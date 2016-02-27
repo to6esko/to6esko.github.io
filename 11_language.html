@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<!-- saved from url=(0046)./11_language.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <title>Project: A Programming Language :: Eloquent JavaScript</title>
+  <link rel="stylesheet" href="./media/codemirror.css">
+  <script src="./media/acorn_codemirror.js"></script>
+  <link rel="stylesheet" href="./media/ejs.css">
+  <script src="./media/sandbox.js"></script>
+  <script src="./media/ejs.js"></script>
+  <script>var chapNum = 11;var sandboxLoadFiles = ["code/chapter/11_language.js"];</script>
+</head>
+
+<body><article>
+<nav>
+  <a href="./10_modules.html" title="previous chapter">◀</a>
+  <a href="./index.html" title="cover">◆</a>
+  <a href="./12_browser.html" title="next chapter">▶</a>
+</nav>
+
+<h1><div class="chap_num">Глава 11</div>Проект: Език за програмиране</h1>
+<blockquote>
+<p><a class="p_ident" id="p_Mt+zDiEThG" href="./11_language.html#p_Mt+zDiEThG"></a>Анализатора, който определя смисъла на изразяване в програмния език, е просто още една програма.”</p>
+ <footer>Hal Abelson and Gerald Sussman, <cite>Структура и Тълкуване на компютърни програми</cite></footer>
+</blockquote>
+<blockquote>
+<p><a class="p_ident" id="p_KjZntSSadH" href="./11_language.html#p_KjZntSSadH"></a>Когато един ученик попитал майстора за естеството на движението на данни и контрол, Ян-Ма отговорил „Мислете за компютъра от неговото съставяне.””</p>
+ <footer>Master Yuan-Ma, <cite>Книга за програмиране</cite></footer>
+</blockquote>
+<p><a class="p_ident" id="p_sLOpE8A1YZ" href="./11_language.html#p_sLOpE8A1YZ"></a>Изграждане на собствен език за програмиране е изненадващо лесно(стига да не се стремите твърде високо) и много поучително.</p>
+<p><a class="p_ident" id="p_XWyxXihLGw" href="./11_language.html#p_XWyxXihLGw"></a>Основното, което искам да покажа в тази глава е, че няма магия, която участва в изграждането на вашия собствен език. Аз често съм чувствал, че някои човешки изобретения са толкова умни и сложни, че никога няма да бъда в състояние да ги разбера. Но с малко четене и бърникане, такива неща често се оказват доста банални.</p>
+<p><a class="p_ident" id="p_99Lxo7iLF8" href="./11_language.html#p_99Lxo7iLF8"></a>Ние ще изградим един език за програмиране, наречен  Egg . Това ще бъде  един малък, прост език, но достатъчно мощен за да се изрази  всяко изчисление, което може да се сетите. Той също така ще позволи  проста абстракция въз основа на функции.</p>
+<h2 id="parsing"><a class="h_ident" id="h_cpTTNxAWkQ" href="./11_language.html#h_cpTTNxAWkQ"></a>Морфологичен  разбор</h2>
+<p><a class="p_ident" id="p_iHS+/Um+4q" href="./11_language.html#p_iHS+/Um+4q"></a>Най-видимата част на един език за програмиране е синтаксиса или нотацията. Анализатор е програма, която чете част от текст и произвежда структура от данни, които отразяват структурата на програмата съдържаща се в този текст. Ако текстът не образува валидна програма, анализатора се оплаква и посочва грешка.</p>
+<p><a class="p_ident" id="p_/qJ2+kk2My" href="./11_language.html#p_/qJ2+kk2My"></a>Нашият език ще има прост и еднообразен синтаксис. Всичко в Egg е израз. Израза може да бъде променлива, номер, <em>string</em> или заявление. Заявленията се използват, както за извикване на функции така и за конструкции, като <code>if</code> и <code>while</code>.</p>
+<p><a class="p_ident" id="p_Us9En1q6+r" href="./11_language.html#p_Us9En1q6+r"></a>За да се запази анализатора елементарен, <em>strings</em> в Egg не поддържат неща, защитени с наклонена черата. <em>Strings</em> са просто поредица от символи, които не са двойни кавички, обвити в двойни кавички. Номерата са последователност от цифри. Имената на променливите могат да се състоят от всякакъв характер, което не е празно място и няма особен смисъл в синтаксиса.</p>
+<p><a class="p_ident" id="p_N7llkiWaN/" href="./11_language.html#p_N7llkiWaN/"></a>Изявленията са написани по начина, по който са в JavaScript, чрез поставяне на скоби след израза и имащи всеки номер, като аргумент между тези скоби, разделени със запетаи.</p>
+<pre>do(define(x, 10),
+   if(&gt;(x, 5),
+      print("large"),
+      print("small")))</pre>
+<p><a class="p_ident" id="p_HBJ5fbzauR" href="./11_language.html#p_HBJ5fbzauR"></a>Еднаквостта на езика Egg означава, че нещата, които са оператори в JavaScript (като <code>&gt;</code>) са нормални променливи в този език и се прилагат точно, както другите функции. И тъй като, синтаксиса няма понятие от блок, ние се нуждаем от <code>do</code> конструкцията да представлява няколко неща в последователност.</p>
+<p><a class="p_ident" id="p_aL3GdDKR9a" href="./11_language.html#p_aL3GdDKR9a"></a>Структурата от данни, които ще използва анализатора за описание на програмата, ще се състои от експресионни обекти, всеки от които има свойството <code>type</code>, което да показва вида на изразяване и други свойства, за да опише съдържанието.</p>
+<p><a class="p_ident" id="p_1s3I5AYr64" href="./11_language.html#p_1s3I5AYr64"></a>Изрази от типа <code>"value"</code> представляват буквални <em>strings</em> или номера. Тяхното свойство <code>value</code> съдържа <em>string</em> или число, които те представляват. Изрази от типа <code>"word"</code> се използват за идентификатори (имена). Такива обекти имат свойството <code>name</code>, което държи името на идентификатора, като <em>string</em>. И накрая <code>"apply"</code> изрази, които представляват приложения. Те имат свойство <code>operator</code>, което се отнася до израза върху, който се прилага и свойство <code>args</code>, което се отнася до набор от аргументи.</p>
+<p><a class="p_ident" id="p_GhgrfUGfKN" href="./11_language.html#p_GhgrfUGfKN"></a>Частта <code>&gt;(x, 5)</code> на предишната програма ще бъде представена по следния начин:</p>
+<pre data-language="application/json" class="snippet cm-s-default"><a class="c_ident" id="c_lPJ6z4fyKi" href="./11_language.html#c_lPJ6z4fyKi"></a>{
+  <span class="cm-property">type</span>: <span class="cm-string">"apply"</span>,
+  <span class="cm-property">operator</span>: {<span class="cm-property">type</span>: <span class="cm-string">"word"</span>, <span class="cm-property">name</span>: <span class="cm-string">"&gt;"</span>},
+  <span class="cm-property">args</span>: [
+    {<span class="cm-property">type</span>: <span class="cm-string">"word"</span>, <span class="cm-property">name</span>: <span class="cm-string">"x"</span>},
+    {<span class="cm-property">type</span>: <span class="cm-string">"value"</span>, <span class="cm-property">value</span>: <span class="cm-number">5</span>}
+  ]
+}</pre>
+<p><a class="p_ident" id="p_wZheW4Mu+K" href="./11_language.html#p_wZheW4Mu+K"></a>Такава структура от данни се нарича синтаксис дърво. Ако си представите обектите, като точки и връзките между тях, като линии между тези точки, те ще имат дървовидна форма. Фактът, че изрази съдържат други изрази, които от своя страна могат да съдържат повече изрази е подобен на начина, по който клоните се разделят и отново се разделят.</p>
+<div class="image">
+  <img src="./media/syntax_tree.svg" alt="The structure of a syntax tree">
+</div>
+<p><a class="p_ident" id="p_TiCtOm6qwQ" href="./11_language.html#p_TiCtOm6qwQ"></a>Сравнете това с анализатора, който писахме за формат на конфигурационен файл в <a href="./09_regexp.html#ini">Глава 9</a> и имаше проста структура: разделя на входа линиите и обработва тези редове един по един. Имаше няколко прости форми, които редовете можеше да имат.</p>
+<p><a class="p_ident" id="p_OtoCO51d4l" href="./11_language.html#p_OtoCO51d4l"></a>Тука трябва да намерим по различен подход. Изразите не се разделят на линии и те имат рекурсивна структура. Приложените изрази съдържат други подобни изрази.</p>
+<p><a class="p_ident" id="p_doWGMjYGVI" href="./11_language.html#p_doWGMjYGVI"></a>За щастие този проблем може да бъде решен елегантно чрез писане на функция анализатор, която е рекурсивна по начин, който отразява рекурсивното естество на езика.</p>
+<p><a class="p_ident" id="p_vEMw7RQ1iA" href="./11_language.html#p_vEMw7RQ1iA"></a>Ще дефинираме функция <code>parseExpression</code>, която взема <em>string</em>, като вход и връща обект, съдържащ структура от данни с изрази, с които стартира <em>string</em>, заедно с частта на <em>string</em> от ляво, след като анализира този израз. След разбора на под-изразите (например, аргументи на заявлението) тази функция може да се извика отново, давайки  израз за аргумент, както и текста който остава.</p>
+<p><a class="p_ident" id="p_qQZOLuZdMw" href="./11_language.html#p_qQZOLuZdMw"></a>Това е първата част на анализатора:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_X80Bp8oPT8" href="./11_language.html#c_X80Bp8oPT8"></a><span class="cm-keyword">function</span> <span class="cm-variable">parseExpression</span>(<span class="cm-def">program</span>) {
+  <span class="cm-variable-2">program</span> <span class="cm-operator">=</span> <span class="cm-variable">skipSpace</span>(<span class="cm-variable-2">program</span>);
+  <span class="cm-keyword">var</span> <span class="cm-def">match</span>, <span class="cm-def">expr</span>;
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">match</span> <span class="cm-operator">=</span> <span class="cm-string-2">/^"([^"]*)"/</span>.<span class="cm-property">exec</span>(<span class="cm-variable-2">program</span>))
+    <span class="cm-variable-2">expr</span> <span class="cm-operator">=</span> {<span class="cm-property">type</span>: <span class="cm-string">"value"</span>, <span class="cm-property">value</span>: <span class="cm-variable-2">match</span>[<span class="cm-number">1</span>]};
+  <span class="cm-keyword">else</span> <span class="cm-keyword">if</span> (<span class="cm-variable-2">match</span> <span class="cm-operator">=</span> <span class="cm-string-2">/^\d+\b/</span>.<span class="cm-property">exec</span>(<span class="cm-variable-2">program</span>))
+    <span class="cm-variable-2">expr</span> <span class="cm-operator">=</span> {<span class="cm-property">type</span>: <span class="cm-string">"value"</span>, <span class="cm-property">value</span>: <span class="cm-variable">Number</span>(<span class="cm-variable-2">match</span>[<span class="cm-number">0</span>])};
+  <span class="cm-keyword">else</span> <span class="cm-keyword">if</span> (<span class="cm-variable-2">match</span> <span class="cm-operator">=</span> <span class="cm-string-2">/^[^\s(),"]+/</span>.<span class="cm-property">exec</span>(<span class="cm-variable-2">program</span>))
+    <span class="cm-variable-2">expr</span> <span class="cm-operator">=</span> {<span class="cm-property">type</span>: <span class="cm-string">"word"</span>, <span class="cm-property">name</span>: <span class="cm-variable-2">match</span>[<span class="cm-number">0</span>]};
+  <span class="cm-keyword">else</span>
+    <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">SyntaxError</span>(<span class="cm-string">"Unexpected syntax: "</span> <span class="cm-operator">+</span> <span class="cm-variable-2">program</span>);
+
+  <span class="cm-keyword">return</span> <span class="cm-variable">parseApply</span>(<span class="cm-variable-2">expr</span>, <span class="cm-variable-2">program</span>.<span class="cm-property">slice</span>(<span class="cm-variable-2">match</span>[<span class="cm-number">0</span>].<span class="cm-property">length</span>));
+}
+
+<span class="cm-keyword">function</span> <span class="cm-variable">skipSpace</span>(<span class="cm-def">string</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">first</span> <span class="cm-operator">=</span> <span class="cm-variable-2">string</span>.<span class="cm-property">search</span>(<span class="cm-string-2">/\S/</span>);
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">first</span> <span class="cm-operator">==</span> <span class="cm-operator">-</span><span class="cm-number">1</span>) <span class="cm-keyword">return</span> <span class="cm-string">""</span>;
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">string</span>.<span class="cm-property">slice</span>(<span class="cm-variable-2">first</span>);
+}</pre>
+<p><a class="p_ident" id="p_A31RFsnSOb" href="./11_language.html#p_A31RFsnSOb"></a>Понеже Egg позволява всякакъв размер на празно пространство между неговите елементи, ние трябва да намалим наведнъж празното разстояние в началото на <em>string</em> на програмата. Това, което функцията <code>skipSpace</code> прави.</p>
+<p><a class="p_ident" id="p_FglUPeozx+" href="./11_language.html#p_FglUPeozx+"></a>След като, прескочим празните пространства, <code>parseExpression</code> използва три регулярни израза, за място на три прости елемента, които Egg поддържа: <em>string</em>, числа и думи. Анализатора изгражда различен вид структура от данни в зависимост от това на кое отговарят. Ако входа не съвпада с тези три форми, то той е невалиден израз и анализатора хвърля грешка. <code>SyntaxError</code> е стандартен тип обект за грешки, който се изпълнява, когато се направи опит да се изпълни програма с невалиден JavaScript.</p>
+<p><a class="p_ident" id="p_SHT28zA+Zh" href="./11_language.html#p_SHT28zA+Zh"></a>След това можем да отрежем част от съвпадащия с програмата <em>string</em> и да го подадем с обекта за изразяване към <code>parseApply</code>, който проверява дали израза е заявление. Ако е така анализира списъка с аргументите в скобите.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_8XJhY9YZ7z" href="./11_language.html#c_8XJhY9YZ7z"></a><span class="cm-keyword">function</span> <span class="cm-variable">parseApply</span>(<span class="cm-def">expr</span>, <span class="cm-def">program</span>) {
+  <span class="cm-variable-2">program</span> <span class="cm-operator">=</span> <span class="cm-variable">skipSpace</span>(<span class="cm-variable-2">program</span>);
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">program</span>[<span class="cm-number">0</span>] <span class="cm-operator">!=</span> <span class="cm-string">"("</span>)
+    <span class="cm-keyword">return</span> {<span class="cm-property">expr</span>: <span class="cm-variable-2">expr</span>, <span class="cm-property">rest</span>: <span class="cm-variable-2">program</span>};
+
+  <span class="cm-variable-2">program</span> <span class="cm-operator">=</span> <span class="cm-variable">skipSpace</span>(<span class="cm-variable-2">program</span>.<span class="cm-property">slice</span>(<span class="cm-number">1</span>));
+  <span class="cm-variable-2">expr</span> <span class="cm-operator">=</span> {<span class="cm-property">type</span>: <span class="cm-string">"apply"</span>, <span class="cm-property">operator</span>: <span class="cm-variable-2">expr</span>, <span class="cm-property">args</span>: []};
+  <span class="cm-keyword">while</span> (<span class="cm-variable-2">program</span>[<span class="cm-number">0</span>] <span class="cm-operator">!=</span> <span class="cm-string">")"</span>) {
+    <span class="cm-keyword">var</span> <span class="cm-def">arg</span> <span class="cm-operator">=</span> <span class="cm-variable">parseExpression</span>(<span class="cm-variable-2">program</span>);
+    <span class="cm-variable-2">expr</span>.<span class="cm-property">args</span>.<span class="cm-property">push</span>(<span class="cm-variable-2">arg</span>.<span class="cm-property">expr</span>);
+    <span class="cm-variable-2">program</span> <span class="cm-operator">=</span> <span class="cm-variable">skipSpace</span>(<span class="cm-variable-2">arg</span>.<span class="cm-property">rest</span>);
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">program</span>[<span class="cm-number">0</span>] <span class="cm-operator">==</span> <span class="cm-string">","</span>)
+      <span class="cm-variable-2">program</span> <span class="cm-operator">=</span> <span class="cm-variable">skipSpace</span>(<span class="cm-variable-2">program</span>.<span class="cm-property">slice</span>(<span class="cm-number">1</span>));
+    <span class="cm-keyword">else</span> <span class="cm-keyword">if</span> (<span class="cm-variable-2">program</span>[<span class="cm-number">0</span>] <span class="cm-operator">!=</span> <span class="cm-string">")"</span>)
+      <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">SyntaxError</span>(<span class="cm-string">"Expected ',' or ')'"</span>);
+  }
+  <span class="cm-keyword">return</span> <span class="cm-variable">parseApply</span>(<span class="cm-variable-2">expr</span>, <span class="cm-variable-2">program</span>.<span class="cm-property">slice</span>(<span class="cm-number">1</span>));
+}</pre>
+<p><a class="p_ident" id="p_I71H7ro2MW" href="./11_language.html#p_I71H7ro2MW"></a>Ако следващият символ в програмата не е отваряща скоба, това не е валидно заявление и <code>parseApply</code> просто връща даденият израз.</p>
+<p><a class="p_ident" id="p_rdoND4Um+i" href="./11_language.html#p_rdoND4Um+i"></a>В противен случай, той прескача скобите за откриване на процедура и създава дървовиден обект на синтаксиса на този израз - заявление. След това, рекурсивно извиква <code>parseExpression</code> за да направи анализ на всеки аргумент, докато открие затваряща скоба. Рекурсията е косвена, през <code>parseApply</code> и <code>parseExpression</code> извикващи се един друг.</p>
+<p><a class="p_ident" id="p_U3xcmi1mE5" href="./11_language.html#p_U3xcmi1mE5"></a>Тъй като, израза на заявлението може да се приложи (както <code>multiplier(2)(1)</code>), <code>parseApply</code> трябва, след като анализира заявлението да извика отново себе си, за да провери дали не следва друга двойка скоби.</p>
+<p><a class="p_ident" id="p_I3C1yxD9Oq" href="./11_language.html#p_I3C1yxD9Oq"></a>Това е целия анализ, който трябва на направи Egg. Ние го увиваме в удобна <code>parse</code> функция, която установява, че той е стигнал края на вохдящия <em>string</em>, след анализ на израза (програмата Egg е единичен израз), това ни дава структурата от данни на програмата.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_j7Ip+SRvOX" href="./11_language.html#c_j7Ip+SRvOX"></a><span class="cm-keyword">function</span> <span class="cm-variable">parse</span>(<span class="cm-def">program</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">result</span> <span class="cm-operator">=</span> <span class="cm-variable">parseExpression</span>(<span class="cm-variable-2">program</span>);
+  <span class="cm-keyword">if</span> (<span class="cm-variable">skipSpace</span>(<span class="cm-variable-2">result</span>.<span class="cm-property">rest</span>).<span class="cm-property">length</span> <span class="cm-operator">&gt;</span> <span class="cm-number">0</span>)
+    <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">SyntaxError</span>(<span class="cm-string">"Unexpected text after program"</span>);
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">result</span>.<span class="cm-property">expr</span>;
+}
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">parse</span>(<span class="cm-string">"+(a, 10)"</span>));
+<span class="cm-comment">// → {type: "apply",</span>
+<span class="cm-comment">//    operator: {type: "word", name: "+"},</span>
+<span class="cm-comment">//    args: [{type: "word", name: "a"},</span>
+<span class="cm-comment">//           {type: "value", value: 10}]}</span></pre>
+<p><a class="p_ident" id="p_sbjERs3L8Y" href="./11_language.html#p_sbjERs3L8Y"></a>Работи! Тя не ни дава много полезна информация, когато се провали и не съхранява реда и колоната, на която започва всеки израз, което може да бъде полезно при отчитане на грешки по-късно, но това е достатъчно добре за нашите цели.</p>
+<h2><a class="h_ident" id="h_HlYkF24q0q" href="./11_language.html#h_HlYkF24q0q"></a>Анализатора</h2>
+<p><a class="p_ident" id="p_NVE0gYIhuH" href="./11_language.html#p_NVE0gYIhuH"></a>Какво можем да направим със синтаксиса на дървото на програмата? Да го пуснем, разбира се! И това е, което анализатора прави. Можем да му дадем дървото на синтаксиса и обекта на околната средата, който свързва имена със стойности, да направи оценка на израза, които дървото представлява и да върне стойността, която произвежда.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_4PzV57jGzX" href="./11_language.html#c_4PzV57jGzX"></a><span class="cm-keyword">function</span> <span class="cm-variable">evaluate</span>(<span class="cm-def">expr</span>, <span class="cm-def">env</span>) {
+  <span class="cm-keyword">switch</span>(<span class="cm-variable-2">expr</span>.<span class="cm-property">type</span>) {
+    <span class="cm-keyword">case</span> <span class="cm-string">"value"</span>:
+      <span class="cm-keyword">return</span> <span class="cm-variable-2">expr</span>.<span class="cm-property">value</span>;
+
+    <span class="cm-keyword">case</span> <span class="cm-string">"word"</span>:
+      <span class="cm-keyword">if</span> (<span class="cm-variable-2">expr</span>.<span class="cm-property">name</span> <span class="cm-keyword">in</span> <span class="cm-variable-2">env</span>)
+        <span class="cm-keyword">return</span> <span class="cm-variable-2">env</span>[<span class="cm-variable-2">expr</span>.<span class="cm-property">name</span>];
+      <span class="cm-keyword">else</span>
+        <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">ReferenceError</span>(<span class="cm-string">"Undefined variable: "</span> <span class="cm-operator">+</span>
+                                 <span class="cm-variable-2">expr</span>.<span class="cm-property">name</span>);
+    <span class="cm-keyword">case</span> <span class="cm-string">"apply"</span>:
+      <span class="cm-keyword">if</span> (<span class="cm-variable-2">expr</span>.<span class="cm-property">operator</span>.<span class="cm-property">type</span> <span class="cm-operator">==</span> <span class="cm-string">"word"</span> <span class="cm-operator">&amp;&amp;</span>
+          <span class="cm-variable-2">expr</span>.<span class="cm-property">operator</span>.<span class="cm-property">name</span> <span class="cm-keyword">in</span> <span class="cm-variable">specialForms</span>)
+        <span class="cm-keyword">return</span> <span class="cm-variable">specialForms</span>[<span class="cm-variable-2">expr</span>.<span class="cm-property">operator</span>.<span class="cm-property">name</span>](<span class="cm-variable-2">expr</span>.<span class="cm-property">args</span>,
+                                                <span class="cm-variable-2">env</span>);
+      <span class="cm-keyword">var</span> <span class="cm-def">op</span> <span class="cm-operator">=</span> <span class="cm-variable">evaluate</span>(<span class="cm-variable-2">expr</span>.<span class="cm-property">operator</span>, <span class="cm-variable-2">env</span>);
+      <span class="cm-keyword">if</span> (<span class="cm-keyword">typeof</span> <span class="cm-variable-2">op</span> <span class="cm-operator">!=</span> <span class="cm-string">"function"</span>)
+        <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">TypeError</span>(<span class="cm-string">"Applying a non-function."</span>);
+      <span class="cm-keyword">return</span> <span class="cm-variable-2">op</span>.<span class="cm-property">apply</span>(<span class="cm-atom">null</span>, <span class="cm-variable-2">expr</span>.<span class="cm-property">args</span>.<span class="cm-property">map</span>(<span class="cm-keyword">function</span>(<span class="cm-def">arg</span>) {
+        <span class="cm-keyword">return</span> <span class="cm-variable">evaluate</span>(<span class="cm-variable-2">arg</span>, <span class="cm-variable-2">env</span>);
+      }));
+  }
+}
+
+<span class="cm-keyword">var</span> <span class="cm-variable">specialForms</span> <span class="cm-operator">=</span> <span class="cm-variable">Object</span>.<span class="cm-property">create</span>(<span class="cm-atom">null</span>);</pre>
+<p><a class="p_ident" id="p_BBPjU16P+4" href="./11_language.html#p_BBPjU16P+4"></a>Оценителят има код за всеки от типовете изрази. Стойността на израза просто произвежда тази стойност.(Например, изразът <code>100</code>, оценява номер 100). За променливата, ние трябва да проверим дали действително е определена в околната среда и ако е така, да и прикачим тази стойност.</p>
+<p><a class="p_ident" id="p_3O0koXQqgW" href="./11_language.html#p_3O0koXQqgW"></a>Заявленията са по-ангажиращи. Ако те са специална форма, <code>if</code>, те не оценяват нищо и просто подават изразите на аргументите заедно с околната среда към функцията, която се занимава с тази  форма. Ако това е нормално извикване, ние го оценяваме с оператора, потвърждаваме, че е функция и я извикваме с резултата от оценяването на аргументите.</p>
+<p><a class="p_ident" id="p_pq4tp0rkgU" href="./11_language.html#p_pq4tp0rkgU"></a>Ние ще използваме обикновени стойности за функции на JavaScript, за да представим стойностите за функциите на Egg. Ще се върнем към това <a href="./11_language.html#egg_fun">по-късно</a>, когато специалната форма, наречена <code>fun</code> дефинирана.</p>
+<p><a class="p_ident" id="p_VAS/FPg1UY" href="./11_language.html#p_VAS/FPg1UY"></a>Рекурсивната структура на <code>evaluate</code> прилича подобно на структурата на оценителя. И двете отразяват структурата на самия език. Също така може да се интегрира анализатор с оценителя и да оценява по време на анализа, като ги разделим и по този начин да направим програмата по-разбираема.</p>
+<p><a class="p_ident" id="p_lfbXYqM2w2" href="./11_language.html#p_lfbXYqM2w2"></a>Това наистина е всичко, което е необходимо за да се интерпретира Egg. Толкова е просто. Но без да определим няколко специални функции и да добавим няколко полезни стойности на средата, няма да можем да правим всичко с този език, все още.</p>
+<h2><a class="h_ident" id="h_JOCrYKZbDr" href="./11_language.html#h_JOCrYKZbDr"></a>Специални  форми</h2>
+<p><a class="p_ident" id="p_Vq0TKNCoCk" href="./11_language.html#p_Vq0TKNCoCk"></a>Обекта на <code>specialForms</code> се използва за определяне на специален синтаксис в Egg. Той свързва думи с функции, които правят оценка на такива специални форми. Сега е празен. Нека добавим някои форми.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_keHNLB7iSD" href="./11_language.html#c_keHNLB7iSD"></a><span class="cm-variable">specialForms</span>[<span class="cm-string">"if"</span>] <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">args</span>, <span class="cm-def">env</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">args</span>.<span class="cm-property">length</span> <span class="cm-operator">!=</span> <span class="cm-number">3</span>)
+    <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">SyntaxError</span>(<span class="cm-string">"Bad number of args to if"</span>);
+
+  <span class="cm-keyword">if</span> (<span class="cm-variable">evaluate</span>(<span class="cm-variable-2">args</span>[<span class="cm-number">0</span>], <span class="cm-variable-2">env</span>) <span class="cm-operator">!==</span> <span class="cm-atom">false</span>)
+    <span class="cm-keyword">return</span> <span class="cm-variable">evaluate</span>(<span class="cm-variable-2">args</span>[<span class="cm-number">1</span>], <span class="cm-variable-2">env</span>);
+  <span class="cm-keyword">else</span>
+    <span class="cm-keyword">return</span> <span class="cm-variable">evaluate</span>(<span class="cm-variable-2">args</span>[<span class="cm-number">2</span>], <span class="cm-variable-2">env</span>);
+};</pre>
+<p><a class="p_ident" id="p_1G1ypvHVnk" href="./11_language.html#p_1G1ypvHVnk"></a>Конструкцията на <code>if</code> в Egg , очаква точно три аргумента. Тя ще направи оценка на първия и ако резултата не е стойността <code>false</code>, ще направи оценка на втория. В противен случай, третият получава оценка. Тази <code>if</code> форма е сходна с трикомпонентната <code>if</code> форма на <code>?:</code> в  JavaScript. Това е израз, а не твърдение и произвежда стойност, а именно резултата от втория или третия аргумент.</p>
+<p><a class="p_ident" id="p_NF+mSlruEr" href="./11_language.html#p_NF+mSlruEr"></a>Egg се различава от JavaScript, в това как се справя със състоянието на стойностите на <code>if</code>. Той няма да разглежда неща, като нула или празен <em>string</em>, като фалшиви, а с точната стойност <code>false</code>.</p>
+<p><a class="p_ident" id="p_ARUuidAS4I" href="./11_language.html#p_ARUuidAS4I"></a>TПричината, поради която трябва да представим <code>if</code>, като специална форма, а не редовна функция, е че всички аргументи на функции са оценени преди извикването на функцията, докато 
+<code>if</code> трябва да оцени всеки един от втория или третия си аргумент , в зависимост от стойността на първия.</p>
+<p><a class="p_ident" id="p_Z67vCfZJi8" href="./11_language.html#p_Z67vCfZJi8"></a>Формата за <code>while</code> е подобна:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_TcilHm4kKN" href="./11_language.html#c_TcilHm4kKN"></a><span class="cm-variable">specialForms</span>[<span class="cm-string">"while"</span>] <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">args</span>, <span class="cm-def">env</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">args</span>.<span class="cm-property">length</span> <span class="cm-operator">!=</span> <span class="cm-number">2</span>)
+    <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">SyntaxError</span>(<span class="cm-string">"Bad number of args to while"</span>);
+
+  <span class="cm-keyword">while</span> (<span class="cm-variable">evaluate</span>(<span class="cm-variable-2">args</span>[<span class="cm-number">0</span>], <span class="cm-variable-2">env</span>) <span class="cm-operator">!==</span> <span class="cm-atom">false</span>)
+    <span class="cm-variable">evaluate</span>(<span class="cm-variable-2">args</span>[<span class="cm-number">1</span>], <span class="cm-variable-2">env</span>);
+
+  <span class="cm-comment">// Since undefined does not exist in Egg, we return false,</span>
+  <span class="cm-comment">// for lack of a meaningful result.</span>
+  <span class="cm-keyword">return</span> <span class="cm-atom">false</span>;
+};</pre>
+<p><a class="p_ident" id="p_jN94KP2C2B" href="./11_language.html#p_jN94KP2C2B"></a>Друг основен градивен елемент е <code>do</code>, който изпълнява всички свои аргументи от горе на долу. Неговата стойност е стойността произведена от последният аргумент.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_C0SLsNu6uq" href="./11_language.html#c_C0SLsNu6uq"></a><span class="cm-variable">specialForms</span>[<span class="cm-string">"do"</span>] <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">args</span>, <span class="cm-def">env</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">value</span> <span class="cm-operator">=</span> <span class="cm-atom">false</span>;
+  <span class="cm-variable-2">args</span>.<span class="cm-property">forEach</span>(<span class="cm-keyword">function</span>(<span class="cm-def">arg</span>) {
+    <span class="cm-variable-2">value</span> <span class="cm-operator">=</span> <span class="cm-variable">evaluate</span>(<span class="cm-variable-2">arg</span>, <span class="cm-variable-2">env</span>);
+  });
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">value</span>;
+};</pre>
+<p><a class="p_ident" id="p_C6o3zSjPya" href="./11_language.html#p_C6o3zSjPya"></a>За да бъдем в състояние да създаваме променливи и да им даваме нови стойности, трябва също да създадем форма наречена <code>define</code>. Тя очаква една дума, като първи аргумент и израз за производство на стойност, на който да възложи тази дума, като втори аргумент. Тъй като, <code>define</code>, както всичко, което е израз трябва да върне стойност. Ще го направим да връща стойността, която е присвоена ( точно, както в JavaScript  с оператора <code>=</code>).</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_4QghGMwc4p" href="./11_language.html#c_4QghGMwc4p"></a><span class="cm-variable">specialForms</span>[<span class="cm-string">"define"</span>] <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">args</span>, <span class="cm-def">env</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">args</span>.<span class="cm-property">length</span> <span class="cm-operator">!=</span> <span class="cm-number">2</span> <span class="cm-operator">||</span> <span class="cm-variable-2">args</span>[<span class="cm-number">0</span>].<span class="cm-property">type</span> <span class="cm-operator">!=</span> <span class="cm-string">"word"</span>)
+    <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">SyntaxError</span>(<span class="cm-string">"Bad use of define"</span>);
+  <span class="cm-keyword">var</span> <span class="cm-def">value</span> <span class="cm-operator">=</span> <span class="cm-variable">evaluate</span>(<span class="cm-variable-2">args</span>[<span class="cm-number">1</span>], <span class="cm-variable-2">env</span>);
+  <span class="cm-variable-2">env</span>[<span class="cm-variable-2">args</span>[<span class="cm-number">0</span>].<span class="cm-property">name</span>] <span class="cm-operator">=</span> <span class="cm-variable-2">value</span>;
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">value</span>;
+};</pre>
+<h2><a class="h_ident" id="h_2Tc54fkIgF" href="./11_language.html#h_2Tc54fkIgF"></a>Околна  среда</h2>
+<p><a class="p_ident" id="p_hpUlK1YNqm" href="./11_language.html#p_hpUlK1YNqm"></a>Околната среда приета от <code>evaluate</code> е обект със свойства, чиито имена съответстват на имената на променливите и чиито стойности отговарят на стойностите на тези променливи, с които са свързани. Нека определим обекта на околната среда да представлява глобалния обхват.</p>
+<p><a class="p_ident" id="p_DNbLZKiE8S" href="./11_language.html#p_DNbLZKiE8S"></a>За да може <code>if</code> конструкцията да го определи, ние трябва да имаме достъп до булеви стойности. Тъй като, има само две булеви стойности, ние се нуждаем от специален синтаксис за тях. Просто ще свържем две променливи със стойностите <code>true</code> и <code>false</code> и ще ги използваме, като такива.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_hR54TW9tph" href="./11_language.html#c_hR54TW9tph"></a><span class="cm-keyword">var</span> <span class="cm-variable">topEnv</span> <span class="cm-operator">=</span> <span class="cm-variable">Object</span>.<span class="cm-property">create</span>(<span class="cm-atom">null</span>);
+
+<span class="cm-variable">topEnv</span>[<span class="cm-string">"true"</span>] <span class="cm-operator">=</span> <span class="cm-atom">true</span>;
+<span class="cm-variable">topEnv</span>[<span class="cm-string">"false"</span>] <span class="cm-operator">=</span> <span class="cm-atom">false</span>;</pre>
+<p><a class="p_ident" id="p_mLmm584R4a" href="./11_language.html#p_mLmm584R4a"></a>Сега можем да оценим един прост израз с негативна булева стойност.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_U/qTEhm5kH" href="./11_language.html#c_U/qTEhm5kH"></a><span class="cm-keyword">var</span> <span class="cm-variable">prog</span> <span class="cm-operator">=</span> <span class="cm-variable">parse</span>(<span class="cm-string">"if(true, false, true)"</span>);
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">evaluate</span>(<span class="cm-variable">prog</span>, <span class="cm-variable">topEnv</span>));
+<span class="cm-comment">// → false</span></pre>
+<p><a class="p_ident" id="p_ngLfcnLh/2" href="./11_language.html#p_ngLfcnLh/2"></a>За да предоставим основни аритметични и сравнителни оператори, ще добавим някои функционални стойности за околната среда. В интерес на запазване на краткия код, ще използваме <code>new Function</code> да синтезира един куп функции с цикъл, а не да ги определяме една по една.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_tur1GafQLT" href="./11_language.html#c_tur1GafQLT"></a>[<span class="cm-string">"+"</span>, <span class="cm-string">"-"</span>, <span class="cm-string">"*"</span>, <span class="cm-string">"/"</span>, <span class="cm-string">"=="</span>, <span class="cm-string">"&lt;"</span>, <span class="cm-string">"&gt;"</span>].<span class="cm-property">forEach</span>(<span class="cm-keyword">function</span>(<span class="cm-def">op</span>) {
+  <span class="cm-variable">topEnv</span>[<span class="cm-variable-2">op</span>] <span class="cm-operator">=</span> <span class="cm-keyword">new</span> <span class="cm-variable">Function</span>(<span class="cm-string">"a, b"</span>, <span class="cm-string">"return a "</span> <span class="cm-operator">+</span> <span class="cm-variable-2">op</span> <span class="cm-operator">+</span> <span class="cm-string">" b;"</span>);
+});</pre>
+<p><a class="p_ident" id="p_ZP9ZMJAskW" href="./11_language.html#p_ZP9ZMJAskW"></a>Начин за показване на изходните стойности също е много полезен, така че ще увием <code>console.log</code> във функция и ще я наречем <code>print</code>.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_o0VLFoQzPE" href="./11_language.html#c_o0VLFoQzPE"></a><span class="cm-variable">topEnv</span>[<span class="cm-string">"print"</span>] <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">value</span>) {
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable-2">value</span>);
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">value</span>;
+};</pre>
+<p><a class="p_ident" id="p_LD0lewrgTF" href="./11_language.html#p_LD0lewrgTF"></a>Това ни дава достатъчно елементарни инструменти, за да се пишат прости програми. Следващата <code>run</code> функция предлага удобен начин да се пишат и изпълняват. Тя създава нова околна среда, прави избор и оценява <em>strings</em>, които ние и даваме, като една единствена програма.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_hH6wAg7pwu" href="./11_language.html#c_hH6wAg7pwu"></a><span class="cm-keyword">function</span> <span class="cm-variable">run</span>() {
+  <span class="cm-keyword">var</span> <span class="cm-def">env</span> <span class="cm-operator">=</span> <span class="cm-variable">Object</span>.<span class="cm-property">create</span>(<span class="cm-variable">topEnv</span>);
+  <span class="cm-keyword">var</span> <span class="cm-def">program</span> <span class="cm-operator">=</span> <span class="cm-variable">Array</span>.<span class="cm-property">prototype</span>.<span class="cm-property">slice</span>
+    .<span class="cm-property">call</span>(<span class="cm-variable-2">arguments</span>, <span class="cm-number">0</span>).<span class="cm-property">join</span>(<span class="cm-string">"\n"</span>);
+  <span class="cm-keyword">return</span> <span class="cm-variable">evaluate</span>(<span class="cm-variable">parse</span>(<span class="cm-variable-2">program</span>), <span class="cm-variable-2">env</span>);
+}</pre>
+<p><a class="p_ident" id="p_L3eaessI8L" href="./11_language.html#p_L3eaessI8L"></a>Използването на <code>Array.prototype.slice.call</code> е трик за да се превърне масиво-подобен обект, например <code>arguments</code> в реален масив, така че да можем да извикаме <code>join</code> върху него. Това взема всички аргументи, подадени на <code>run</code> и ги третира, като линии на програма</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_GFag0fDf4R" href="./11_language.html#c_GFag0fDf4R"></a><span class="cm-variable">run</span>(<span class="cm-string">"do(define(total, 0),"</span>,
+    <span class="cm-string">"   define(count, 1),"</span>,
+    <span class="cm-string">"   while(&lt;(count, 11),"</span>,
+    <span class="cm-string">"         do(define(total, +(total, count)),"</span>,
+    <span class="cm-string">"            define(count, +(count, 1)))),"</span>,
+    <span class="cm-string">"   print(total))"</span>);
+<span class="cm-comment">// → 55</span></pre>
+<p><a class="p_ident" id="p_4cQhF2ypgW" href="./11_language.html#p_4cQhF2ypgW"></a>Това е програма, която сме виждали няколко пъти преди за изчисляване на сумата на числата от 1 до 10, изпълнена в Egg. То е ясно, че е по-грозна от същата програма в JavaScript, но никак не е зле за език с по-малко от 150 реда код.</p>
+<h2 id="egg_fun"><a class="h_ident" id="h_K5Yd6h3Axg" href="./11_language.html#h_K5Yd6h3Axg"></a>Функции</h2>
+<p><a class="p_ident" id="p_FabFt4VUPD" href="./11_language.html#p_FabFt4VUPD"></a>Език за програмиране без функции е беден език.</p>
+<p><a class="p_ident" id="p_wOCI3bG7/f" href="./11_language.html#p_wOCI3bG7/f"></a>За щастие, не е трудно да добавим <code>fun</code> конструкция, с която да  третираме нейния последен аргумент, като тялото на функцията и да третираме всички аргументи преди това, като имената на аргументите на функцията.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_mbreVUDgQo" href="./11_language.html#c_mbreVUDgQo"></a><span class="cm-variable">specialForms</span>[<span class="cm-string">"fun"</span>] <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">args</span>, <span class="cm-def">env</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-operator">!</span><span class="cm-variable-2">args</span>.<span class="cm-property">length</span>)
+    <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">SyntaxError</span>(<span class="cm-string">"Functions need a body"</span>);
+  <span class="cm-keyword">function</span> <span class="cm-def">name</span>(<span class="cm-def">expr</span>) {
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">expr</span>.<span class="cm-property">type</span> <span class="cm-operator">!=</span> <span class="cm-string">"word"</span>)
+      <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">SyntaxError</span>(<span class="cm-string">"Arg names must be words"</span>);
+    <span class="cm-keyword">return</span> <span class="cm-variable-2">expr</span>.<span class="cm-property">name</span>;
+  }
+  <span class="cm-keyword">var</span> <span class="cm-def">argNames</span> <span class="cm-operator">=</span> <span class="cm-variable-2">args</span>.<span class="cm-property">slice</span>(<span class="cm-number">0</span>, <span class="cm-variable-2">args</span>.<span class="cm-property">length</span> <span class="cm-operator">-</span> <span class="cm-number">1</span>).<span class="cm-property">map</span>(<span class="cm-variable-2">name</span>);
+  <span class="cm-keyword">var</span> <span class="cm-def">body</span> <span class="cm-operator">=</span> <span class="cm-variable-2">args</span>[<span class="cm-variable-2">args</span>.<span class="cm-property">length</span> <span class="cm-operator">-</span> <span class="cm-number">1</span>];
+
+  <span class="cm-keyword">return</span> <span class="cm-keyword">function</span>() {
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">arguments</span>.<span class="cm-property">length</span> <span class="cm-operator">!=</span> <span class="cm-variable-2">argNames</span>.<span class="cm-property">length</span>)
+      <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">TypeError</span>(<span class="cm-string">"Wrong number of arguments"</span>);
+    <span class="cm-keyword">var</span> <span class="cm-def">localEnv</span> <span class="cm-operator">=</span> <span class="cm-variable">Object</span>.<span class="cm-property">create</span>(<span class="cm-variable-2">env</span>);
+    <span class="cm-keyword">for</span> (<span class="cm-keyword">var</span> <span class="cm-def">i</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>; <span class="cm-variable-2">i</span> <span class="cm-operator">&lt;</span> <span class="cm-variable-2">arguments</span>.<span class="cm-property">length</span>; <span class="cm-variable-2">i</span><span class="cm-operator">++</span>)
+      <span class="cm-variable-2">localEnv</span>[<span class="cm-variable-2">argNames</span>[<span class="cm-variable-2">i</span>]] <span class="cm-operator">=</span> <span class="cm-variable-2">arguments</span>[<span class="cm-variable-2">i</span>];
+    <span class="cm-keyword">return</span> <span class="cm-variable">evaluate</span>(<span class="cm-variable-2">body</span>, <span class="cm-variable-2">localEnv</span>);
+  };
+};</pre>
+<p><a class="p_ident" id="p_iTINb2vdSn" href="./11_language.html#p_iTINb2vdSn"></a>Функциите в Egg имат своя собствена локална среда, точно както в JavaScript. Ние използваме <code>Object.create</code> за да направим нов обект, който има достъп до променливите във външната среда, но това също така съдържа нови променливи, с които променя онези във външния обхват.</p>
+<p><a class="p_ident" id="p_8s1BSoLJ7h" href="./11_language.html#p_8s1BSoLJ7h"></a>Функцията създадена от <code>fun</code> формата, създава тази локална среда и добавя променливи на аргументи към нея. След това тя оценява тялото на функцията в тази среда и връща резултата.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_MrkLcJvHKa" href="./11_language.html#c_MrkLcJvHKa"></a><span class="cm-variable">run</span>(<span class="cm-string">"do(define(plusOne, fun(a, +(a, 1))),"</span>,
+    <span class="cm-string">"   print(plusOne(10)))"</span>);
+<span class="cm-comment">// → 11</span>
+
+<span class="cm-variable">run</span>(<span class="cm-string">"do(define(pow, fun(base, exp,"</span>,
+    <span class="cm-string">"     if(==(exp, 0),"</span>,
+    <span class="cm-string">"        1,"</span>,
+    <span class="cm-string">"        *(base, pow(base, -(exp, 1)))))),"</span>,
+    <span class="cm-string">"   print(pow(2, 10)))"</span>);
+<span class="cm-comment">// → 1024</span></pre>
+<h2><a class="h_ident" id="h_qtdV3kKVQe" href="./11_language.html#h_qtdV3kKVQe"></a>Компилация</h2>
+<p><a class="p_ident" id="p_JRcPOXDFEi" href="./11_language.html#p_JRcPOXDFEi"></a>Това което, изградихме до сега е интерпретатор. По време на оценката, той действа директно върху представянето на програмата, произведена от анализатора.</p>
+<p><a class="p_ident" id="p_4qkDFya9A2" href="./11_language.html#p_4qkDFya9A2"></a>Компилация е процес на добавяне на още една стъпка между анализирането и управлението на една програма, което трансформира  програмата в нещо, което може да оценява по-ефективно, като прави толкова работа, колкото е възможно при подобрение. Например, в добре проектирани езици е очевидна всяка употреба на променлива, която е посочена без действително изпълнение на програмата. Това може да се използва, за да се избегне търсенето на променливата по име всеки път, когато тя е  достъпна и директно да се вземе от някое предварително определено място в паметта.</p>
+<p><a class="p_ident" id="p_HrQe0PuoCJ" href="./11_language.html#p_HrQe0PuoCJ"></a>Традиционно компилацията включва превръщането на програмата в машинен код със суров формат, който процесорът на компютъра може да изпълни. Но и всякакъв процес, който преобразува програмата в различно представяне, може да се мисли за него, като за компилация.</p>
+<p><a class="p_ident" id="p_+HfDnbf6cY" href="./11_language.html#p_+HfDnbf6cY"></a>Възможно е да се напише стратегия за алтернативно оценяване за Egg , като първо превръща  програмата в програма на JavaScript, като използва <code>new Function</code> за да призове компилатора на JavaScript върху нея и след това да стартира резултата. Когато е завършена, това би направило Egg да работи много по-бързо докато все още е лесна за изпълнение.</p>
+<p><a class="p_ident" id="p_PmaubaTjuT" href="./11_language.html#p_PmaubaTjuT"></a>Ако се интересувате от тази тема и искате да и отделите известно време, аз ви насърчавам да се опитате да въведете някакъв компилатор, като упражнение.</p>
+<h2><a class="h_ident" id="h_DmDK0dWdfE" href="./11_language.html#h_DmDK0dWdfE"></a>На  готово</h2>
+<p><a class="p_ident" id="p_cUrg/8XPK+" href="./11_language.html#p_cUrg/8XPK+"></a>Когато дефинирахме <code>if</code> и <code>while</code>, вие вероятно забелязахте, че те бяха повече или по-малко тривиални обвивки на JavaScript-ските <code>if</code> и <code>while</code>. По същия начин стойностите в Egg са само стандартни стари стойности на JavaScript.</p>
+<p><a class="p_ident" id="p_qMvm2xpt6o" href="./11_language.html#p_qMvm2xpt6o"></a>Ако сравните реализацията на Egg, изградена върху JavaScript, с обема на работа и сложността необходима за изграждане на един език за програмиране директно в суровата функционалност предоставена от една машина, разликата е огромна. Независимо от това с този пример се надявам да добиете представа за начина, по който програмните езици работят. </p>
+<p><a class="p_ident" id="p_xuQu2Hdpx2" href="./11_language.html#p_xuQu2Hdpx2"></a>И когато става  въпрос за получаване на нещо направено на готово е по-ефективно, от колкото да правите всичко сами. Въпреки, че езикът - играчка в тази глава не прави нищо, което да не може да се направи по-добре в JavaScript, има ситуации, в които написването на малки езици помага да си свършите работата реално.</p>
+<p><a class="p_ident" id="p_WIR6a1g/pa" href="./11_language.html#p_WIR6a1g/pa"></a>Такъв език не трябва да прилича на типичен език за програмиране. Ако JavaScript не беше оборудван с регулярни изрази, можеше да напишете свой собствен анализатор и оценител за такъв под - език.</p>
+<p><a class="p_ident" id="p_j8SqlNkYB/" href="./11_language.html#p_j8SqlNkYB/"></a>Или си представете, че изграждате гигантски робот - динозавър и трябва да програмирате поведението му. JavaScript може да не е най-ефективния начин да направите това. Вие може да предпочетете език, който изглежда така:</p>
+<pre>behavior walk
+  perform when
+    destination ahead
+  actions
+    move left-foot
+    move right-foot
+
+behavior attack
+  perform when
+    Godzilla in-view
+  actions
+    fire laser-eyes
+    launch arm-rockets</pre>
+<p><a class="p_ident" id="p_O9+2Ve51P4" href="./11_language.html#p_O9+2Ve51P4"></a>Това обикновено се нарича домейн - специфичен език, съобразен да изрази тясна област от знанието. Такъв език може да бъде по-изразителен, от колкото език с общо предназначение, тъй като неговото предназначение е да изрази точно това, което е нужно, изразяващо се в подобренията и нищо друго.</p>
+<h2><a class="h_ident" id="h_TcUD2vzyMe" href="./11_language.html#h_TcUD2vzyMe"></a>Упражнения</h2>
+<h3><a class="h_ident" id="h_uQzJv9I1Z6" href="./11_language.html#h_uQzJv9I1Z6"></a>Масиви</h3>
+<p><a class="p_ident" id="p_4rt40yX+cU" href="./11_language.html#p_4rt40yX+cU"></a>Добави подкрепа за масиви на Egg, чрез добавяне на следните три функции в началото на обхвата: <code>array(...)</code> да изгради масив съдържащ стойностите на аргумента, <code>length(array)</code> за да получите дължината на масива, а <code>element(array, n)</code> да даде <em>n</em>-тия елемент на масива.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_nALfBd1XST" href="./11_language.html#c_nALfBd1XST"></a><span class="cm-comment">// Modify these definitions...</span>
+
+<span class="cm-variable">topEnv</span>[<span class="cm-string">"array"</span>] <span class="cm-operator">=</span> <span class="cm-string">"..."</span>;
+
+<span class="cm-variable">topEnv</span>[<span class="cm-string">"length"</span>] <span class="cm-operator">=</span> <span class="cm-string">"..."</span>;
+
+<span class="cm-variable">topEnv</span>[<span class="cm-string">"element"</span>] <span class="cm-operator">=</span> <span class="cm-string">"..."</span>;
+
+<span class="cm-variable">run</span>(<span class="cm-string">"do(define(sum, fun(array,"</span>,
+    <span class="cm-string">"     do(define(i, 0),"</span>,
+    <span class="cm-string">"        define(sum, 0),"</span>,
+    <span class="cm-string">"        while(&lt;(i, length(array)),"</span>,
+    <span class="cm-string">"          do(define(sum, +(sum, element(array, i))),"</span>,
+    <span class="cm-string">"             define(i, +(i, 1)))),"</span>,
+    <span class="cm-string">"        sum))),"</span>,
+    <span class="cm-string">"   print(sum(array(1, 2, 3))))"</span>);
+<span class="cm-comment">// → 6</span></pre>
+<div class="solution"><div class="solution-text">
+<p><a class="p_ident" id="p_31fDZBvLEa" href="./11_language.html#p_31fDZBvLEa"></a>Най-лесният начин да направите това е, масивите на Egg да представляват JavaScript масиви.</p>
+<p><a class="p_ident" id="p_+aiai7zl+b" href="./11_language.html#p_+aiai7zl+b"></a>Стойностите, добавени към горната околна среда трябва да бъдат функции. <code>Array.prototype.slice</code> може да се използва за конвертиране на масиво-подобен обект с аргументи в редовен масив.</p>
+</div></div>
+<h3><a class="h_ident" id="h_hOd+yVxaku" href="./11_language.html#h_hOd+yVxaku"></a>Закриване</h3>
+<p><a class="p_ident" id="p_v1H/2L3I5F" href="./11_language.html#p_v1H/2L3I5F"></a>Начинът, по който е дефиниран <code>fun</code> позволява на функциите в Egg , да се “затворят над” заобикалящата околна среда, което позволява на тялото на функцията да използва локални стойности, които са видими в момента, когато функцията е определена, точно както функциите в JavaScript правят.</p>
+<p><a class="p_ident" id="p_kjSkKHf16k" href="./11_language.html#p_kjSkKHf16k"></a>Следната програма илюстрира това: функция <code>f</code> връща функция, която добавя своя аргумент към <code>f</code> аргумента, което означава, че се нуждае от достъп до локалния обхват вътре в <code>f</code> за да бъде в състояние да използва променливата <code>a</code>.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_zLDVGdi1HZ" href="./11_language.html#c_zLDVGdi1HZ"></a><span class="cm-variable">run</span>(<span class="cm-string">"do(define(f, fun(a, fun(b, +(a, b)))),"</span>,
+    <span class="cm-string">"   print(f(4)(5)))"</span>);
+<span class="cm-comment">// → 9</span></pre>
+<p><a class="p_ident" id="p_40Yj7LMkYl" href="./11_language.html#p_40Yj7LMkYl"></a>Върни се на определянето за <code>fun</code> формата и си обясни, кой механизъм е причината това да работи..</p>
+<div class="solution"><div class="solution-text">
+<p><a class="p_ident" id="p_LOgpHZsyhJ" href="./11_language.html#p_LOgpHZsyhJ"></a>Отново, вървим по протежение на JavaScript механизма, за да получим еквивалентна функция в Egg. Специалните форми се предават на локалната околна среда, в която се оценяват, така че да могат да се оценят и техните подформи в тази среда. Функцията върната от <code>fun</code> се затваря над <code>env</code> аргумента даден на неговата обхващаща функция и използва това за да създаде локална среда на функцията му, когато се извика.</p>
+<p><a class="p_ident" id="p_w6RFAh/z4Z" href="./11_language.html#p_w6RFAh/z4Z"></a>Това означава, че прототип на локалната среда ще бъде средата, в която се създава функцията, което дава възможност за достъп до променливите в тази среда на функцията.Това е всичко, което трябва да изпълните за затваряне (макар, че за да го компилирате по начин, който действително е ефективен, ще трябва да свършите още много работа).</p>
+</div></div>
+<h3><a class="h_ident" id="h_/OBuIOX390" href="./11_language.html#h_/OBuIOX390"></a>Коментари</h3>
+<p><a class="p_ident" id="p_qV4w3Ov/ee" href="./11_language.html#p_qV4w3Ov/ee"></a>Би било хубаво, ако можехме да пишем коментари в Egg. Например, когато поставим знака (<code>#</code>) отпред, бихме могли да пишем коментари в останалата част от линията и да ги игнорираме, както с <code>//</code> в JavaScript.</p>
+<p><a class="p_ident" id="p_EVGdU2vHLH" href="./11_language.html#p_EVGdU2vHLH"></a>Ние не трябва да правим някакви големи промени в анализатора в подкрепа на това. Можем просто да променим <code>skipSpace</code> да пропуска коментарите, както празните пространства, така че всички точки, където се извиква <code>skipSpace</code> също ще пропускат коментарите. Направи тази промяна.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_CpN/f2F2fu" href="./11_language.html#c_CpN/f2F2fu"></a><span class="cm-comment">// This is the old skipSpace. Modify it...</span>
+<span class="cm-keyword">function</span> <span class="cm-variable">skipSpace</span>(<span class="cm-def">string</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">first</span> <span class="cm-operator">=</span> <span class="cm-variable-2">string</span>.<span class="cm-property">search</span>(<span class="cm-string-2">/\S/</span>);
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">first</span> <span class="cm-operator">==</span> <span class="cm-operator">-</span><span class="cm-number">1</span>) <span class="cm-keyword">return</span> <span class="cm-string">""</span>;
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">string</span>.<span class="cm-property">slice</span>(<span class="cm-variable-2">first</span>);
+}
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">parse</span>(<span class="cm-string">"# hello\nx"</span>));
+<span class="cm-comment">// → {type: "word", name: "x"}</span>
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">parse</span>(<span class="cm-string">"a # one\n   # two\n()"</span>));
+<span class="cm-comment">// → {type: "apply",</span>
+<span class="cm-comment">//    operator: {type: "word", name: "a"},</span>
+<span class="cm-comment">//    args: []}</span></pre>
+<div class="solution"><div class="solution-text">
+<p><a class="p_ident" id="p_Dds6GLJzwb" href="./11_language.html#p_Dds6GLJzwb"></a>Уверете се, че вашето решение поддържа много коментари на един ред с потенциално празно пространство между или след тях.</p>
+<p><a class="p_ident" id="p_w/PeZhCFV2" href="./11_language.html#p_w/PeZhCFV2"></a>Регулярният израз е може би най-лесният начин да се реши това. Напишете нещо, което съответства на “whitespace or a comment, zero or more times”. Използвайте <code>exec</code> или <code>match</code> метод, за да видите дължината на първия елемент във върнатия масив (цялото съвпадение), за да разберете колко знака да отрежете.</p>
+</div></div>
+<h3><a class="h_ident" id="h_Y9ZDMshYCQ" href="./11_language.html#h_Y9ZDMshYCQ"></a>Фиксиран обхват</h3>
+<p><a class="p_ident" id="p_wiUendOwjA" href="./11_language.html#p_wiUendOwjA"></a>В момента единственият начин да зададете стойност на променлива е <code>define</code>. Тази конструкция действа, като начин за определянето на нови променливи и дава на съществуващите такива нови стойности.</p>
+<p><a class="p_ident" id="p_O06fqfa6CU" href="./11_language.html#p_O06fqfa6CU"></a>Тази неяснота създава проблем. Когато се опитате да зададете на не локална променлива нова стойност, ще се окажете пред определяне на локална променлива със същото име.(На някои езици дизайна им работи така, но аз винаги съм го намирал за глупав начин да се справят с обхвата.)</p>
+<p><a class="p_ident" id="p_wG0OsCIoJb" href="./11_language.html#p_wG0OsCIoJb"></a>Добави специална форма <code>set</code> подобна на <code>define</code>, която дава нова стойност на променлива и актуализира променливата във външния обхват, ако тя вече съществува във вътрешното поле. Ако променливата не е определена за всички, хвърли <code>ReferenceError</code> (който е друг стандартен тип грешка).</p>
+<p><a class="p_ident" id="p_vI0CMB91dl" href="./11_language.html#p_vI0CMB91dl"></a>Техниката за представяне на обхвати, като прости обекти, която е правила нещата удобни до сега, ще ви помогне малко в този момент. Може би искате да използвате <code>Object.getPrototypeOf</code> функцията, която връща прототипа на обекта. Също така не забравяйте, че обхватите не произтичат от <code>Object.prototype</code>, така че ако искате да извикате <code>hasOwnProperty</code> върху тях, вие ще трябва да използвате този тромав израз:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_EqqjVhV5wE" href="./11_language.html#c_EqqjVhV5wE"></a><span class="cm-variable">Object</span>.<span class="cm-property">prototype</span>.<span class="cm-property">hasOwnProperty</span>.<span class="cm-property">call</span>(<span class="cm-variable">scope</span>, <span class="cm-variable">name</span>);</pre>
+<p><a class="p_ident" id="p_xdKe490o5g" href="./11_language.html#p_xdKe490o5g"></a>Това извлича <code>hasOwnProperty</code> метода от <code>Object</code> прототипа и след това го извиква на обхвата на обекта.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_KcPg7PsN3m" href="./11_language.html#c_KcPg7PsN3m"></a><span class="cm-variable">specialForms</span>[<span class="cm-string">"set"</span>] <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">args</span>, <span class="cm-def">env</span>) {
+  <span class="cm-comment">// Your code here.</span>
+};
+
+<span class="cm-variable">run</span>(<span class="cm-string">"do(define(x, 4),"</span>,
+    <span class="cm-string">"   define(setx, fun(val, set(x, val))),"</span>,
+    <span class="cm-string">"   setx(50),"</span>,
+    <span class="cm-string">"   print(x))"</span>);
+<span class="cm-comment">// → 50</span>
+<span class="cm-variable">run</span>(<span class="cm-string">"set(quux, true)"</span>);
+<span class="cm-comment">// → Some kind of ReferenceError</span></pre>
+<div class="solution"><div class="solution-text">
+<p><a class="p_ident" id="p_NhXhfFLedb" href="./11_language.html#p_NhXhfFLedb"></a>Ще ви трябва цикъл през обхвата в един момент, използвайте <code>Object.getPrototypeOf</code> за да отидете в следващия външен обхват. За всеки обхват използвайте <code>hasOwnProperty</code> за да разберете дали променливата, посочена от свойството <code>name</code> на първия аргумент <code>set</code> съществува в този обхват. Ако е така поставете я в резултата на втория аргумент за да го настроите и след това върнете тази стойност.</p>
+<p><a class="p_ident" id="p_vdMHRjshzJ" href="./11_language.html#p_vdMHRjshzJ"></a>Ако достигате най-въшния обхват (<code>Object.getPrototypeOf</code> връща null) и не сте намерили променлива още, то тя не съществува и трябва да хвърлите грешка.</p>
+</div></div>
+<nav>
+  <a href="./10_modules.html" title="previous chapter">◀</a>
+  <a href="./index.html" title="cover">◆</a>
+  <a href="./12_browser.html" title="next chapter">▶</a>
+</nav>
+</article>
+</body></html>

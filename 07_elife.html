@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<!-- saved from url=(0043)./07_elife.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <title>Project: Electronic Life :: Eloquent JavaScript</title>
+  <link rel="stylesheet" href="./media/codemirror.css">
+  <script src="./media/acorn_codemirror.js"></script>
+  <link rel="stylesheet" href="./media/ejs.css">
+  <script src="./media/sandbox.js"></script>
+  <script src="./media/ejs.js"></script>
+  <script>var chapNum = 7;var sandboxLoadFiles = ["code/chapter/07_elife.js", "code/animateworld.js"];</script>
+</head>
+
+<body><article>
+<nav>
+  <a href="./06_object.html" title="previous chapter">◀</a>
+  <a href="./index.html" title="cover">◆</a>
+  <a href="./08_error.html" title="next chapter">▶</a>
+</nav>
+
+<h1><div class="chap_num">Глава 7</div>Проект:Electronic Life</h1>
+<blockquote>
+<p><a class="p_ident" id="p_uJUZHUrdPa" href="./07_elife.html#p_uJUZHUrdPa"></a>[…] Въпроса дали Машините могат да мисля […] е толкова важен, колкото и въпроса дали Подводниците могат да плуват.”</p>
+ <footer>Edsger Dijkstra, <cite>заплахите за Computing Science</cite></footer>
+</blockquote>
+<p><a class="p_ident" id="p_DNRnU3ddVS" href="./07_elife.html#p_DNRnU3ddVS"></a>В главите: „проект”, аз ще се спра на една нова теория за кратък момент и после ще продължим да работим заедно по програмата. Теорията е незаменима, когато учим програмиране, но ако е придружена от четене и разбиране на не-тривиални програми.</p>
+<p><a class="p_ident" id="p_R5hb9BKRqf" href="./07_elife.html#p_R5hb9BKRqf"></a>Нашия проект в тази глава ще изгради виртуална еко-система, един малък свят населен със същества, които се движат наоколо и се борят за оцеляване.</p>
+<h2><a class="h_ident" id="h_vxvit60Huu" href="./07_elife.html#h_vxvit60Huu"></a>Дефиниция</h2>
+<p><a class="p_ident" id="p_h6wKLP2RRa" href="./07_elife.html#p_h6wKLP2RRa"></a>За да направим тази задача лесно управляема, ние коренно ще опростим концепцията за света. А именно този свят ще бъде двуизмерна мрежа, където всеки обект заема един квадрат от решетката. Всички обекти получават възможност за вземане на решение за предприемане на някакви действия.</p>
+<p><a class="p_ident" id="p_M69iRDzFTU" href="./07_elife.html#p_M69iRDzFTU"></a>За това ние ще разделим времето и пространството на дялове с фиксиран размер: квадрати за пространството и време за обикаляне. Разбира се, това е сурово и неточно приближение. Но нашата симулация е предназначена да бъде забавна, а не точна, така че сме свободни да импровизираме.</p>
+<p id="plan"><a class="p_ident" id="p_LQyST0HVVt" href="./07_elife.html#p_LQyST0HVVt"></a>Можем да дефинираме този свят с план от масив от <em>strings</em>, който излага мрежата на света с помощта на един характер на квадрат.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><div class="sandboxhint">edit &amp; run code by clicking it</div><a class="c_ident" id="c_YSHh4Dww1G" href="./07_elife.html#c_YSHh4Dww1G"></a><span class="cm-keyword">var</span> <span class="cm-variable">plan</span> <span class="cm-operator">=</span> [<span class="cm-string">"############################"</span>,
+            <span class="cm-string">"#      #    #      o      ##"</span>,
+            <span class="cm-string">"#                          #"</span>,
+            <span class="cm-string">"#          #####           #"</span>,
+            <span class="cm-string">"##         #   #    ##     #"</span>,
+            <span class="cm-string">"###           ##     #     #"</span>,
+            <span class="cm-string">"#           ###      #     #"</span>,
+            <span class="cm-string">"#   ####                   #"</span>,
+            <span class="cm-string">"#   ##       o             #"</span>,
+            <span class="cm-string">"# o  #         o       ### #"</span>,
+            <span class="cm-string">"#    #                     #"</span>,
+            <span class="cm-string">"############################"</span>];</pre>
+<p><a class="p_ident" id="p_fLAu6TuC/p" href="./07_elife.html#p_fLAu6TuC/p"></a>Характера  “ # ” в този план представлява стени и скали, а “ o ” са живи същества. Интервалите, както се досещате са празни пространства.</p>
+<p><a class="p_ident" id="p_zsYxlvNAj4" href="./07_elife.html#p_zsYxlvNAj4"></a>Масива <em>plan</em> може да се използва за създаване на обект-свят. Такъв обект следи размера и съдържанието на света. Той има <code>toString</code> метод, който конвертира обратно света в печатащ <em>string</em> (базиран подобно на плана), така че да можем да видим какво се случва вътре. Обекта - свят също има метод <code>turn</code>, който позволява на всички същества в него да обикалят наоколо и актуализира света за да отрази своите действия.</p>
+<h2 id="grid"><a class="h_ident" id="h_Xm5GEUJ7Zs" href="./07_elife.html#h_Xm5GEUJ7Zs"></a>Представяне  на  пространство</h2>
+<p><a class="p_ident" id="p_oFrPkPfpOk" href="./07_elife.html#p_oFrPkPfpOk"></a>Решетката на модела на света има фиксирана ширина и височина. Квадратите се индентифицират чрез техните x  и  y координати. Ще използваме <code>Vector</code> (който правихме в упражненията на 
+<a href="./06_object.html#exercise_vector">предишната глава</a>), за да представим тази двойка координати.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_mciWzOsKpc" href="./07_elife.html#c_mciWzOsKpc"></a><span class="cm-keyword">function</span> <span class="cm-variable">Vector</span>(<span class="cm-def">x</span>, <span class="cm-def">y</span>) {
+  <span class="cm-keyword">this</span>.<span class="cm-property">x</span> <span class="cm-operator">=</span> <span class="cm-variable-2">x</span>;
+  <span class="cm-keyword">this</span>.<span class="cm-property">y</span> <span class="cm-operator">=</span> <span class="cm-variable-2">y</span>;
+}
+<span class="cm-variable">Vector</span>.<span class="cm-property">prototype</span>.<span class="cm-property">plus</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">other</span>) {
+  <span class="cm-keyword">return</span> <span class="cm-keyword">new</span> <span class="cm-variable">Vector</span>(<span class="cm-keyword">this</span>.<span class="cm-property">x</span> <span class="cm-operator">+</span> <span class="cm-variable-2">other</span>.<span class="cm-property">x</span>, <span class="cm-keyword">this</span>.<span class="cm-property">y</span> <span class="cm-operator">+</span> <span class="cm-variable-2">other</span>.<span class="cm-property">y</span>);
+};</pre>
+<p><a class="p_ident" id="p_XfoPZurQDA" href="./07_elife.html#p_XfoPZurQDA"></a>После се нуждаем от тип обект, който моделира самата мрежа. Мрежата е част от света, но ние правим този отделен обект (който ще бъде свойство на обекта-свят), за да запазим обекта-свят опростен. Света трябва да се самосезира от свързаните със света неща, а мрежата трябва да се занимава със свързаните с мрежата неща.</p>
+<p><a class="p_ident" id="p_wCk8yM/+PK" href="./07_elife.html#p_wCk8yM/+PK"></a>За да съхраняваме мрежа от стойности, ние имаме няколко опции. Можем да използваме масив с масиви от редове и две свойства, за да имаме достъп до конкретен квадрат по този начин:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_4Mn1dYi2sq" href="./07_elife.html#c_4Mn1dYi2sq"></a><span class="cm-keyword">var</span> <span class="cm-variable">grid</span> <span class="cm-operator">=</span> [[<span class="cm-string">"top left"</span>,    <span class="cm-string">"top middle"</span>,    <span class="cm-string">"top right"</span>],
+            [<span class="cm-string">"bottom left"</span>, <span class="cm-string">"bottom middle"</span>, <span class="cm-string">"bottom right"</span>]];
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">grid</span>[<span class="cm-number">1</span>][<span class="cm-number">2</span>]);
+<span class="cm-comment">// → bottom right</span></pre>
+<p><a class="p_ident" id="p_ltezQzq/yp" href="./07_elife.html#p_ltezQzq/yp"></a>Или да използваме единичен масив, със размери - ширина  x * височина y, за да определим, че елемента (<em>x</em>, <em>y</em>) се намира в позиция <em>x</em> + (<em>y</em> × width) в масива.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_t14rdf0XRH" href="./07_elife.html#c_t14rdf0XRH"></a><span class="cm-keyword">var</span> <span class="cm-variable">grid</span> <span class="cm-operator">=</span> [<span class="cm-string">"top left"</span>,    <span class="cm-string">"top middle"</span>,    <span class="cm-string">"top right"</span>,
+            <span class="cm-string">"bottom left"</span>, <span class="cm-string">"bottom middle"</span>, <span class="cm-string">"bottom right"</span>];
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">grid</span>[<span class="cm-number">2</span> <span class="cm-operator">+</span> (<span class="cm-number">1</span> <span class="cm-operator">*</span> <span class="cm-number">3</span>)]);
+<span class="cm-comment">// → bottom right</span></pre>
+<p><a class="p_ident" id="p_L+hHKfbXDj" href="./07_elife.html#p_L+hHKfbXDj"></a>Тъй като, достъпът до този масив ще бъде увит в методи на типа на мрежата обект, това няма значение за външния код, който предстои да го вземе. Избираме второто представяне, защото прави много по-лесно създаването на масив. Когато извикаме <code>Array</code> конструктора с един номер, като аргумент, той създава нов празен масив с дадената дължина.</p>
+<p><a class="p_ident" id="p_WhnH9cyDGI" href="./07_elife.html#p_WhnH9cyDGI"></a>Този код дефинира <code>Grid</code> обекта с някои основни методи:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_ygwzXGZzJU" href="./07_elife.html#c_ygwzXGZzJU"></a><span class="cm-keyword">function</span> <span class="cm-variable">Grid</span>(<span class="cm-def">width</span>, <span class="cm-def">height</span>) {
+  <span class="cm-keyword">this</span>.<span class="cm-property">space</span> <span class="cm-operator">=</span> <span class="cm-keyword">new</span> <span class="cm-variable">Array</span>(<span class="cm-variable-2">width</span> <span class="cm-operator">*</span> <span class="cm-variable-2">height</span>);
+  <span class="cm-keyword">this</span>.<span class="cm-property">width</span> <span class="cm-operator">=</span> <span class="cm-variable-2">width</span>;
+  <span class="cm-keyword">this</span>.<span class="cm-property">height</span> <span class="cm-operator">=</span> <span class="cm-variable-2">height</span>;
+}
+<span class="cm-variable">Grid</span>.<span class="cm-property">prototype</span>.<span class="cm-property">isInside</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">vector</span>) {
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">vector</span>.<span class="cm-property">x</span> <span class="cm-operator">&gt;=</span> <span class="cm-number">0</span> <span class="cm-operator">&amp;&amp;</span> <span class="cm-variable-2">vector</span>.<span class="cm-property">x</span> <span class="cm-operator">&lt;</span> <span class="cm-keyword">this</span>.<span class="cm-property">width</span> <span class="cm-operator">&amp;&amp;</span>
+         <span class="cm-variable-2">vector</span>.<span class="cm-property">y</span> <span class="cm-operator">&gt;=</span> <span class="cm-number">0</span> <span class="cm-operator">&amp;&amp;</span> <span class="cm-variable-2">vector</span>.<span class="cm-property">y</span> <span class="cm-operator">&lt;</span> <span class="cm-keyword">this</span>.<span class="cm-property">height</span>;
+};
+<span class="cm-variable">Grid</span>.<span class="cm-property">prototype</span>.<span class="cm-property">get</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">vector</span>) {
+  <span class="cm-keyword">return</span> <span class="cm-keyword">this</span>.<span class="cm-property">space</span>[<span class="cm-variable-2">vector</span>.<span class="cm-property">x</span> <span class="cm-operator">+</span> <span class="cm-keyword">this</span>.<span class="cm-property">width</span> <span class="cm-operator">*</span> <span class="cm-variable-2">vector</span>.<span class="cm-property">y</span>];
+};
+<span class="cm-variable">Grid</span>.<span class="cm-property">prototype</span>.<span class="cm-property">set</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">vector</span>, <span class="cm-def">value</span>) {
+  <span class="cm-keyword">this</span>.<span class="cm-property">space</span>[<span class="cm-variable-2">vector</span>.<span class="cm-property">x</span> <span class="cm-operator">+</span> <span class="cm-keyword">this</span>.<span class="cm-property">width</span> <span class="cm-operator">*</span> <span class="cm-variable-2">vector</span>.<span class="cm-property">y</span>] <span class="cm-operator">=</span> <span class="cm-variable-2">value</span>;
+};</pre>
+<p><a class="p_ident" id="p_Nyp/8drByS" href="./07_elife.html#p_Nyp/8drByS"></a>И тука един обикновен тест:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_vDMWFe7n9A" href="./07_elife.html#c_vDMWFe7n9A"></a><span class="cm-keyword">var</span> <span class="cm-variable">grid</span> <span class="cm-operator">=</span> <span class="cm-keyword">new</span> <span class="cm-variable">Grid</span>(<span class="cm-number">5</span>, <span class="cm-number">5</span>);
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">grid</span>.<span class="cm-property">get</span>(<span class="cm-keyword">new</span> <span class="cm-variable">Vector</span>(<span class="cm-number">1</span>, <span class="cm-number">1</span>)));
+<span class="cm-comment">// → undefined</span>
+<span class="cm-variable">grid</span>.<span class="cm-property">set</span>(<span class="cm-keyword">new</span> <span class="cm-variable">Vector</span>(<span class="cm-number">1</span>, <span class="cm-number">1</span>), <span class="cm-string">"X"</span>);
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">grid</span>.<span class="cm-property">get</span>(<span class="cm-keyword">new</span> <span class="cm-variable">Vector</span>(<span class="cm-number">1</span>, <span class="cm-number">1</span>)));
+<span class="cm-comment">// → X</span></pre>
+<h2><a class="h_ident" id="h_OpRteCjOxs" href="./07_elife.html#h_OpRteCjOxs"></a>Задачи на програмния интерфейс</h2>
+<p><a class="p_ident" id="p_AVQE8U7Nsn" href="./07_elife.html#p_AVQE8U7Nsn"></a>Преди да започнем с <code>World</code> конструктора, ние трябва да направим по-специфични обекти, които ще живеят в него. Споменах, че света изисква от съществата, които живеят в него да могат да предприемат всякакви действия. Това работи  по следния начин: всеки обект си има метод <code>act</code>, който когато бъде извикан връща действие. Действието е обект със свойство <code>type</code>, който има имена за всяко действие, които съществото иска да предприеме, например <code>"move"</code>. Действието може да съдържа и допълнителна информация, като например посоката на движение.</p>
+<p id="directions"><a class="p_ident" id="p_K7ngGZ/StH" href="./07_elife.html#p_K7ngGZ/StH"></a>Съществата са ужасно късогледи и могат да видят само квадратите около тях на мрежата. Но дори и това ограничено зрение може да бъде полезно, когато се решава какво действие да предприемат. Когато се извика метода <code>act</code>, той дава гледка, която позволява на създанията да инспектират околността. Ние назоваваме осемте околни квадрати с техните посоки: <code>"n"</code> за север, <code>"ne"</code> за североизток и т.н. Ето обекта, който ще използваме за карта от имена на посоки за координатната мрежа:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_c47GSqHmYK" href="./07_elife.html#c_c47GSqHmYK"></a><span class="cm-keyword">var</span> <span class="cm-variable">directions</span> <span class="cm-operator">=</span> {
+  <span class="cm-string cm-property">"n"</span>:  <span class="cm-keyword">new</span> <span class="cm-variable">Vector</span>( <span class="cm-number">0</span>, <span class="cm-operator">-</span><span class="cm-number">1</span>),
+  <span class="cm-string cm-property">"ne"</span>: <span class="cm-keyword">new</span> <span class="cm-variable">Vector</span>( <span class="cm-number">1</span>, <span class="cm-operator">-</span><span class="cm-number">1</span>),
+  <span class="cm-string cm-property">"e"</span>:  <span class="cm-keyword">new</span> <span class="cm-variable">Vector</span>( <span class="cm-number">1</span>,  <span class="cm-number">0</span>),
+  <span class="cm-string cm-property">"se"</span>: <span class="cm-keyword">new</span> <span class="cm-variable">Vector</span>( <span class="cm-number">1</span>,  <span class="cm-number">1</span>),
+  <span class="cm-string cm-property">"s"</span>:  <span class="cm-keyword">new</span> <span class="cm-variable">Vector</span>( <span class="cm-number">0</span>,  <span class="cm-number">1</span>),
+  <span class="cm-string cm-property">"sw"</span>: <span class="cm-keyword">new</span> <span class="cm-variable">Vector</span>(<span class="cm-operator">-</span><span class="cm-number">1</span>,  <span class="cm-number">1</span>),
+  <span class="cm-string cm-property">"w"</span>:  <span class="cm-keyword">new</span> <span class="cm-variable">Vector</span>(<span class="cm-operator">-</span><span class="cm-number">1</span>,  <span class="cm-number">0</span>),
+  <span class="cm-string cm-property">"nw"</span>: <span class="cm-keyword">new</span> <span class="cm-variable">Vector</span>(<span class="cm-operator">-</span><span class="cm-number">1</span>, <span class="cm-operator">-</span><span class="cm-number">1</span>)
+};</pre>
+<p><a class="p_ident" id="p_g3a7FTfLaJ" href="./07_elife.html#p_g3a7FTfLaJ"></a>Обекта разполага с метод <code>look</code>, който взема една посока и се връща, ако например има стена <code>"#"</code> в тази посока или продължава напред ако няма нищо там, като <code>" "</code> празно пространство (<em>space</em>). Обекта предвижа също удобни методи, като <code>find</code> и <code>findAll</code>. И двата вземат характера на картата, като аргумент. Първият връща посоката, в която героя може да се намери в непосредствена близост до създание или връща <code>null</code>,ако не съществува такава посока. Вторият връща масив съдържащ всички посоки с този характер. Например ако едно същество седи в ляво(запад) от стената, ще получите <code>["ne", "e", "se"]</code>, когато извикате <code>findAll</code> на своя обект, с характер <code>"#"</code> за аргумент.</p>
+<p><a class="p_ident" id="p_HNBrqFmcYV" href="./07_elife.html#p_HNBrqFmcYV"></a>Ето едно просто, глупаво животно, което следва носа си, докато не срещне препятствие и се измества в произволна отворена посока:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_DFH+MZaTtO" href="./07_elife.html#c_DFH+MZaTtO"></a><span class="cm-keyword">function</span> <span class="cm-variable">randomElement</span>(<span class="cm-def">array</span>) {
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">array</span>[<span class="cm-variable">Math</span>.<span class="cm-property">floor</span>(<span class="cm-variable">Math</span>.<span class="cm-property">random</span>() <span class="cm-operator">*</span> <span class="cm-variable-2">array</span>.<span class="cm-property">length</span>)];
+}
+
+<span class="cm-keyword">var</span> <span class="cm-variable">directionNames</span> <span class="cm-operator">=</span> <span class="cm-string">"n ne e se s sw w nw"</span>.<span class="cm-property">split</span>(<span class="cm-string">" "</span>);
+
+<span class="cm-keyword">function</span> <span class="cm-variable">BouncingCritter</span>() {
+  <span class="cm-keyword">this</span>.<span class="cm-property">direction</span> <span class="cm-operator">=</span> <span class="cm-variable">randomElement</span>(<span class="cm-variable">directionNames</span>);
+};
+
+<span class="cm-variable">BouncingCritter</span>.<span class="cm-property">prototype</span>.<span class="cm-property">act</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">view</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">view</span>.<span class="cm-property">look</span>(<span class="cm-keyword">this</span>.<span class="cm-property">direction</span>) <span class="cm-operator">!=</span> <span class="cm-string">" "</span>)
+    <span class="cm-keyword">this</span>.<span class="cm-property">direction</span> <span class="cm-operator">=</span> <span class="cm-variable-2">view</span>.<span class="cm-property">find</span>(<span class="cm-string">" "</span>) <span class="cm-operator">||</span> <span class="cm-string">"s"</span>;
+  <span class="cm-keyword">return</span> {<span class="cm-property">type</span>: <span class="cm-string">"move"</span>, <span class="cm-property">direction</span>: <span class="cm-keyword">this</span>.<span class="cm-property">direction</span>};
+};</pre>
+<p><a class="p_ident" id="p_WzFfJ2mQq9" href="./07_elife.html#p_WzFfJ2mQq9"></a>Помощната функция <code>randomElement</code> взема случаен елемент от масива, използвайки <code>Math.random</code> плюс някаква аритметика, за да получи случаен индекс. Ще използваме това по късно, защото случайността може да бъде полезна в симулации.</p>
+<p><a class="p_ident" id="p_pwO1hCYROA" href="./07_elife.html#p_pwO1hCYROA"></a>За да изберете произволна посока, конструктора <code>BouncingCritter</code> призовава <code>randomElement</code> върху масива от имена на посоки. Можем също да използваме <code>Object.keys</code> за да получим този масив от <code>directions</code>, който дефинирахме <a href="./07_elife.html#directions">по-рано</a>, но това не дава гаранции за реда, по който свойствата са изброени. В повечето случаи, съвременните JavaScript интерпретатори, ще върнат свойствата в реда по който са определени, но не винаги е задължително.</p>
+<p><a class="p_ident" id="p_fi4mft+UlD" href="./07_elife.html#p_fi4mft+UlD"></a>В <code>act</code> метода <code>|| "s"</code> е за да предотврати <code>this.direction</code> от получаване на <code>null</code>, ако създанието по някакъв начин попадне в капан, без празно пространство около него (например, претъпкан ъгъл от други същества).</p>
+<h2><a class="h_ident" id="h_4ewxuNkubc" href="./07_elife.html#h_4ewxuNkubc"></a>World - обект</h2>
+<p><a class="p_ident" id="p_ik4sLr54Yk" href="./07_elife.html#p_ik4sLr54Yk"></a>Сега можем да започнем с типа на <code>World</code> обекта. Конструктора взема плана (масив от <em>strings</em>, представляващ мрежата на света, описана 
+<a href="./07_elife.html#grid">по-рано</a>) и легенда, като аргументи. Легендата е обект, който ни казва, какво означава всеки знак на картата. Тя съдържа конструктор за всеки герой с изключение на <em>space</em>, който винаги се отнася до стойността <code>null</code> и ще бъде използван за представяне на празно пространство.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_p2N2N4tOq2" href="./07_elife.html#c_p2N2N4tOq2"></a><span class="cm-keyword">function</span> <span class="cm-variable">elementFromChar</span>(<span class="cm-def">legend</span>, <span class="cm-def">ch</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">ch</span> <span class="cm-operator">==</span> <span class="cm-string">" "</span>)
+    <span class="cm-keyword">return</span> <span class="cm-atom">null</span>;
+  <span class="cm-keyword">var</span> <span class="cm-def">element</span> <span class="cm-operator">=</span> <span class="cm-keyword">new</span> <span class="cm-variable-2">legend</span>[<span class="cm-variable-2">ch</span>]();
+  <span class="cm-variable-2">element</span>.<span class="cm-property">originChar</span> <span class="cm-operator">=</span> <span class="cm-variable-2">ch</span>;
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">element</span>;
+}
+
+<span class="cm-keyword">function</span> <span class="cm-variable">World</span>(<span class="cm-def">map</span>, <span class="cm-def">legend</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">grid</span> <span class="cm-operator">=</span> <span class="cm-keyword">new</span> <span class="cm-variable">Grid</span>(<span class="cm-variable-2">map</span>[<span class="cm-number">0</span>].<span class="cm-property">length</span>, <span class="cm-variable-2">map</span>.<span class="cm-property">length</span>);
+  <span class="cm-keyword">this</span>.<span class="cm-property">grid</span> <span class="cm-operator">=</span> <span class="cm-variable-2">grid</span>;
+  <span class="cm-keyword">this</span>.<span class="cm-property">legend</span> <span class="cm-operator">=</span> <span class="cm-variable-2">legend</span>;
+
+  <span class="cm-variable-2">map</span>.<span class="cm-property">forEach</span>(<span class="cm-keyword">function</span>(<span class="cm-def">line</span>, <span class="cm-def">y</span>) {
+    <span class="cm-keyword">for</span> (<span class="cm-keyword">var</span> <span class="cm-def">x</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>; <span class="cm-variable-2">x</span> <span class="cm-operator">&lt;</span> <span class="cm-variable-2">line</span>.<span class="cm-property">length</span>; <span class="cm-variable-2">x</span><span class="cm-operator">++</span>)
+      <span class="cm-variable-2">grid</span>.<span class="cm-property">set</span>(<span class="cm-keyword">new</span> <span class="cm-variable">Vector</span>(<span class="cm-variable-2">x</span>, <span class="cm-variable-2">y</span>),
+               <span class="cm-variable">elementFromChar</span>(<span class="cm-variable-2">legend</span>, <span class="cm-variable-2">line</span>[<span class="cm-variable-2">x</span>]));
+  });
+}</pre>
+<p><a class="p_ident" id="p_0JVotAPiPQ" href="./07_elife.html#p_0JVotAPiPQ"></a>В <code>elementFromChar</code>, първо създаваме инстанция за десния тип на конструктора на героя, който изглежда в изправност и прилагаме <code>new</code> за него. После добавяме свойството <code>originChar</code> за да направи лесно разбирането вида на характера на елемента, който първоначално е бил създаден.</p>
+<p><a class="p_ident" id="p_y7y9KPcPVM" href="./07_elife.html#p_y7y9KPcPVM"></a>Ние се нуждаем от това свойство <code>originChar</code> при изпълнението на света със <code>toString</code> метода. Този метод изгражда <em>string</em>, като карта  от текущото състояние на света, чрез минаване на два вложени цикъла през квадратите на мрежата.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_eUl3+53vHg" href="./07_elife.html#c_eUl3+53vHg"></a><span class="cm-keyword">function</span> <span class="cm-variable">charFromElement</span>(<span class="cm-def">element</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">element</span> <span class="cm-operator">==</span> <span class="cm-atom">null</span>)
+    <span class="cm-keyword">return</span> <span class="cm-string">" "</span>;
+  <span class="cm-keyword">else</span>
+    <span class="cm-keyword">return</span> <span class="cm-variable-2">element</span>.<span class="cm-property">originChar</span>;
+}
+
+<span class="cm-variable">World</span>.<span class="cm-property">prototype</span>.<span class="cm-property">toString</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>() {
+  <span class="cm-keyword">var</span> <span class="cm-def">output</span> <span class="cm-operator">=</span> <span class="cm-string">""</span>;
+  <span class="cm-keyword">for</span> (<span class="cm-keyword">var</span> <span class="cm-def">y</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>; <span class="cm-variable-2">y</span> <span class="cm-operator">&lt;</span> <span class="cm-keyword">this</span>.<span class="cm-property">grid</span>.<span class="cm-property">height</span>; <span class="cm-variable-2">y</span><span class="cm-operator">++</span>) {
+    <span class="cm-keyword">for</span> (<span class="cm-keyword">var</span> <span class="cm-def">x</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>; <span class="cm-variable-2">x</span> <span class="cm-operator">&lt;</span> <span class="cm-keyword">this</span>.<span class="cm-property">grid</span>.<span class="cm-property">width</span>; <span class="cm-variable-2">x</span><span class="cm-operator">++</span>) {
+      <span class="cm-keyword">var</span> <span class="cm-def">element</span> <span class="cm-operator">=</span> <span class="cm-keyword">this</span>.<span class="cm-property">grid</span>.<span class="cm-property">get</span>(<span class="cm-keyword">new</span> <span class="cm-variable">Vector</span>(<span class="cm-variable-2">x</span>, <span class="cm-variable-2">y</span>));
+      <span class="cm-variable-2">output</span> <span class="cm-operator">+=</span> <span class="cm-variable">charFromElement</span>(<span class="cm-variable-2">element</span>);
+    }
+    <span class="cm-variable-2">output</span> <span class="cm-operator">+=</span> <span class="cm-string">"\n"</span>;
+  }
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">output</span>;
+};</pre>
+<p><a class="p_ident" id="p_H37YR7T8/r" href="./07_elife.html#p_H37YR7T8/r"></a>Стената е просто обект - използва се да ограничи мястото и няма <code>act</code> метод.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_ouajOZJ4Gg" href="./07_elife.html#c_ouajOZJ4Gg"></a><span class="cm-keyword">function</span> <span class="cm-variable">Wall</span>() {}</pre>
+<p><a class="p_ident" id="p_OW2cfuBxbV" href="./07_elife.html#p_OW2cfuBxbV"></a>Когато изпробваме <code>World</code> обекта чрез създаване на инстанция въз основа на <em>plan</em> от <a href="./07_elife.html#plan">по-рано</a> от по-рано и след това извикаме <code>toString</code> върху него, ще получим <em>string</em> подобен на плана, който се появява вътре.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_pBmLgnKtsS" href="./07_elife.html#c_pBmLgnKtsS"></a><span class="cm-keyword">var</span> <span class="cm-variable">world</span> <span class="cm-operator">=</span> <span class="cm-keyword">new</span> <span class="cm-variable">World</span>(<span class="cm-variable">plan</span>, {<span class="cm-string cm-property">"#"</span>: <span class="cm-variable">Wall</span>,
+                             <span class="cm-string cm-property">"o"</span>: <span class="cm-variable">BouncingCritter</span>});
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">world</span>.<span class="cm-property">toString</span>());
+<span class="cm-comment">// → ############################</span>
+<span class="cm-comment">//   #      #    #      o      ##</span>
+<span class="cm-comment">//   #                          #</span>
+<span class="cm-comment">//   #          #####           #</span>
+<span class="cm-comment">//   ##         #   #    ##     #</span>
+<span class="cm-comment">//   ###           ##     #     #</span>
+<span class="cm-comment">//   #           ###      #     #</span>
+<span class="cm-comment">//   #   ####                   #</span>
+<span class="cm-comment">//   #   ##       o             #</span>
+<span class="cm-comment">//   # o  #         o       ### #</span>
+<span class="cm-comment">//   #    #                     #</span>
+<span class="cm-comment">//   ############################</span></pre>
+<h2><a class="h_ident" id="h_EoVtgPzygv" href="./07_elife.html#h_EoVtgPzygv"></a>this и обхвата му</h2>
+<p><a class="p_ident" id="p_QcRBGpv5Fi" href="./07_elife.html#p_QcRBGpv5Fi"></a><code>World</code> конструктора съдържа извикване към <code>forEach</code>. Интересно е да се отбележи, че вътре подадената функция на <code>forEach</code> не е директно в обхвата на функцията конструктор. Всяка извикана функция получава свой собствен <code>this</code>, така че <code>this</code> във вътрешната функция не се отнася до ново-изградения обект, към който се отнася външния <code>this</code>. В действителност, когато функцията не се извиква като метод, <code>this</code> ще се отнася до глобалния обект.</p>
+<p><a class="p_ident" id="p_NZC77y3jw6" href="./07_elife.html#p_NZC77y3jw6"></a>Това означава, че не можем да пишем <code>this.grid</code> за достъп до мрежата от вътрешния цикъл. Вместо това, външната функция създава нормална локална променлива <code>grid</code>, чрез която вътрешната функция получава достъп до мрежата.</p>
+<p><a class="p_ident" id="p_nCmQW78Pl2" href="./07_elife.html#p_nCmQW78Pl2"></a>Това е грешка в дизайна на JavaScript. За щастие в следващата версия на езика има решение на този проблем. Един общ модел казва, че <code>var self = this</code> и от този момент нататък <code>this</code> се отнася към <code>self</code>, който е нормална променлива и по този начин видима за вътрешните функции.</p>
+<p><a class="p_ident" id="p_Rh0gGyd888" href="./07_elife.html#p_Rh0gGyd888"></a>Друго решение е да се използва <code>bind</code> метод, който ни позволява да предоставим изричен <code>this</code> обект, към който да се свържем.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_i+EFiyy5fv" href="./07_elife.html#c_i+EFiyy5fv"></a><span class="cm-keyword">var</span> <span class="cm-variable">test</span> <span class="cm-operator">=</span> {
+  <span class="cm-property">prop</span>: <span class="cm-number">10</span>,
+  <span class="cm-property">addPropTo</span>: <span class="cm-keyword">function</span>(<span class="cm-def">array</span>) {
+    <span class="cm-keyword">return</span> <span class="cm-variable-2">array</span>.<span class="cm-property">map</span>(<span class="cm-keyword">function</span>(<span class="cm-def">elt</span>) {
+      <span class="cm-keyword">return</span> <span class="cm-keyword">this</span>.<span class="cm-property">prop</span> <span class="cm-operator">+</span> <span class="cm-variable-2">elt</span>;
+    }.<span class="cm-property">bind</span>(<span class="cm-keyword">this</span>));
+  }
+};
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">test</span>.<span class="cm-property">addPropTo</span>([<span class="cm-number">5</span>]));
+<span class="cm-comment">// → [15]</span></pre>
+<p><a class="p_ident" id="p_goPioKvWJ+" href="./07_elife.html#p_goPioKvWJ+"></a>Функцията преминава в <code>map</code>, която е резултат от <code>bind</code> извикване и по този начин има <code>this</code> свързан с първия аргумент на <code>bind</code> със стойността на <code>this</code> във външната функция (която държи <code>test</code> обекта).</p>
+<p><a class="p_ident" id="p_6Is4vwcRpS" href="./07_elife.html#p_6Is4vwcRpS"></a>Повечето стандартни по-високо ниво методи на масиви, като <code>forEach</code> и <code>map</code> вземат втори не задължителен аргумент, който може да се използва за осигуряване на <code>this</code> на вътрешната функцията. По този начин предният пример може да се изрази по-лесно.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_T0cVC+JMz3" href="./07_elife.html#c_T0cVC+JMz3"></a><span class="cm-keyword">var</span> <span class="cm-variable">test</span> <span class="cm-operator">=</span> {
+  <span class="cm-property">prop</span>: <span class="cm-number">10</span>,
+  <span class="cm-property">addPropTo</span>: <span class="cm-keyword">function</span>(<span class="cm-def">array</span>) {
+    <span class="cm-keyword">return</span> <span class="cm-variable-2">array</span>.<span class="cm-property">map</span>(<span class="cm-keyword">function</span>(<span class="cm-def">elt</span>) {
+      <span class="cm-keyword">return</span> <span class="cm-keyword">this</span>.<span class="cm-property">prop</span> <span class="cm-operator">+</span> <span class="cm-variable-2">elt</span>;
+    }, <span class="cm-keyword">this</span>); <span class="cm-comment">// ← no bind</span>
+  }
+};
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">test</span>.<span class="cm-property">addPropTo</span>([<span class="cm-number">5</span>]));
+<span class="cm-comment">// → [15]</span></pre>
+<p><a class="p_ident" id="p_IJrpC7ALpA" href="./07_elife.html#p_IJrpC7ALpA"></a>Това работи само за по-високо ниво функции, които поддържат такъв параметър в контекста си. Ако те не го правят, ще трябва да използвате един от другите подходи.</p>
+<p><a class="p_ident" id="p_/IbAQkWKaF" href="./07_elife.html#p_/IbAQkWKaF"></a>На вашите собствени по-високо ниво функции, може да закачите такъв параметър в контекста, с помощта на метода <code>call</code>, който извиква функция, която дава такъв аргумент. На пример, тук е метода, който извиква функция, която дава такъв аргумент. На пример, тук е метода <code>forEach</code> на нашия <code>Grid</code> тип, който призовава дадена функция за всеки не нулев или неопределен елемент в мрежата.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_tJQCEockLE" href="./07_elife.html#c_tJQCEockLE"></a><span class="cm-variable">Grid</span>.<span class="cm-property">prototype</span>.<span class="cm-property">forEach</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">f</span>, <span class="cm-def">context</span>) {
+  <span class="cm-keyword">for</span> (<span class="cm-keyword">var</span> <span class="cm-def">y</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>; <span class="cm-variable-2">y</span> <span class="cm-operator">&lt;</span> <span class="cm-keyword">this</span>.<span class="cm-property">height</span>; <span class="cm-variable-2">y</span><span class="cm-operator">++</span>) {
+    <span class="cm-keyword">for</span> (<span class="cm-keyword">var</span> <span class="cm-def">x</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>; <span class="cm-variable-2">x</span> <span class="cm-operator">&lt;</span> <span class="cm-keyword">this</span>.<span class="cm-property">width</span>; <span class="cm-variable-2">x</span><span class="cm-operator">++</span>) {
+      <span class="cm-keyword">var</span> <span class="cm-def">value</span> <span class="cm-operator">=</span> <span class="cm-keyword">this</span>.<span class="cm-property">space</span>[<span class="cm-variable-2">x</span> <span class="cm-operator">+</span> <span class="cm-variable-2">y</span> <span class="cm-operator">*</span> <span class="cm-keyword">this</span>.<span class="cm-property">width</span>];
+      <span class="cm-keyword">if</span> (<span class="cm-variable-2">value</span> <span class="cm-operator">!=</span> <span class="cm-atom">null</span>)
+        <span class="cm-variable-2">f</span>.<span class="cm-property">call</span>(<span class="cm-variable-2">context</span>, <span class="cm-variable-2">value</span>, <span class="cm-keyword">new</span> <span class="cm-variable">Vector</span>(<span class="cm-variable-2">x</span>, <span class="cm-variable-2">y</span>));
+    }
+  }
+};</pre>
+<h2><a class="h_ident" id="h_6OGIzAd5Tr" href="./07_elife.html#h_6OGIzAd5Tr"></a>Анимиране на живот</h2>
+<p><a class="p_ident" id="p_fHIh5+R55Q" href="./07_elife.html#p_fHIh5+R55Q"></a>Следващата стъпка е да напишем <code>turn</code> метод за <em>world</em> обекта, който дава шанс за действие на съществата. Той ще влезе в мрежата използвайки <code>forEach</code> метода, който току що дефинирахме, гледайки за обекти с <code>act</code> метод. Когато намери един, <code>turn</code> извиква този метод, за да вземе този обект и извършва действието ако то е валидно. За сега само действията <code>"move"</code> са определени.</p>
+<p><a class="p_ident" id="p_iE5jpow+CQ" href="./07_elife.html#p_iE5jpow+CQ"></a>Има един потенциален проблем с този подход. Можете ли да го видите? Ако оставим съществата да се движат на около, могат да се преместят в квадрат, който все още не сме огледали и ако не се сблъскат с нещо, ще им позволи да се движат отново, когато достигнат този квадрат. По този начин, ще трябва да се пази масив със същества, които вече са се преместили и да се игнорират, когато се видят отново.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_Uiw3etHkwj" href="./07_elife.html#c_Uiw3etHkwj"></a><span class="cm-variable">World</span>.<span class="cm-property">prototype</span>.<span class="cm-property">turn</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>() {
+  <span class="cm-keyword">var</span> <span class="cm-def">acted</span> <span class="cm-operator">=</span> [];
+  <span class="cm-keyword">this</span>.<span class="cm-property">grid</span>.<span class="cm-property">forEach</span>(<span class="cm-keyword">function</span>(<span class="cm-def">critter</span>, <span class="cm-def">vector</span>) {
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">critter</span>.<span class="cm-property">act</span> <span class="cm-operator">&amp;&amp;</span> <span class="cm-variable-2">acted</span>.<span class="cm-property">indexOf</span>(<span class="cm-variable-2">critter</span>) <span class="cm-operator">==</span> <span class="cm-operator">-</span><span class="cm-number">1</span>) {
+      <span class="cm-variable-2">acted</span>.<span class="cm-property">push</span>(<span class="cm-variable-2">critter</span>);
+      <span class="cm-keyword">this</span>.<span class="cm-property">letAct</span>(<span class="cm-variable-2">critter</span>, <span class="cm-variable-2">vector</span>);
+    }
+  }, <span class="cm-keyword">this</span>);
+};</pre>
+<p><a class="p_ident" id="p_Aa9iyVeBsc" href="./07_elife.html#p_Aa9iyVeBsc"></a>Ние използваме втория параметър към мрежата на метода <code>forEach</code>, за да бъде в състояние да получи правилните <code>this</code> във вътрешната функция. Метода <code>letAct</code> съдържа действителната логика, която позволява на съществата да се движат.</p>
+<pre id="checkDestination" data-language="javascript" class="snippet cm-s-default"><span class="cm-variable">World</span>.<span class="cm-property">prototype</span>.<span class="cm-property">letAct</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">critter</span>, <span class="cm-def">vector</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">action</span> <span class="cm-operator">=</span> <span class="cm-variable-2">critter</span>.<span class="cm-property">act</span>(<span class="cm-keyword">new</span> <span class="cm-variable">View</span>(<span class="cm-keyword">this</span>, <span class="cm-variable-2">vector</span>));
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">action</span> <span class="cm-operator">&amp;&amp;</span> <span class="cm-variable-2">action</span>.<span class="cm-property">type</span> <span class="cm-operator">==</span> <span class="cm-string">"move"</span>) {
+    <span class="cm-keyword">var</span> <span class="cm-def">dest</span> <span class="cm-operator">=</span> <span class="cm-keyword">this</span>.<span class="cm-property">checkDestination</span>(<span class="cm-variable-2">action</span>, <span class="cm-variable-2">vector</span>);
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">dest</span> <span class="cm-operator">&amp;&amp;</span> <span class="cm-keyword">this</span>.<span class="cm-property">grid</span>.<span class="cm-property">get</span>(<span class="cm-variable-2">dest</span>) <span class="cm-operator">==</span> <span class="cm-atom">null</span>) {
+      <span class="cm-keyword">this</span>.<span class="cm-property">grid</span>.<span class="cm-property">set</span>(<span class="cm-variable-2">vector</span>, <span class="cm-atom">null</span>);
+      <span class="cm-keyword">this</span>.<span class="cm-property">grid</span>.<span class="cm-property">set</span>(<span class="cm-variable-2">dest</span>, <span class="cm-variable-2">critter</span>);
+    }
+  }
+};
+
+<span class="cm-variable">World</span>.<span class="cm-property">prototype</span>.<span class="cm-property">checkDestination</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">action</span>, <span class="cm-def">vector</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-variable">directions</span>.<span class="cm-property">hasOwnProperty</span>(<span class="cm-variable-2">action</span>.<span class="cm-property">direction</span>)) {
+    <span class="cm-keyword">var</span> <span class="cm-def">dest</span> <span class="cm-operator">=</span> <span class="cm-variable-2">vector</span>.<span class="cm-property">plus</span>(<span class="cm-variable">directions</span>[<span class="cm-variable-2">action</span>.<span class="cm-property">direction</span>]);
+    <span class="cm-keyword">if</span> (<span class="cm-keyword">this</span>.<span class="cm-property">grid</span>.<span class="cm-property">isInside</span>(<span class="cm-variable-2">dest</span>))
+      <span class="cm-keyword">return</span> <span class="cm-variable-2">dest</span>;
+  }
+};</pre>
+<p><a class="p_ident" id="p_UrtcsyHVBc" href="./07_elife.html#p_UrtcsyHVBc"></a>Първо, просто искаме съществото да извърши действие, преминавайки през обект за оглед, с който разбира заобикалящия го свят и текущата позиция на този свят (ние дефинираме <code>View</code>
+in a <a href="./07_elife.html#view">момента</a>). Метода <code>act</code> връща действие от всякакъв вид.</p>
+<p><a class="p_ident" id="p_WfOP6E9DAW" href="./07_elife.html#p_WfOP6E9DAW"></a>Ако действието е <code>type</code>, а не <code>"move"</code> то се игнорира. Ако е <code>"move"</code> и има свойство <code>direction</code>, което се отнася до посоката и ако квадрата в тази посока е празен (нула), съществото отива там и го съхраняваме на този празен квадрат.</p>
+<p><a class="p_ident" id="p_k+MCUoR4aQ" href="./07_elife.html#p_k+MCUoR4aQ"></a>Имайте в предвид, че <code>letAct</code> се грижи да игнорира входящи глупости, като дали действието на свойството <code>direction</code> е валидно или свойството <code>type</code> има смисъл. Този вид защита при програмиране има смисъл в някои ситуации. Основната причина да го прави е да валидира входове идващи от не контролирани източници(като потребител или входящ файл), но може да бъде полезно да се изолират системи една от друга. В този случай, намерението е, че самите същества могат да бъдат програмирани небрежно - не трябва да се проверява дали предвидените действия имат смисъл. Те просто могат да поискат действие, а света ще определи дали да го позволи.</p>
+<p><a class="p_ident" id="p_4tMXZtdiIU" href="./07_elife.html#p_4tMXZtdiIU"></a>Тези два метода не са част от външния интерфейс на <code>World</code> обекта. Те са вътрешен детайл. Някои езици предоставят начини, изрично да се декларират определени методи и частни свойства, и сигнализират за грешка ако се опитате да ги използвате извън обекта. JavaScript не е от тях, така че ще трябва да разчитате на някаква друга форма на комуникация, за да опишете това, което е част от интерфейса на даден обект. Понякога може да ви помогне използването на схема за именуване, с което да се прави разлика между външни и вътрешни свойства, например, като поставим на всички вътрешни свойства подчертаващо тире ( _ ). Това ще направи случайни употреби на свойства, които не са част от интерфейса на даден обект, по-лесни.</p>
+<p id="view"><a class="p_ident" id="p_CEJTIYaI46" href="./07_elife.html#p_CEJTIYaI46"></a>Онази липсваща част на типа <code>View</code> изглежда така:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_1AHaBWMXKm" href="./07_elife.html#c_1AHaBWMXKm"></a><span class="cm-keyword">function</span> <span class="cm-variable">View</span>(<span class="cm-def">world</span>, <span class="cm-def">vector</span>) {
+  <span class="cm-keyword">this</span>.<span class="cm-property">world</span> <span class="cm-operator">=</span> <span class="cm-variable-2">world</span>;
+  <span class="cm-keyword">this</span>.<span class="cm-property">vector</span> <span class="cm-operator">=</span> <span class="cm-variable-2">vector</span>;
+}
+<span class="cm-variable">View</span>.<span class="cm-property">prototype</span>.<span class="cm-property">look</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">dir</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">target</span> <span class="cm-operator">=</span> <span class="cm-keyword">this</span>.<span class="cm-property">vector</span>.<span class="cm-property">plus</span>(<span class="cm-variable">directions</span>[<span class="cm-variable-2">dir</span>]);
+  <span class="cm-keyword">if</span> (<span class="cm-keyword">this</span>.<span class="cm-property">world</span>.<span class="cm-property">grid</span>.<span class="cm-property">isInside</span>(<span class="cm-variable-2">target</span>))
+    <span class="cm-keyword">return</span> <span class="cm-variable">charFromElement</span>(<span class="cm-keyword">this</span>.<span class="cm-property">world</span>.<span class="cm-property">grid</span>.<span class="cm-property">get</span>(<span class="cm-variable-2">target</span>));
+  <span class="cm-keyword">else</span>
+    <span class="cm-keyword">return</span> <span class="cm-string">"#"</span>;
+};
+<span class="cm-variable">View</span>.<span class="cm-property">prototype</span>.<span class="cm-property">findAll</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">ch</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">found</span> <span class="cm-operator">=</span> [];
+  <span class="cm-keyword">for</span> (<span class="cm-keyword">var</span> <span class="cm-def">dir</span> <span class="cm-keyword">in</span> <span class="cm-variable">directions</span>)
+    <span class="cm-keyword">if</span> (<span class="cm-keyword">this</span>.<span class="cm-property">look</span>(<span class="cm-variable-2">dir</span>) <span class="cm-operator">==</span> <span class="cm-variable-2">ch</span>)
+      <span class="cm-variable-2">found</span>.<span class="cm-property">push</span>(<span class="cm-variable-2">dir</span>);
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">found</span>;
+};
+<span class="cm-variable">View</span>.<span class="cm-property">prototype</span>.<span class="cm-property">find</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">ch</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">found</span> <span class="cm-operator">=</span> <span class="cm-keyword">this</span>.<span class="cm-property">findAll</span>(<span class="cm-variable-2">ch</span>);
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">found</span>.<span class="cm-property">length</span> <span class="cm-operator">==</span> <span class="cm-number">0</span>) <span class="cm-keyword">return</span> <span class="cm-atom">null</span>;
+  <span class="cm-keyword">return</span> <span class="cm-variable">randomElement</span>(<span class="cm-variable-2">found</span>);
+};</pre>
+<p><a class="p_ident" id="p_Yr7JFXwnP2" href="./07_elife.html#p_Yr7JFXwnP2"></a>Метода <code>look</code> определя координатите, които ние се опитваме да разгледаме и ако те са вътре в мрежата, намира характера, съответстващ на елемента, който стои там. За координати извън мрежата, <code>look</code> просто се преструва, че има стена там, така че ако вие дефинирате свят, който е ограден, съществата да бъдат изкушени да се опитат да преминат границите.</p>
+<h2><a class="h_ident" id="h_d0UsPgSWRD" href="./07_elife.html#h_d0UsPgSWRD"></a>Те  се  движат</h2>
+<p><a class="p_ident" id="p_BQnR0yHaOY" href="./07_elife.html#p_BQnR0yHaOY"></a>Ние определихме <em>world</em> обект по-рано. Сега, след като сме добавили всички необходими методи, следва да бъде възможно да се направи действително <em>world</em> движение.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_2KvMtxPjPO" href="./07_elife.html#c_2KvMtxPjPO"></a><span class="cm-keyword">for</span> (<span class="cm-keyword">var</span> <span class="cm-variable">i</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>; <span class="cm-variable">i</span> <span class="cm-operator">&lt;</span> <span class="cm-number">5</span>; <span class="cm-variable">i</span><span class="cm-operator">++</span>) {
+  <span class="cm-variable">world</span>.<span class="cm-property">turn</span>();
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">world</span>.<span class="cm-property">toString</span>());
+}
+<span class="cm-comment">// → … five turns of moving critters</span></pre>
+<p><a class="p_ident" id="p_HwVEJ+g6z5" href="./07_elife.html#p_HwVEJ+g6z5"></a>Просто отпечатване на много копия на картата е доста неприятен начин за наблюдение на един свят. Ето защо пясъчника осигурява <code>animateWorld</code> функция, която ще управлява света, като екранна анимация с движещи се завъртания по три пъти в секунда, докато не натиснете бутона за спиране.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_Ll8uem89AC" href="./07_elife.html#c_Ll8uem89AC"></a><span class="cm-variable">animateWorld</span>(<span class="cm-variable">world</span>);
+<span class="cm-comment">// → … life!</span></pre>
+<p><a class="p_ident" id="p_jGPHPftEGJ" href="./07_elife.html#p_jGPHPftEGJ"></a>Изпълнението на <code>animateWorld</code> ще остане загадка за сега, но след като прочетете <a href="./13_dom.html#dom">последните глави</a> на тази книга, които обсъждат интеграцията на JavaScript  в уеб  браузъри, няма да изглежда толкова загадъчно.</p>
+<h2><a class="h_ident" id="h_r85xE+rzsD" href="./07_elife.html#h_r85xE+rzsD"></a>Още форми на живот</h2>
+<p><a class="p_ident" id="p_aVv117kVSp" href="./07_elife.html#p_aVv117kVSp"></a>Драматично събитие от нашия свят е ако гледате, когато две същества отскачат едно от друго. Сещате ли се за друга форма на поведение?</p>
+<p><a class="p_ident" id="p_ZzTWUs5sdf" href="./07_elife.html#p_ZzTWUs5sdf"></a>Има една, когато съществото се движи по стените. В концептуално отношение, създанието се държи с лявата си ръка(лапа, пипало, каквото има) за стената и я следва. Това се оказва доста сложно да се приложи.</p>
+<p><a class="p_ident" id="p_+nyDt2anla" href="./07_elife.html#p_+nyDt2anla"></a>Ние трябва да бъдем в състояние да “ изчислим ” посоките с компас. Тъй като посоките са моделирани с помощта на набор от <em>strings</em>, ние трябва да дефинираме наша собствена операция (<code>dirPlus</code>) за изчисляване на относителни посоки. Така <code>dirPlus("n", 1)</code> ще означава 45 градуса завой по посока на часовниковата стрелка от север, както “ ne ”. По същия начин <code>dirPlus("s", -2)</code> означава 90 градуса обратно на часовниковата стрелка на юг, когато е от изток.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_/f16aAnRw9" href="./07_elife.html#c_/f16aAnRw9"></a><span class="cm-keyword">function</span> <span class="cm-variable">dirPlus</span>(<span class="cm-def">dir</span>, <span class="cm-def">n</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">index</span> <span class="cm-operator">=</span> <span class="cm-variable">directionNames</span>.<span class="cm-property">indexOf</span>(<span class="cm-variable-2">dir</span>);
+  <span class="cm-keyword">return</span> <span class="cm-variable">directionNames</span>[(<span class="cm-variable-2">index</span> <span class="cm-operator">+</span> <span class="cm-variable-2">n</span> <span class="cm-operator">+</span> <span class="cm-number">8</span>) <span class="cm-operator">%</span> <span class="cm-number">8</span>];
+}
+
+<span class="cm-keyword">function</span> <span class="cm-variable">WallFollower</span>() {
+  <span class="cm-keyword">this</span>.<span class="cm-property">dir</span> <span class="cm-operator">=</span> <span class="cm-string">"s"</span>;
+}
+
+<span class="cm-variable">WallFollower</span>.<span class="cm-property">prototype</span>.<span class="cm-property">act</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">view</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">start</span> <span class="cm-operator">=</span> <span class="cm-keyword">this</span>.<span class="cm-property">dir</span>;
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">view</span>.<span class="cm-property">look</span>(<span class="cm-variable">dirPlus</span>(<span class="cm-keyword">this</span>.<span class="cm-property">dir</span>, <span class="cm-operator">-</span><span class="cm-number">3</span>)) <span class="cm-operator">!=</span> <span class="cm-string">" "</span>)
+    <span class="cm-variable-2">start</span> <span class="cm-operator">=</span> <span class="cm-keyword">this</span>.<span class="cm-property">dir</span> <span class="cm-operator">=</span> <span class="cm-variable">dirPlus</span>(<span class="cm-keyword">this</span>.<span class="cm-property">dir</span>, <span class="cm-operator">-</span><span class="cm-number">2</span>);
+  <span class="cm-keyword">while</span> (<span class="cm-variable-2">view</span>.<span class="cm-property">look</span>(<span class="cm-keyword">this</span>.<span class="cm-property">dir</span>) <span class="cm-operator">!=</span> <span class="cm-string">" "</span>) {
+    <span class="cm-keyword">this</span>.<span class="cm-property">dir</span> <span class="cm-operator">=</span> <span class="cm-variable">dirPlus</span>(<span class="cm-keyword">this</span>.<span class="cm-property">dir</span>, <span class="cm-number">1</span>);
+    <span class="cm-keyword">if</span> (<span class="cm-keyword">this</span>.<span class="cm-property">dir</span> <span class="cm-operator">==</span> <span class="cm-variable-2">start</span>) <span class="cm-keyword">break</span>;
+  }
+  <span class="cm-keyword">return</span> {<span class="cm-property">type</span>: <span class="cm-string">"move"</span>, <span class="cm-property">direction</span>: <span class="cm-keyword">this</span>.<span class="cm-property">dir</span>};
+};</pre>
+<p><a class="p_ident" id="p_vLV21F0iBf" href="./07_elife.html#p_vLV21F0iBf"></a>Метода <code>act</code> трябва само да “сканира” околностите около съществата, започвайки от лявата страна и продължавайки по часовниковата стрелка, докато не открие празен квадрат. След това продължава да се движи в посока на празния квадрат.</p>
+<p><a class="p_ident" id="p_KvheizXuRR" href="./07_elife.html#p_KvheizXuRR"></a>Нещо което усложнява нещата е, че създанието може да спре по средата на празното пространство, както при стартова позиция или като резултат от разходката на друго същество. Ако приложим подход с просто описание на празно пространство, съществото просто ще продължи да завива на ляво и да обикаля в кръг.</p>
+<p><a class="p_ident" id="p_TzIxUwgqju" href="./07_elife.html#p_TzIxUwgqju"></a>Така че има допълнителна проверка <code>if</code>, за да стартираме сканирането на ляво, само ако създанието току що е преминало някаква пречка - тоест, ако пространството зад и на ляво от създанието не е празно. В противен случай създанието започва да сканира директно напред и ще отива напред, ако пространството отпред е празно.</p>
+<p><a class="p_ident" id="p_h7LZenYvtj" href="./07_elife.html#p_h7LZenYvtj"></a>И накрая има един тест за сравняване на <code>this.dir</code> и <code>start</code> след всеки преминал цикъл за да се уверим, че цикълът няма да работи вечно, ако създанието попадне в претъпкано от други създания място и не може да намери празен квадрат.</p>
+<p><a class="p_ident" id="p_+rUHxdy6xc" href="./07_elife.html#p_+rUHxdy6xc"></a>Този малък свят демонстрира движението по стените на съществата.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_bE8wiFAYHa" href="./07_elife.html#c_bE8wiFAYHa"></a><span class="cm-variable">animateWorld</span>(<span class="cm-keyword">new</span> <span class="cm-variable">World</span>(
+  [<span class="cm-string">"############"</span>,
+   <span class="cm-string">"#     #    #"</span>,
+   <span class="cm-string">"#   ~    ~ #"</span>,
+   <span class="cm-string">"#  ##      #"</span>,
+   <span class="cm-string">"#  ##  o####"</span>,
+   <span class="cm-string">"#          #"</span>,
+   <span class="cm-string">"############"</span>],
+  {<span class="cm-string cm-property">"#"</span>: <span class="cm-variable">Wall</span>,
+   <span class="cm-string cm-property">"~"</span>: <span class="cm-variable">WallFollower</span>,
+   <span class="cm-string cm-property">"o"</span>: <span class="cm-variable">BouncingCritter</span>}
+));</pre>
+<h2><a class="h_ident" id="h_yTrS5ee3KB" href="./07_elife.html#h_yTrS5ee3KB"></a>Една по-реалистична симулация</h2>
+<p><a class="p_ident" id="p_WyKE9k0MVM" href="./07_elife.html#p_WyKE9k0MVM"></a>За да направим живота в нашия свят по-интересен, ще добавим концепции за храна и възпроизводство. Всяко живо същество в света получава ново свойство <code>energy</code>, което се намалява с извършените действия и се увеличава с яденето на храна. Когато създанието има достатъчно енергия, то може да се възпроизвежда - генерира ново създание от своя вид. За да опростим нещата, създанията в нашия свят ще се размножават безполово от себе си.</p>
+<p><a class="p_ident" id="p_W7zSlnat3V" href="./07_elife.html#p_W7zSlnat3V"></a>Ако съществата само се движат и ядат едни други, света скоро ще попадне под закона за увеличаване на ентропията, изчерпване на енергията и ще се превърне в безжизнена пустиня. За да се предотврати това да се случи (твърде бързо), ние ще добавим растения. Те не се движат, а просто използват фотосинтезата за да растат (това повишава тяхната енергия) и да се възпроизвеждат.</p>
+<p><a class="p_ident" id="p_94pQzOmOVM" href="./07_elife.html#p_94pQzOmOVM"></a>За да направим това, ще имаме нужда от един свят с различен <code>letAct</code> метод. Бихме могли просто да заменим метода на прототипа на <code>World</code>, но аз станах малко привързан към тази симулация с ходещи по стените същества и не ми се иска да прекъсвам този стар свят.</p>
+<p><a class="p_ident" id="p_v0IDjeo0fS" href="./07_elife.html#p_v0IDjeo0fS"></a>Едно решение е да използваме наследяване. Ще създадем нов конструктор <code>LifelikeWorld</code> чийто прототип е базиран на прототипа на <code>World</code>, но с надгараден <code>letAct</code> метод. Новият <code>letAct</code> метод ще делегира работата на действително извършени действия на различни функции съхранени в <code>actionTypes</code> обекта.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_Xq/SMOEf8t" href="./07_elife.html#c_Xq/SMOEf8t"></a><span class="cm-keyword">function</span> <span class="cm-variable">LifelikeWorld</span>(<span class="cm-def">map</span>, <span class="cm-def">legend</span>) {
+  <span class="cm-variable">World</span>.<span class="cm-property">call</span>(<span class="cm-keyword">this</span>, <span class="cm-variable-2">map</span>, <span class="cm-variable-2">legend</span>);
+}
+<span class="cm-variable">LifelikeWorld</span>.<span class="cm-property">prototype</span> <span class="cm-operator">=</span> <span class="cm-variable">Object</span>.<span class="cm-property">create</span>(<span class="cm-variable">World</span>.<span class="cm-property">prototype</span>);
+
+<span class="cm-keyword">var</span> <span class="cm-variable">actionTypes</span> <span class="cm-operator">=</span> <span class="cm-variable">Object</span>.<span class="cm-property">create</span>(<span class="cm-atom">null</span>);
+
+<span class="cm-variable">LifelikeWorld</span>.<span class="cm-property">prototype</span>.<span class="cm-property">letAct</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">critter</span>, <span class="cm-def">vector</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">action</span> <span class="cm-operator">=</span> <span class="cm-variable-2">critter</span>.<span class="cm-property">act</span>(<span class="cm-keyword">new</span> <span class="cm-variable">View</span>(<span class="cm-keyword">this</span>, <span class="cm-variable-2">vector</span>));
+  <span class="cm-keyword">var</span> <span class="cm-def">handled</span> <span class="cm-operator">=</span> <span class="cm-variable-2">action</span> <span class="cm-operator">&amp;&amp;</span>
+    <span class="cm-variable-2">action</span>.<span class="cm-property">type</span> <span class="cm-keyword">in</span> <span class="cm-variable">actionTypes</span> <span class="cm-operator">&amp;&amp;</span>
+    <span class="cm-variable">actionTypes</span>[<span class="cm-variable-2">action</span>.<span class="cm-property">type</span>].<span class="cm-property">call</span>(<span class="cm-keyword">this</span>, <span class="cm-variable-2">critter</span>,
+                                  <span class="cm-variable-2">vector</span>, <span class="cm-variable-2">action</span>);
+  <span class="cm-keyword">if</span> (<span class="cm-operator">!</span><span class="cm-variable-2">handled</span>) {
+    <span class="cm-variable-2">critter</span>.<span class="cm-property">energy</span> <span class="cm-operator">-=</span> <span class="cm-number">0.2</span>;
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">critter</span>.<span class="cm-property">energy</span> <span class="cm-operator">&lt;=</span> <span class="cm-number">0</span>)
+      <span class="cm-keyword">this</span>.<span class="cm-property">grid</span>.<span class="cm-property">set</span>(<span class="cm-variable-2">vector</span>, <span class="cm-atom">null</span>);
+  }
+};</pre>
+<p><a class="p_ident" id="p_yUSwDSWWG/" href="./07_elife.html#p_yUSwDSWWG/"></a>Новият <code>letAct</code> метод първо проверява дали действието е върнато на всички, след това дали е налице функция манипулатор за тови вид действие и в крайна сметка дали този манипулатор връща истина, ако успешно се справи с действието. Обърнете внимание на използването на <code>call</code> за даване на достъп на манипулатора на света, чрез своя <code>this</code>.</p>
+<p><a class="p_ident" id="p_XIDOYUJ2VB" href="./07_elife.html#p_XIDOYUJ2VB"></a>Ако действието не работи по някаква причина, действието по подразбиране на съществото е просто изчакване. Съществото губи една пета от енергията си и ако неговото енергийно ниво падне до или по-ниско от нула, то умира и се отстранява от мрежата.</p>
+<h2><a class="h_ident" id="h_s7VEeFM4T2" href="./07_elife.html#h_s7VEeFM4T2"></a>Обработка  на  действие </h2>
+<p><a class="p_ident" id="p_RE6to1zSFD" href="./07_elife.html#p_RE6to1zSFD"></a>Най -простото действие, което създанията могат да изпълнят е растеж (<code>"grow"</code>) използвано от растенията. Когато даден вид обект за действие, като <code>{type:
+"grow"}</code> се връща, извиква следващия обработващ метод:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_wHH+c78jV5" href="./07_elife.html#c_wHH+c78jV5"></a><span class="cm-variable">actionTypes</span>.<span class="cm-property">grow</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">critter</span>) {
+  <span class="cm-variable-2">critter</span>.<span class="cm-property">energy</span> <span class="cm-operator">+=</span> <span class="cm-number">0.5</span>;
+  <span class="cm-keyword">return</span> <span class="cm-atom">true</span>;
+};</pre>
+<p><a class="p_ident" id="p_6k/ZhdfEll" href="./07_elife.html#p_6k/ZhdfEll"></a>Растежа винаги успява и добавя половин точка в нивото на енергията на растението.</p>
+<p><a class="p_ident" id="p_JTfOBvLWbR" href="./07_elife.html#p_JTfOBvLWbR"></a>Движението е по-ангажиращо:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_EgcpmD74TO" href="./07_elife.html#c_EgcpmD74TO"></a><span class="cm-variable">actionTypes</span>.<span class="cm-property">move</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">critter</span>, <span class="cm-def">vector</span>, <span class="cm-def">action</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">dest</span> <span class="cm-operator">=</span> <span class="cm-keyword">this</span>.<span class="cm-property">checkDestination</span>(<span class="cm-variable-2">action</span>, <span class="cm-variable-2">vector</span>);
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">dest</span> <span class="cm-operator">==</span> <span class="cm-atom">null</span> <span class="cm-operator">||</span>
+      <span class="cm-variable-2">critter</span>.<span class="cm-property">energy</span> <span class="cm-operator">&lt;=</span> <span class="cm-number">1</span> <span class="cm-operator">||</span>
+      <span class="cm-keyword">this</span>.<span class="cm-property">grid</span>.<span class="cm-property">get</span>(<span class="cm-variable-2">dest</span>) <span class="cm-operator">!=</span> <span class="cm-atom">null</span>)
+    <span class="cm-keyword">return</span> <span class="cm-atom">false</span>;
+  <span class="cm-variable-2">critter</span>.<span class="cm-property">energy</span> <span class="cm-operator">-=</span> <span class="cm-number">1</span>;
+  <span class="cm-keyword">this</span>.<span class="cm-property">grid</span>.<span class="cm-property">set</span>(<span class="cm-variable-2">vector</span>, <span class="cm-atom">null</span>);
+  <span class="cm-keyword">this</span>.<span class="cm-property">grid</span>.<span class="cm-property">set</span>(<span class="cm-variable-2">dest</span>, <span class="cm-variable-2">critter</span>);
+  <span class="cm-keyword">return</span> <span class="cm-atom">true</span>;
+};</pre>
+<p><a class="p_ident" id="p_OyaLcjtdgw" href="./07_elife.html#p_OyaLcjtdgw"></a>Това действие първо проверява, използвайки метода <code>checkDestination</code> дефиниран <a href="./07_elife.html#checkDestination">по-рано</a>, дали действието използва валидна дестинация. Ако не е или дестинацията не е празна или на създанието липсва необходимата енергия, <code>move</code> връща <em>false</em> за посочените предприети действия. В противен случай, създанието се движи и изважда разходите за енергия.</p>
+<p><a class="p_ident" id="p_0Wdb2GCOkE" href="./07_elife.html#p_0Wdb2GCOkE"></a>В допълнение към движението, съществата могат да се хранят.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_cQhl6uK2Jo" href="./07_elife.html#c_cQhl6uK2Jo"></a><span class="cm-variable">actionTypes</span>.<span class="cm-property">eat</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">critter</span>, <span class="cm-def">vector</span>, <span class="cm-def">action</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">dest</span> <span class="cm-operator">=</span> <span class="cm-keyword">this</span>.<span class="cm-property">checkDestination</span>(<span class="cm-variable-2">action</span>, <span class="cm-variable-2">vector</span>);
+  <span class="cm-keyword">var</span> <span class="cm-def">atDest</span> <span class="cm-operator">=</span> <span class="cm-variable-2">dest</span> <span class="cm-operator">!=</span> <span class="cm-atom">null</span> <span class="cm-operator">&amp;&amp;</span> <span class="cm-keyword">this</span>.<span class="cm-property">grid</span>.<span class="cm-property">get</span>(<span class="cm-variable-2">dest</span>);
+  <span class="cm-keyword">if</span> (<span class="cm-operator">!</span><span class="cm-variable-2">atDest</span> <span class="cm-operator">||</span> <span class="cm-variable-2">atDest</span>.<span class="cm-property">energy</span> <span class="cm-operator">==</span> <span class="cm-atom">null</span>)
+    <span class="cm-keyword">return</span> <span class="cm-atom">false</span>;
+  <span class="cm-variable-2">critter</span>.<span class="cm-property">energy</span> <span class="cm-operator">+=</span> <span class="cm-variable-2">atDest</span>.<span class="cm-property">energy</span>;
+  <span class="cm-keyword">this</span>.<span class="cm-property">grid</span>.<span class="cm-property">set</span>(<span class="cm-variable-2">dest</span>, <span class="cm-atom">null</span>);
+  <span class="cm-keyword">return</span> <span class="cm-atom">true</span>;
+};</pre>
+<p><a class="p_ident" id="p_I63DQNJFYJ" href="./07_elife.html#p_I63DQNJFYJ"></a>Яденето на друго същество включва и осигуряване на правилната посока за квадрат. Тази дестинация не трябва да е празна и трябва да съдържа нещо с енергия, като растение(но не и стена, която не е годна за консумация). Ако е така енергията на изядения се прехвърля на ядящия и жертвата се отстранява от мрежата.</p>
+<p><a class="p_ident" id="p_aDjES09ZCB" href="./07_elife.html#p_aDjES09ZCB"></a>И накрая, ние позволяваме на нашите същества да се размножават.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_0hQdcXq3OA" href="./07_elife.html#c_0hQdcXq3OA"></a><span class="cm-variable">actionTypes</span>.<span class="cm-property">reproduce</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">critter</span>, <span class="cm-def">vector</span>, <span class="cm-def">action</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">baby</span> <span class="cm-operator">=</span> <span class="cm-variable">elementFromChar</span>(<span class="cm-keyword">this</span>.<span class="cm-property">legend</span>,
+                             <span class="cm-variable-2">critter</span>.<span class="cm-property">originChar</span>);
+  <span class="cm-keyword">var</span> <span class="cm-def">dest</span> <span class="cm-operator">=</span> <span class="cm-keyword">this</span>.<span class="cm-property">checkDestination</span>(<span class="cm-variable-2">action</span>, <span class="cm-variable-2">vector</span>);
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">dest</span> <span class="cm-operator">==</span> <span class="cm-atom">null</span> <span class="cm-operator">||</span>
+      <span class="cm-variable-2">critter</span>.<span class="cm-property">energy</span> <span class="cm-operator">&lt;=</span> <span class="cm-number">2</span> <span class="cm-operator">*</span> <span class="cm-variable-2">baby</span>.<span class="cm-property">energy</span> <span class="cm-operator">||</span>
+      <span class="cm-keyword">this</span>.<span class="cm-property">grid</span>.<span class="cm-property">get</span>(<span class="cm-variable-2">dest</span>) <span class="cm-operator">!=</span> <span class="cm-atom">null</span>)
+    <span class="cm-keyword">return</span> <span class="cm-atom">false</span>;
+  <span class="cm-variable-2">critter</span>.<span class="cm-property">energy</span> <span class="cm-operator">-=</span> <span class="cm-number">2</span> <span class="cm-operator">*</span> <span class="cm-variable-2">baby</span>.<span class="cm-property">energy</span>;
+  <span class="cm-keyword">this</span>.<span class="cm-property">grid</span>.<span class="cm-property">set</span>(<span class="cm-variable-2">dest</span>, <span class="cm-variable-2">baby</span>);
+  <span class="cm-keyword">return</span> <span class="cm-atom">true</span>;
+};</pre>
+<p><a class="p_ident" id="p_iznW2m8B2U" href="./07_elife.html#p_iznW2m8B2U"></a>Възпроизвеждането струва две нива на енергия за новородено същество. Така че, за да създадете (хипотетично) бебе, използваме първо <code>elementFromChar</code> на характера на родителя на създанието. След като имаме бебе, можем да намерим енергийното ниво и да тестваме дали родителя има достатъчно енергия за успешно раждане. Също така се изисква и валидна празна дестинация.</p>
+<p><a class="p_ident" id="p_stSVDa0fH8" href="./07_elife.html#p_stSVDa0fH8"></a>Ако всичко е наред, бебето се появява на мрежата(това вече не е хипотетично) и енергията се изразходва.</p>
+<h2><a class="h_ident" id="h_vziJXy2ZdX" href="./07_elife.html#h_vziJXy2ZdX"></a>Популация на новия свят</h2>
+<p><a class="p_ident" id="p_vGmE0fy2RS" href="./07_elife.html#p_vGmE0fy2RS"></a>Сега имаме рамката за симулация на тези по-реалистични същества. Ние можем да поставим съществата от стария свят в нея, но те просто ще умрат, тъй като не разполагат със собствена енергия. Така че нека направим нови. Първо ще напишем едно растение, което е доста проста форма на живот.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_RQsOcWcml/" href="./07_elife.html#c_RQsOcWcml/"></a><span class="cm-keyword">function</span> <span class="cm-variable">Plant</span>() {
+  <span class="cm-keyword">this</span>.<span class="cm-property">energy</span> <span class="cm-operator">=</span> <span class="cm-number">3</span> <span class="cm-operator">+</span> <span class="cm-variable">Math</span>.<span class="cm-property">random</span>() <span class="cm-operator">*</span> <span class="cm-number">4</span>;
+}
+<span class="cm-variable">Plant</span>.<span class="cm-property">prototype</span>.<span class="cm-property">act</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">view</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-keyword">this</span>.<span class="cm-property">energy</span> <span class="cm-operator">&gt;</span> <span class="cm-number">15</span>) {
+    <span class="cm-keyword">var</span> <span class="cm-def">space</span> <span class="cm-operator">=</span> <span class="cm-variable-2">view</span>.<span class="cm-property">find</span>(<span class="cm-string">" "</span>);
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">space</span>)
+      <span class="cm-keyword">return</span> {<span class="cm-property">type</span>: <span class="cm-string">"reproduce"</span>, <span class="cm-property">direction</span>: <span class="cm-variable-2">space</span>};
+  }
+  <span class="cm-keyword">if</span> (<span class="cm-keyword">this</span>.<span class="cm-property">energy</span> <span class="cm-operator">&lt;</span> <span class="cm-number">20</span>)
+    <span class="cm-keyword">return</span> {<span class="cm-property">type</span>: <span class="cm-string">"grow"</span>};
+};</pre>
+<p><a class="p_ident" id="p_OCJXcCZPZm" href="./07_elife.html#p_OCJXcCZPZm"></a>Растенията стартират с енергийно ниво между 3 и 7, така че не всички се размножават с еднакъв темп. Когато растението достигне енергийно ниво 15 точки и има празно пространство в близост, то се размножава там. Ако няма възможност да се възпроизведе, то расте докато достигне ниво на енергията 20 точки.</p>
+<p><a class="p_ident" id="p_xjp5a11XH7" href="./07_elife.html#p_xjp5a11XH7"></a>Сега да определим тревопасните.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_ddgWDpbvSl" href="./07_elife.html#c_ddgWDpbvSl"></a><span class="cm-keyword">function</span> <span class="cm-variable">PlantEater</span>() {
+  <span class="cm-keyword">this</span>.<span class="cm-property">energy</span> <span class="cm-operator">=</span> <span class="cm-number">20</span>;
+}
+<span class="cm-variable">PlantEater</span>.<span class="cm-property">prototype</span>.<span class="cm-property">act</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">view</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">space</span> <span class="cm-operator">=</span> <span class="cm-variable-2">view</span>.<span class="cm-property">find</span>(<span class="cm-string">" "</span>);
+  <span class="cm-keyword">if</span> (<span class="cm-keyword">this</span>.<span class="cm-property">energy</span> <span class="cm-operator">&gt;</span> <span class="cm-number">60</span> <span class="cm-operator">&amp;&amp;</span> <span class="cm-variable-2">space</span>)
+    <span class="cm-keyword">return</span> {<span class="cm-property">type</span>: <span class="cm-string">"reproduce"</span>, <span class="cm-property">direction</span>: <span class="cm-variable-2">space</span>};
+  <span class="cm-keyword">var</span> <span class="cm-def">plant</span> <span class="cm-operator">=</span> <span class="cm-variable-2">view</span>.<span class="cm-property">find</span>(<span class="cm-string">"*"</span>);
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">plant</span>)
+    <span class="cm-keyword">return</span> {<span class="cm-property">type</span>: <span class="cm-string">"eat"</span>, <span class="cm-property">direction</span>: <span class="cm-variable-2">plant</span>};
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">space</span>)
+    <span class="cm-keyword">return</span> {<span class="cm-property">type</span>: <span class="cm-string">"move"</span>, <span class="cm-property">direction</span>: <span class="cm-variable-2">space</span>};
+};</pre>
+<p><a class="p_ident" id="p_JYpELDqyyT" href="./07_elife.html#p_JYpELDqyyT"></a>Ще използваме характера <code>*</code> за изобразяване на растенията.</p>
+<h2><a class="h_ident" id="h_pxU2HNE0gc" href="./07_elife.html#h_pxU2HNE0gc"></a>Внасяне на живот</h2>
+<p><a class="p_ident" id="p_/pimHqjNal" href="./07_elife.html#p_/pimHqjNal"></a>Това ни дава достатъчно елементи за да изпробваме нашия нов свят. Представете си следната картина, тревиста долина със стадо тревопасни в нея, няколко камъка и буйна растителност навсякъде.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_uxbbeqRjLM" href="./07_elife.html#c_uxbbeqRjLM"></a><span class="cm-keyword">var</span> <span class="cm-variable">valley</span> <span class="cm-operator">=</span> <span class="cm-keyword">new</span> <span class="cm-variable">LifelikeWorld</span>(
+  [<span class="cm-string">"############################"</span>,
+   <span class="cm-string">"#####                 ######"</span>,
+   <span class="cm-string">"##   ***                **##"</span>,
+   <span class="cm-string">"#   *##**         **  O  *##"</span>,
+   <span class="cm-string">"#    ***     O    ##**    *#"</span>,
+   <span class="cm-string">"#       O         ##***    #"</span>,
+   <span class="cm-string">"#                 ##**     #"</span>,
+   <span class="cm-string">"#   O       #*             #"</span>,
+   <span class="cm-string">"#*          #**       O    #"</span>,
+   <span class="cm-string">"#***        ##**    O    **#"</span>,
+   <span class="cm-string">"##****     ###***       *###"</span>,
+   <span class="cm-string">"############################"</span>],
+  {<span class="cm-string cm-property">"#"</span>: <span class="cm-variable">Wall</span>,
+   <span class="cm-string cm-property">"O"</span>: <span class="cm-variable">PlantEater</span>,
+   <span class="cm-string cm-property">"*"</span>: <span class="cm-variable">Plant</span>}
+);</pre>
+<p><a class="p_ident" id="p_XZiEmlppan" href="./07_elife.html#p_XZiEmlppan"></a>Да видим какво ще стане, като стартираме това:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_ryt21fIzYu" href="./07_elife.html#c_ryt21fIzYu"></a><span class="cm-variable">animateWorld</span>(<span class="cm-variable">valley</span>);</pre>
+<p><a class="p_ident" id="p_1fhW4rcJRU" href="./07_elife.html#p_1fhW4rcJRU"></a>Повечето време, растенията се размножават и разширяват доста бързо, но след това изобилието от храна предизвиква взрив на населението на тревопасните, които унищожават всички или почти всички растения, което води до масов глад на тревопасните. Понякога еко-системата се възстановява и започва друг цикъл. В друг случай, един от видовете умира напълно. Ако умрат тревопасните, цялото пространство ще се запълни с растения. Ако умрат растенията, останалите същества ще гладуват и долината ще се превърне в безжизнена пустиня. Това е жестокостта на природата.</p>
+<h2><a class="h_ident" id="h_TcUD2vzyMe" href="./07_elife.html#h_TcUD2vzyMe"></a>Упражнения</h2>
+<h3><a class="h_ident" id="h_lU2HuCXhbH" href="./07_elife.html#h_lU2HuCXhbH"></a>Изкуствена  глупост</h3>
+<p><a class="p_ident" id="p_w0CByGW7g5" href="./07_elife.html#p_w0CByGW7g5"></a>Когато жителите на нашия свят изчезнат след няколко минути е доста депресиращо. За да се справят с това, бихме могли да опитаме да създадем едни по-интелигентни тревопасни.</p>
+<p><a class="p_ident" id="p_G39rqGC9Ql" href="./07_elife.html#p_G39rqGC9Ql"></a>Има няколко очевидни проблема с нашите тревопасни животни. Първо: те имат ужасно голям апетит и изяждат всяко растение, което виждат докато унищожат всички растения. Второ: тяхното произволно движение (което съответства на различните посоки) ги води в безплодни участъци и те гладуват ако няма растения на близо. И на края те се размножават много бързо, което прави циклите между изобилие и глад доста интензивни.</p>
+<p><a class="p_ident" id="p_RoYABqty7W" href="./07_elife.html#p_RoYABqty7W"></a>Добави нов вид животно, което се опитва да се справи с една или с повече от тези точки и замени стария тип <code>PlantEater</code> в света на долината. Вижте как се справят. Модифицирайте ги още малко, ако е необходимо.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_7OKWiyCd1B" href="./07_elife.html#c_7OKWiyCd1B"></a><span class="cm-comment">// Your code here</span>
+<span class="cm-keyword">function</span> <span class="cm-variable">SmartPlantEater</span>() {}
+
+<span class="cm-variable">animateWorld</span>(<span class="cm-keyword">new</span> <span class="cm-variable">LifelikeWorld</span>(
+  [<span class="cm-string">"############################"</span>,
+   <span class="cm-string">"#####                 ######"</span>,
+   <span class="cm-string">"##   ***                **##"</span>,
+   <span class="cm-string">"#   *##**         **  O  *##"</span>,
+   <span class="cm-string">"#    ***     O    ##**    *#"</span>,
+   <span class="cm-string">"#       O         ##***    #"</span>,
+   <span class="cm-string">"#                 ##**     #"</span>,
+   <span class="cm-string">"#   O       #*             #"</span>,
+   <span class="cm-string">"#*          #**       O    #"</span>,
+   <span class="cm-string">"#***        ##**    O    **#"</span>,
+   <span class="cm-string">"##****     ###***       *###"</span>,
+   <span class="cm-string">"############################"</span>],
+  {<span class="cm-string cm-property">"#"</span>: <span class="cm-variable">Wall</span>,
+   <span class="cm-string cm-property">"O"</span>: <span class="cm-variable">SmartPlantEater</span>,
+   <span class="cm-string cm-property">"*"</span>: <span class="cm-variable">Plant</span>}
+));</pre>
+<div class="solution"><div class="solution-text">
+<p><a class="p_ident" id="p_opSDCAfj1y" href="./07_elife.html#p_opSDCAfj1y"></a>Проблемът с ненаситността може да бъде атакуван по няколко начина. Съществата могат да спрат да ядат, когато достигнат определено ниво на енергия. Или те могат да се хранят само веднъж на всеки <em>N</em>-ти завой (чрез водене на брояч за завоите от последното хранене в свойство на обекта на създанието). Или да се уверим, че растенията никога не изчезват напълно, животните могат да се откажат да ядат растение, ако те видят поне едно друго в друг завой наблизо (с помощта на <code>findAll</code> метода за изгледа). Комбинацията на някои от тези с някои съвсем различни стратегии също може да проработи.</p>
+<p><a class="p_ident" id="p_oozF6+toSs" href="./07_elife.html#p_oozF6+toSs"></a>Осъществяването на по-ефективно движение на съществата може да стане с кражба на една от стратегиите за движение в нашия стар <em>energyless</em> свят. Като подскачащо поведение и поведението за стената, показват много по-широк диапазон на движение от напълно случайни стратегии.</p>
+<p><a class="p_ident" id="p_Gao/HNyaKe" href="./07_elife.html#p_Gao/HNyaKe"></a>По-бавното размножаване на съществата е тривиално. Просто увеличете минималното ниво на енергия, с което се размножават. Разбира се, когато екосистемата е по-стабилна това я прави скучна. Ако имате една шепа мазни, неподвижни същества в люшкащото се море от растения и те никога не се възпроизвеждат, това прави една много стабилна екосистема. Но никой не иска да гледа това.</p>
+</div></div>
+<h3><a class="h_ident" id="h_QUnD2hCBv4" href="./07_elife.html#h_QUnD2hCBv4"></a>Хищници</h3>
+<p><a class="p_ident" id="p_wLAPo3ZZqC" href="./07_elife.html#p_wLAPo3ZZqC"></a>Всяка сериозна еко-система има хранителна верига по-дълга от едно единствено животно. Напишете друго животно, което оцелява с ядене на тревопасни създания. Ще забележете, че стабилността е още по-трудна за постигане сега, има цикли на няколко нива. Опитайте се да намерите стратегия за живота на еко-системата, да тече гладко поне за известно време.</p>
+<p><a class="p_ident" id="p_jEi7Cawsdy" href="./07_elife.html#p_jEi7Cawsdy"></a>Едно нещо, което може да ви помогне е да направите света по-голям. По този начин местния бум на населението или унищожението на един вид са по-малко вероятни да се случат и има по голяма плячка за поддържането на популацията на малък хищник.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_ub1nEhU4ti" href="./07_elife.html#c_ub1nEhU4ti"></a><span class="cm-comment">// Your code here</span>
+<span class="cm-keyword">function</span> <span class="cm-variable">Tiger</span>() {}
+
+<span class="cm-variable">animateWorld</span>(<span class="cm-keyword">new</span> <span class="cm-variable">LifelikeWorld</span>(
+  [<span class="cm-string">"####################################################"</span>,
+   <span class="cm-string">"#                 ####         ****              ###"</span>,
+   <span class="cm-string">"#   *  @  ##                 ########       OO    ##"</span>,
+   <span class="cm-string">"#   *    ##        O O                 ****       *#"</span>,
+   <span class="cm-string">"#       ##*                        ##########     *#"</span>,
+   <span class="cm-string">"#      ##***  *         ****                     **#"</span>,
+   <span class="cm-string">"#* **  #  *  ***      #########                  **#"</span>,
+   <span class="cm-string">"#* **  #      *               #   *              **#"</span>,
+   <span class="cm-string">"#     ##              #   O   #  ***          ######"</span>,
+   <span class="cm-string">"#*            @       #       #   *        O  #    #"</span>,
+   <span class="cm-string">"#*                    #  ######                 ** #"</span>,
+   <span class="cm-string">"###          ****          ***                  ** #"</span>,
+   <span class="cm-string">"#       O                        @         O       #"</span>,
+   <span class="cm-string">"#   *     ##  ##  ##  ##               ###      *  #"</span>,
+   <span class="cm-string">"#   **         #              *       #####  O     #"</span>,
+   <span class="cm-string">"##  **  O   O  #  #    ***  ***        ###      ** #"</span>,
+   <span class="cm-string">"###               #   *****                    ****#"</span>,
+   <span class="cm-string">"####################################################"</span>],
+  {<span class="cm-string cm-property">"#"</span>: <span class="cm-variable">Wall</span>,
+   <span class="cm-string cm-property">"@"</span>: <span class="cm-variable">Tiger</span>,
+   <span class="cm-string cm-property">"O"</span>: <span class="cm-variable">SmartPlantEater</span>, <span class="cm-comment">// from previous exercise</span>
+   <span class="cm-string cm-property">"*"</span>: <span class="cm-variable">Plant</span>}
+));</pre>
+<div class="solution"><div class="solution-text">
+<p><a class="p_ident" id="p_JUs/FVKOo4" href="./07_elife.html#p_JUs/FVKOo4"></a>Много от същите трикове, които работиха в предното упражнение може да се приложат тук. Препоръчвам създаване на големи хищници (с много енергия) и бавно възпроизвеждане. Това ги прави по-малко уязвими за големи периоди на глад, когато тревопасните са оскъдни.</p>
+<p><a class="p_ident" id="p_za3nm9yDGX" href="./07_elife.html#p_za3nm9yDGX"></a>Оставането им живи, запазвайки източника на своята храна също жива е основната цел на хищника. Намери някакъв начин да направиш хищниците да ловуват по-агресивно, когато има много тревопасни животни и да ловуват по-бавно (или изобщо), когато плячката е рядкост. Тъй като растителните консуматори се движат на около е прост трик да се ядат само, когато и други тревопасни консуматори са наблизо, което е малко вероятно - това ще се случи толкова рядко, че хищниците ще гладуват. Но може да следите наблюденията от предишните завои в някои структури от данни, съхранени в обектите на хищниците и да базирате поведението им на това, което са видели наскоро.</p>
+</div></div>
+<nav>
+  <a href="./06_object.html" title="previous chapter">◀</a>
+  <a href="./index.html" title="cover">◆</a>
+  <a href="./08_error.html" title="next chapter">▶</a>
+</nav>
+</article>
+</body></html>

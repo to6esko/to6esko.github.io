@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<!-- saved from url=(0042)./20_node.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <title>Node.js :: Eloquent JavaScript</title>
+  <link rel="stylesheet" href="./media/codemirror.css">
+  <script src="./media/acorn_codemirror.js"></script>
+  <link rel="stylesheet" href="./media/ejs.css">
+  <script src="./media/sandbox.js"></script>
+  <script src="./media/ejs.js"></script>
+  <script>var chapNum = 20;</script>
+</head>
+
+<body><article>
+<nav>
+  <a href="./19_paint.html" title="previous chapter">◀</a>
+  <a href="./index.html" title="cover">◆</a>
+  <a href="./21_skillsharing.html" title="next chapter">▶</a>
+</nav>
+
+<h1><div class="chap_num">Глава 20</div>Node.js</h1>
+<blockquote>
+<p><a class="p_ident" id="p_+0XsOMiWpx" href="./20_node.html#p_+0XsOMiWpx"></a>Един студент попитал: ”Старите програмисти използват само прости машини и никакви програмни езици, но въпреки това те правят красиви програми. Защо ние използваме сложни машини и езици за програмиране?”. Фу-Дзъ отговорил: ”Старите строители използвали пръчки и глина, но те правели само красиви колиби.””</p>
+ <footer>Master Yuan-Ma, <cite>Книга за програмиране</cite></footer>
+</blockquote>
+<p><a class="p_ident" id="p_f4N5IT0jKt" href="./20_node.html#p_f4N5IT0jKt"></a>Досега учихме езика JavaScript и го използвахме в рамките на една среда: браузъра. В тази глава и <a href="./21_skillsharing.html#skillsharing"> следващата</a> накратко ще ви запозная с Node.js, една програма, която позволява прилагане на вашите умения с JavaScritp извън браузъра. С него може да се изгради всичко от прости инструменти за командния ред до динамични HTTP сървъри.</p>
+<p><a class="p_ident" id="p_Dt2jHJJhuW" href="./20_node.html#p_Dt2jHJJhuW"></a>Тези глави имат за цел да ви научат на важните идеи, които Node.js надгражда и да ви дадат достатъчно информация, за да напишете някои полезни програми на него. Но те не се опитват да бъдат пълни или по-задълбочени при разглеждането на Node.js.</p>
+<p><a class="p_ident" id="p_NM5XbgzOCu" href="./20_node.html#p_NM5XbgzOCu"></a>Като имате това в предвид, можете да стартирате кода от предишните глави директно на тези страници, тъй като той е суров JavaScript или е писан за браузъра, примерните кодове по тази глава са писани за Node и няма да се показват на браузъра.</p>
+<p><a class="p_ident" id="p_Bc2F03Fwki" href="./20_node.html#p_Bc2F03Fwki"></a>Ако искате да вървим заедно и да стартираме кода от тази глава, започнете като отидете на <a href="http://nodejs.org/"><em>nodejs.org</em></a> и следвайте инструкциите за инсталиране на вашата операционна система. Същото се отнася до този уеб сайт за допълнителната документация на Node и неговите вградени модули.</p>
+<h2><a class="h_ident" id="h_ZN1g/hoEn+" href="./20_node.html#h_ZN1g/hoEn+"></a>Заден  план (Background)</h2>
+<p><a class="p_ident" id="p_I4yhs5+yBu" href="./20_node.html#p_I4yhs5+yBu"></a>Един от най-трудните проблеми с писането на системи, които комуникират по мрежата е управлението на входа и изхода, тоест четенето и писането на данни към и от мрежата, на твърдия диск, както и на други подобни устройства. Местенето на данни на около отнема време и умелото планиране може да направи голяма разлика в това, колко бързо системата реагира с потребителя или на исканията на мрежата.</p>
+<p><a class="p_ident" id="p_w4Myb9Rs0P" href="./20_node.html#p_w4Myb9Rs0P"></a>Традиционият начин да се справите с входа и изхода е да има функция, като например <code>readFile</code>, която да чете файл и се връща само, когато файлът е напълно прочетен. Това се нарича синхронен <em>synchronous I/O</em> (I/O означава вход/изход).</p>
+<p><a class="p_ident" id="p_1PH8PTd2Ht" href="./20_node.html#p_1PH8PTd2Ht"></a>Node първоначално е бил замислен с цел на правене на асинхронен I/O лесно и удобно. Видяхме асинхронни интерфейси преди, като например, обекта на браузъра <code>XMLHttpRequest</code> дискутиран в <a href="./17_http.html#xmlhttprequest">Chapter 17</a>. Асинхронния интерфейс позволява на скрипта да продължи да се изпълнява, докато той си работи и призовава функция за обратно извикване, когато това е направено. Това е начинът, по който Node върши цялата работа по I/O.</p>
+<p><a class="p_ident" id="p_tBCEeUjRdi" href="./20_node.html#p_tBCEeUjRdi"></a>JavaScript се поддава добре на система, като Node. Той е един от малкото езици за програмиране, които нямат вграден начин да направите I/O. За това, JavaScript може да бъде подходящ ексцентричен подход към Node I/O, без да се стига до два несъвместими интерфейса. През 2009г., когато е бил проектиран Node, хората вече правят комуникации в браузъра, базирани на I/O, така че насочват услията си за използване на асинхронен стил на програмиране.</p>
+<h2><a class="h_ident" id="h_HH3wvnWMnd" href="./20_node.html#h_HH3wvnWMnd"></a>Asynchronicity</h2>
+<p><a class="p_ident" id="p_8dB4v8+vkP" href="./20_node.html#p_8dB4v8+vkP"></a>Ще се опитам да сравня синхронни срещу асинхронни I/O с един малък пример, когато дадена програма се нуждае от вземане на два ресурса от Интернет и след това направи няколко прости обработки с резултата.</p>
+<p><a class="p_ident" id="p_USoDXq6W5R" href="./20_node.html#p_USoDXq6W5R"></a>В синхронна среда, очевидният начин да се изпълни тази задачата е да се направят исканията едно след друго. Този метод има недостатък, че второто искане ще бъде стартирано, само след като първото е приключило. Общото време ще бъде най-малко сумата от двата отговора. Това не е ефективно използване на машината, което ще бъде най-вече празен ход, когато се предават или приемат данни през мрежата.</p>
+<p><a class="p_ident" id="p_GzbDIalJ5Y" href="./20_node.html#p_GzbDIalJ5Y"></a>Решението на този проблем със синхронната система е да се подадат допълнителни нишки за контрол. (Вижте <a href="./14_event.html#timeline">Chapter 14</a>, където обсъждахме тези теми). С втората нишка може да започне втората заявка, а след това двете заявки чакат резултата от тях да се върнат, след което те се ресинхронизират за да комбинират своите резултати.</p>
+<p><a class="p_ident" id="p_EWjYy77pGQ" href="./20_node.html#p_EWjYy77pGQ"></a>В следната диаграма, дебелите линии проследяват времето, през което програмата работи нормално, а тънките линии представят времето за изчакване на I/O. В синхронен модел, времето необходимо за I/O е част от времевата линия за дадена тема на контрол. В асинхронния модел, със самото започване на I/O действията, концептуално се предизвиква разцепване в линията на времето. Нишката, която инициализира I/O продължава да работи и самото I/O се извършва заедно с нея, накрая се извиква функцията за обратно извикване, когато тя е завършена.</p>
+<div class="image">
+  <img src="./media/control-io.svg" alt="Control flow for synchronous and asynchronous I/O">
+</div>
+<p><a class="p_ident" id="p_RmZacjuEJP" href="./20_node.html#p_RmZacjuEJP"></a>Друг начин за изразяване на тази разлика е, че очакването на I/O да завърши е заложено в синхронния модел, макар и да е ясно, че е директно под наш контрол в асинхронен такъв. Но асинхронния модел е нож с две остриета. Това прави изразяващите програми, които не се вместват в линейния модел на контрол по-лесни, но също така прави изразяването на програми, които следват правата линия, по-неудобни.</p>
+<p><a class="p_ident" id="p_OojnwsVJab" href="./20_node.html#p_OojnwsVJab"></a>В <a href="./17_http.html#promises">Глава 17</a> засегнахме факта, че тези обратни извиквания добавят доста околен шум към програмата. Дали асинхронния стил е добра идея, като цяло може да се дискутира. Във всеки случай това отнема известно привикване. </p>
+<p><a class="p_ident" id="p_rvRV3gJ7Vm" href="./20_node.html#p_rvRV3gJ7Vm"></a>Но за JavaScript-базирана система, бих казал, че обратно извикващия асинхронен стил е разумен избор. Една от силните страни на JavaScript е неговата простота и опита да добавим няколко нишки на контрол към него, ще добави много сложност. Въпреки, че обратните връщания имат тенденцията да доведат до прост код, като концепция, те са приятно прости но достатъчно мощни за да напишем високо производителен сървър.</p>
+<h2><a class="h_ident" id="h_TUzbi7lU/0" href="./20_node.html#h_TUzbi7lU/0"></a>Node  команди</h2>
+<p><a class="p_ident" id="p_rE0vPeaAdk" href="./20_node.html#p_rE0vPeaAdk"></a>Когато Node.js се инсталира на системата, той осигурява програма наречена <code>node</code>, която позволява стартиране на JavaScript файлове. Да речем, че имаме файл <code>hello.js</code> съдържащ този код.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_16ybTW1fnG" href="./20_node.html#c_16ybTW1fnG"></a><span class="cm-keyword">var</span> <span class="cm-variable">message</span> <span class="cm-operator">=</span> <span class="cm-string">"Hello world"</span>;
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">message</span>);</pre>
+<p><a class="p_ident" id="p_AQLpVQwSlg" href="./20_node.html#p_AQLpVQwSlg"></a>После можем да стартираме <code>node</code> от командния ред, подобно на изпълнението на програмата:</p>
+<pre>$ node hello.js
+Hello world</pre>
+<p><a class="p_ident" id="p_4itSQ4XQYe" href="./20_node.html#p_4itSQ4XQYe"></a>Метода <code>console.log</code> в Node прави нещо подобно на това, което прави в браузъра. Той отпечатва част от текст. Но в Node текста ще отиде в процеса на стандартния изходен поток, а не в JavaScript конзолата на браузъра.</p>
+<p><a class="p_ident" id="p_0xbG1KLur9" href="./20_node.html#p_0xbG1KLur9"></a>Ако стартираме <code>node</code> без да му дадем файл, той предоставя команден ред (<em>prompt</em>), в който можем да въведем директно код на JavaScript и веднага да видим резултата.</p>
+<pre>$ node
+&gt; 1 + 1
+2
+&gt; [-1, -2, -3].map(Math.abs)
+[1, 2, 3]
+&gt; process.exit(0)
+$</pre>
+<p><a class="p_ident" id="p_HtWWK8Hi6k" href="./20_node.html#p_HtWWK8Hi6k"></a>Променливата <code>process</code>, точно както <code>console</code> променливата е на разположение в глобален мащаб през Node. Тя предоставя различни начини за преглеждане и манипулиране на текущата програма. Метода <code>exit</code> завършва процеса и прилага код със статут на излизане, което казва на програмата стартирана в <code>node</code> (в този случай обвивката на командния ред) дали е приключила успешно (код  0) или е възникнала грешка (всеки друг код).</p>
+<p><a class="p_ident" id="p_r76dNN6hR1" href="./20_node.html#p_r76dNN6hR1"></a>За да видите аргументите от командния ред дадени за вашия скрипт, можете да прочетете <code>process.argv</code>, което е масив от strings. Имайте в предвид, те включват името на <code>node</code>командите и името на вашия скрипт, така че действителните аргументи започват с индекс 2. Ако <code>showargv.js</code> просто съдържа твърдение <code>console.log(process.argv)</code> можете да го използвате така:</p>
+<pre>$ node showargv.js one --and two
+["node", "/home/marijn/showargv.js", "one", "--and", "two"]</pre>
+<p><a class="p_ident" id="p_sAXeLpUyyx" href="./20_node.html#p_sAXeLpUyyx"></a>Всички стандартни JavaScript глобални променливи, като <code>Array</code>, <code>Math</code> и <code>JSON</code> също присъстват в околната среда на Node. Свързаните с функционалноста на браузъра, като например, <code>document</code> и <code>alert</code> отсъства</p>
+<p><a class="p_ident" id="p_ZyBIfWzBLo" href="./20_node.html#p_ZyBIfWzBLo"></a>Глобалния обхват на обект, който се нарича <code>window</code> в браузъра, има по-разумното име <code>global</code> в Node.</p>
+<h2><a class="h_ident" id="h_BOlGLA/wK7" href="./20_node.html#h_BOlGLA/wK7"></a>Модули</h2>
+<p><a class="p_ident" id="p_kjExgCix3i" href="./20_node.html#p_kjExgCix3i"></a>Извън променливите, които споменахме, като <code>console</code> и <code>process</code> Node предоставя малка функционалност в глобалния обхват. Ако искате да получите достъп до други вградени функции, трябва питате модулната система за тях.</p>
+<p><a class="p_ident" id="p_hr2Rgijb8q" href="./20_node.html#p_hr2Rgijb8q"></a>Модул системата CommonJS се основава на <code>require</code> функцията описана в <a href="./10_modules.html#commonjs">Глава 10</a>. Тази система е вградена в Node и се използва за да зареди нещо от вградените модули на изтеглени библиотеки с файлове, като част от вашата собствена програма.</p>
+<p><a class="p_ident" id="p_XAhBxX8ROy" href="./20_node.html#p_XAhBxX8ROy"></a> Когато се извиква <code>require</code>, Node трябва да определи от дадената поредица от strings, действителния файл и да го зареди. Пътища и файлове, които започват с <code>"/"</code>, <code>"./"</code> или <code>"../"</code> са определени в сравнение с пътя на текущия модул, където <code>"./"</code> означава текущата директория, <code>"../"</code> една директория нагоре и <code>"/"</code> корена на файловата система. Така че, ако попитам за <code>"./world/world"</code> от файловете на <code>/home/marijn/elife/run.js</code>, Node ще се опита да зареди файловете на <code>/home/marijn/elife/world/world.js</code>. Разширението <code>.js</code> може да се пропусне.</p>
+<p><a class="p_ident" id="p_Jbv0K2DaVF" href="./20_node.html#p_Jbv0K2DaVF"></a>Когато <em>string</em>, които не изглежда, като относителен или абсолютен път се подаден на <code>require</code>, се предполага, че се отнася към вграден модул или модул инсталиран в <code>node_modules</code> директорията. Така например, <code>require("fs")</code> ще ни даде вградена модулна файлова система на Node, а <code>require("elife")</code> ще опита да зареди библиотека, която се намира в <code>node_modules/elife/</code>. Един общ начин за инсталиране на библиотеки е с помощта на NPM, който ще обсъдим по-късно.</p>
+<p><a class="p_ident" id="p_5Ya065Hb/J" href="./20_node.html#p_5Ya065Hb/J"></a>За да илюстрираме използването на <code>require</code>, нека създадем прост проект състоящ се от два файла. Първият се нарича <code>main.js</code>, който дефинира скрипт, който може да се изпълни от командния ред подобно на <em>string</em>.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_rkHXpmNdaU" href="./20_node.html#c_rkHXpmNdaU"></a><span class="cm-keyword">var</span> <span class="cm-variable">garble</span> <span class="cm-operator">=</span> <span class="cm-variable">require</span>(<span class="cm-string">"./garble"</span>);
+
+<span class="cm-comment">// Index 2 holds the first actual command-line argument</span>
+<span class="cm-keyword">var</span> <span class="cm-variable">argument</span> <span class="cm-operator">=</span> <span class="cm-variable">process</span>.<span class="cm-property">argv</span>[<span class="cm-number">2</span>];
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">garble</span>(<span class="cm-variable">argument</span>));</pre>
+<p><a class="p_ident" id="p_2+5gg4XOlc" href="./20_node.html#p_2+5gg4XOlc"></a>Файла <code>garble.js</code> определя библиотеката за <em>grabling strings</em>, които могат да се използват, както от инструмента за командния ред определен по-рано, така и от други скриптове, които се нуждаят от директен достъп до функцията <em>grabling</em>. </p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_a8fT57BaBu" href="./20_node.html#c_a8fT57BaBu"></a><span class="cm-keyword">module</span>.<span class="cm-variable">exports</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">string</span>) {
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">string</span>.<span class="cm-property">split</span>(<span class="cm-string">""</span>).<span class="cm-property">map</span>(<span class="cm-keyword">function</span>(<span class="cm-def">ch</span>) {
+    <span class="cm-keyword">return</span> <span class="cm-variable">String</span>.<span class="cm-property">fromCharCode</span>(<span class="cm-variable-2">ch</span>.<span class="cm-property">charCodeAt</span>(<span class="cm-number">0</span>) <span class="cm-operator">+</span> <span class="cm-number">5</span>);
+  }).<span class="cm-property">join</span>(<span class="cm-string">""</span>);
+};</pre>
+<p><a class="p_ident" id="p_1wgmE+Q4Cz" href="./20_node.html#p_1wgmE+Q4Cz"></a>Не забравяйте, че замяната на <code>module.exports</code>, а не добавяне на свойства в него ни позволява да изнасяме конкретна стойност от един модул. В този случай, ние правим резултат от изискването от нашия <code>garble</code> файл на самия <em>grabling</em>.</p>
+<p><a class="p_ident" id="p_DqwnM9koUR" href="./20_node.html#p_DqwnM9koUR"></a>Функцията разделя <em>string</em> на единични характери разделени от празен <em>string</em> и след това заменя всеки характер със символ чиито код е пет пункта по-висок. Накрая ги свързва в резултата обратно в <em>string</em>.</p>
+<p><a class="p_ident" id="p_S/nc4v84fJ" href="./20_node.html#p_S/nc4v84fJ"></a>Сега можем да извикаме нашия инструмент, подобен на този:</p>
+<pre>$ node main.js JavaScript
+Of{fXhwnuy</pre>
+<h2><a class="h_ident" id="h_J6hW/SmL/a" href="./20_node.html#h_J6hW/SmL/a"></a>Инсталиране  с  NPM</h2>
+<p><a class="p_ident" id="p_hIPO+3mmLK" href="./20_node.html#p_hIPO+3mmLK"></a>NPM, който е споменат на кратко в <a href="./10_modules.html#modules_npm">Глава 10</a> е онлайн хранилище на модули за JavaScript, много от които са специално написани за Node. Когато инсталирате Node  на вашия компютър, също получавате и една програма наречена <code>npm</code>, която представлява удобен интерфейс за това хранилище.</p>
+<p><a class="p_ident" id="p_vVKwgEFDXW" href="./20_node.html#p_vVKwgEFDXW"></a>Например, един модул, който ще намерите на NPM е <code>figlet</code>, който може да конвертира текст в <em>ASCII apm-drawings </em> направен от текстови символи. Следната транскрипция показва как да го инсталирате и ползвате.</p>
+<pre>$ npm install figlet
+npm GET https://registry.npmjs.org/figlet
+npm 200 https://registry.npmjs.org/figlet
+npm GET https://registry.npmjs.org/figlet/-/figlet-1.0.9.tgz
+npm 200 https://registry.npmjs.org/figlet/-/figlet-1.0.9.tgz
+figlet@1.0.9 node_modules/figlet
+$ node
+&gt; var figlet = require("figlet");
+&gt; figlet.text("Hello world!", function(error, data) {
+    if (error)
+      console.error(error);
+    else
+      console.log(data);
+  });
+  _   _      _ _                            _     _ _
+ | | | | ___| | | ___   __      _____  _ __| | __| | |
+ | |_| |/ _ \ | |/ _ \  \ \ /\ / / _ \| '__| |/ _` | |
+ |  _  |  __/ | | (_) |  \ V  V / (_) | |  | | (_| |_|
+ |_| |_|\___|_|_|\___/    \_/\_/ \___/|_|  |_|\__,_(_)</pre>
+<p><a class="p_ident" id="p_az5okEiggC" href="./20_node.html#p_az5okEiggC"></a>След стартирането на <code>npm install</code>, NPM ще създаде директория, наречена <code>node_modules</code>. Вътре в тази директория ще бъде <code>figlet</code> директорията, която съдържа библиотеката. Когато стартираме <code>node</code> и извикаме <code>require("figlet")</code> тази библиотека се зарежда и ние можем да използваме своя <code>text</code> метод, за да начертае няколко големи букви.</p>
+<p><a class="p_ident" id="p_JoI06XJ/Qi" href="./20_node.html#p_JoI06XJ/Qi"></a>Донякъде неочаквано, вместо просто да върне <em>string</em> с направените големи букви, <code>figlet.text</code> взема функция с обратно извикване, на която подава своя резултат. Той също така подава аргумент за обратно извикване към <code>error</code>, който държи обекта за грешка, ако нещо се обърка или нула ако всичко е наред</p>
+<p><a class="p_ident" id="p_wAmsyRKxO8" href="./20_node.html#p_wAmsyRKxO8"></a>Това е често срещан модел на код в Node. Представяне на нещо с <code>figlet</code> изисква библиотеката да чете даден файл, който съдържа писмо от фигури. Четенето на такъв файл от диска е асинхронна работа в Node, така че <code>figlet.text</code> не може веднага да върне своя резултат. Asynchronicity е инфекциозен по начин, по който всяка функция, която извиква асинхронна функция, трябва да превърне себе си в асинхронна функция.</p>
+<p><a class="p_ident" id="p_a6yOLG4/+I" href="./20_node.html#p_a6yOLG4/+I"></a>Има много повече неща за NPM, от колкото за <code>npm install</code>. Той чете <code>package.json</code> файлове, които съдържат JSON-кодирана информация за дадена програма или библиотека, като например, от кои други библиотеки зависи. Правейки <code>npm install</code> в директорията, която съдържа такъв файл, автоматично ще инсталира всички зависимости, както и техните зависимости. Инструмента The <code>npm</code> се използва също и за публикуване на библиотеки (онлайн хранилища) пакети NPM, така че други хора да ги намерят, изтеглят и използват.</p>
+<p><a class="p_ident" id="p_hiqvsm4s1n" href="./20_node.html#p_hiqvsm4s1n"></a>Тази книга няма да рови по-нататък в подробности за използването на NPM. Обърнете се към <a href="http://npmjs.org/"><em>npmjs.org</em></a> за допълнителна документация и лесен начин за търсене на библиотеки.</p>
+<h2><a class="h_ident" id="h_o2abiQU0TD" href="./20_node.html#h_o2abiQU0TD"></a>Модул  на  файловата  система</h2>
+<p><a class="p_ident" id="p_HumHNRQKJx" href="./20_node.html#p_HumHNRQKJx"></a>Един от най-често използваните вградени модули, които идват с Node e модула <code>"fs"</code>, което е съкращение на файлова система. Този модул осигурява функции за работа с файлове и директории.</p>
+<p><a class="p_ident" id="p_OWX791kITh" href="./20_node.html#p_OWX791kITh"></a>Например, има функция наречена <code>readFile</code>, която чете файл и след това се извиква обратно с файловото съдържание.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_hFwzxo7309" href="./20_node.html#c_hFwzxo7309"></a><span class="cm-keyword">var</span> <span class="cm-variable">fs</span> <span class="cm-operator">=</span> <span class="cm-variable">require</span>(<span class="cm-string">"fs"</span>);
+<span class="cm-variable">fs</span>.<span class="cm-property">readFile</span>(<span class="cm-string">"file.txt"</span>, <span class="cm-string">"utf8"</span>, <span class="cm-keyword">function</span>(<span class="cm-def">error</span>, <span class="cm-def">text</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">error</span>)
+    <span class="cm-keyword">throw</span> <span class="cm-variable-2">error</span>;
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"The file contained:"</span>, <span class="cm-variable-2">text</span>);
+});</pre>
+<p><a class="p_ident" id="p_kiSsXyNElK" href="./20_node.html#p_kiSsXyNElK"></a>Вторият аргумент на <code>readFile</code> посочва кодовата таблица, използвана от <em>character encoding</em> за декодиране на файла в <em>string</em>. Има няколко начина, по който текст може да бъде кодиран в бинарни данни, но повечето съвременни системи използват UTF-8 за да кодират текст, така че ако нямате причини да смятате, че се използва друго кодиране, подаването на <code>"utf8"</code> при четене на текстов файл е безопасен залог. Ако не се поддават на кодиране, Node ще приеме, че се интересувате от бинарни данни и ще ви даде <code>Buffer</code> обект вместо <em>string</em>. Това е масиво-подобен обект, който съдържа числа представящи байтовете във файла. </p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_cJxc+loE7w" href="./20_node.html#c_cJxc+loE7w"></a><span class="cm-keyword">var</span> <span class="cm-variable">fs</span> <span class="cm-operator">=</span> <span class="cm-variable">require</span>(<span class="cm-string">"fs"</span>);
+<span class="cm-variable">fs</span>.<span class="cm-property">readFile</span>(<span class="cm-string">"file.txt"</span>, <span class="cm-keyword">function</span>(<span class="cm-def">error</span>, <span class="cm-def">buffer</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">error</span>)
+    <span class="cm-keyword">throw</span> <span class="cm-variable-2">error</span>;
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"The file contained"</span>, <span class="cm-variable-2">buffer</span>.<span class="cm-property">length</span>, <span class="cm-string">"bytes."</span>,
+              <span class="cm-string">"The first byte is:"</span>, <span class="cm-variable-2">buffer</span>[<span class="cm-number">0</span>]);
+});</pre>
+<p><a class="p_ident" id="p_2eNWgxdLGx" href="./20_node.html#p_2eNWgxdLGx"></a>Подобна функция <code>writeFile</code> се използва за да запишете файла на диск. </p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_qKm9fANymd" href="./20_node.html#c_qKm9fANymd"></a><span class="cm-keyword">var</span> <span class="cm-variable">fs</span> <span class="cm-operator">=</span> <span class="cm-variable">require</span>(<span class="cm-string">"fs"</span>);
+<span class="cm-variable">fs</span>.<span class="cm-property">writeFile</span>(<span class="cm-string">"graffiti.txt"</span>, <span class="cm-string">"Node was here"</span>, <span class="cm-keyword">function</span>(<span class="cm-def">err</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">err</span>)
+    <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"Failed to write file:"</span>, <span class="cm-variable-2">err</span>);
+  <span class="cm-keyword">else</span>
+    <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"File written."</span>);
+});</pre>
+<p><a class="p_ident" id="p_rDd4gjDwV6" href="./20_node.html#p_rDd4gjDwV6"></a>Тук не е необходимо да се уточни кодирането, тъй като <code>writeFile</code> ще предположи, че ако е даден <em>string</em> за запис, а не <code>Buffer</code> обект, той трябва да го запише, като текст, използвайки своя стандартен характер за кодиране, който е UTF-8.</p>
+<p><a class="p_ident" id="p_wbabMpBtqE" href="./20_node.html#p_wbabMpBtqE"></a>Модулът <code>"fs"</code> съдъръжа много други полезни функции: <code>readdir</code> връща файловете в директорията, като масив от <em>strings</em>, <code>stat</code>, извлича информация за даден файл, <code>rename</code> преименува файл, <code>unlink</code> премахва файл и т.н. Вижте документацията на <a href="http://nodejs.org/"><em>nodejs.org</em></a> за конкретен случай.</p>
+<p><a class="p_ident" id="p_yy7JT9M6b9" href="./20_node.html#p_yy7JT9M6b9"></a>Много от функциите в <code>"fs"</code>идват с двата варианта: синхронен и асинхронен. Например, това е синхронна версия на <code>readFile</code> наречена <code>readFileSync</code>.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_94I+ezgEnX" href="./20_node.html#c_94I+ezgEnX"></a><span class="cm-keyword">var</span> <span class="cm-variable">fs</span> <span class="cm-operator">=</span> <span class="cm-variable">require</span>(<span class="cm-string">"fs"</span>);
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">fs</span>.<span class="cm-property">readFileSync</span>(<span class="cm-string">"file.txt"</span>, <span class="cm-string">"utf8"</span>));</pre>
+<p><a class="p_ident" id="p_eKCxvkAVwC" href="./20_node.html#p_eKCxvkAVwC"></a>Синхронните функции изискват по-малко приготовления за употреба и могат да бъдат полезни в прости скриптове, където допълнителната скорост предоставена от асинхронен  I/O е без значение. Но имайте в предвид, че въпреки малкото синхронна работа, която се извършва, вашата програма ще бъде изцяло спряна. Ако трябва да се отговори на потребител или на други машини в мрежата, задържането на синхронно I/O може да произведе досадни забавяния.</p>
+<h2><a class="h_ident" id="h_3O5dGIJE9F" href="./20_node.html#h_3O5dGIJE9F"></a>HTTP  модул</h2>
+<p><a class="p_ident" id="p_jzBrRTKIgP" href="./20_node.html#p_jzBrRTKIgP"></a>Друг централен модул се нарича <code>"http"</code>. Той предоставя функционалност за работа с HTTP сървъри и вземане на HTTP заявки.</p>
+<p><a class="p_ident" id="p_vo1yvZzETN" href="./20_node.html#p_vo1yvZzETN"></a>Това е всичко необходимо, за да започнем с един прост HTTP сървър.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_xKC7K4AOy1" href="./20_node.html#c_xKC7K4AOy1"></a><span class="cm-keyword">var</span> <span class="cm-variable">http</span> <span class="cm-operator">=</span> <span class="cm-variable">require</span>(<span class="cm-string">"http"</span>);
+<span class="cm-keyword">var</span> <span class="cm-variable">server</span> <span class="cm-operator">=</span> <span class="cm-variable">http</span>.<span class="cm-property">createServer</span>(<span class="cm-keyword">function</span>(<span class="cm-def">request</span>, <span class="cm-def">response</span>) {
+  <span class="cm-variable-2">response</span>.<span class="cm-property">writeHead</span>(<span class="cm-number">200</span>, {<span class="cm-string cm-property">"Content-Type"</span>: <span class="cm-string">"text/html"</span>});
+  <span class="cm-variable-2">response</span>.<span class="cm-property">write</span>(<span class="cm-string">"&lt;h1&gt;Hello!&lt;/h1&gt;&lt;p&gt;You asked for &lt;code&gt;"</span> <span class="cm-operator">+</span>
+                 <span class="cm-variable-2">request</span>.<span class="cm-property">url</span> <span class="cm-operator">+</span> <span class="cm-string">"&lt;/code&gt;&lt;/p&gt;"</span>);
+  <span class="cm-variable-2">response</span>.<span class="cm-property">end</span>();
+});
+<span class="cm-variable">server</span>.<span class="cm-property">listen</span>(<span class="cm-number">8000</span>);</pre>
+<p><a class="p_ident" id="p_aWcDaGah2b" href="./20_node.html#p_aWcDaGah2b"></a>Ако пуснете този скрипт на собствената си машина, можете да го посочите на вашия уеб браузър с <a href="http://localhost:8000/hello"><em>http://localhost:8000/hello</em></a>  за да направи искане към вашия сървър. Той ще отговори с малка HTML страница.</p>
+<p><a class="p_ident" id="p_ZiHH2p8YG0" href="./20_node.html#p_ZiHH2p8YG0"></a>Функцията се подава, като аргумент на <code>createServer</code> и се извиква всеки път, когато клиента се опитва да се свърже със сървъра. Променливите <code>request</code> и <code>response</code> response са обекти представляващи входящите и изходящите данни. Първият съдържа информация за искането, като негово <code>url</code> свойство, с което казва каква URL заявка иска да направи.</p>
+<p><a class="p_ident" id="p_eHNvwd3lFU" href="./20_node.html#p_eHNvwd3lFU"></a>За да изпратите нещо обратно, трябва да извикате методи за <code>response</code> обекта. Първият <code>writeHead</code> ще напише заглавието на отговора (виж <a href="./17_http.html#headers">Глава 17</a>). Можем да му дадем кода за състоянието (200 за случай на “OK”) и обект който съдържа стойностите на заглавието. Тука трябва да кажем на клиента, че ще извикаме обратно HTML документ.</p>
+<p><a class="p_ident" id="p_AVzTSVzXSM" href="./20_node.html#p_AVzTSVzXSM"></a>На следващо място, действителното тяло на отговора (самия документ) е изпратено с <code>response.write</code>. Вие имате право да извиквате този метод няколко пъти, ако искате да изпратите отговора парче по парче, вероятно докато потока с данни на клиента станат налични. И накрая <code>response.end</code> сигнализира за края на отговора.</p>
+<p><a class="p_ident" id="p_dETBrQIlAE" href="./20_node.html#p_dETBrQIlAE"></a>Извикването на <code>server.listen</code>, казва на сървъра да започне да чака връзка на порт 8000. Това е причината, поради която трябва да се свържем с <em>localhost:8000</em>, а не само с <em>localhost</em> (което по подразбиране е порт 80), за да направим връзка с този сървър.</p>
+<p><a class="p_ident" id="p_IwS00NKPKg" href="./20_node.html#p_IwS00NKPKg"></a>За да спрем използването на Node скрипта, подобно на този който не завършва автоматично в очакване на по нататъшни събития (в този случай мрежовата връзка) натискаме Ctrl-C.</p>
+<p><a class="p_ident" id="p_7qMlOUUlqm" href="./20_node.html#p_7qMlOUUlqm"></a>Един истински уеб сървър обикновено е по-голям от този в предишния пример, той разглежда метода на искането (свойствата на метода) за да разбере, какви действия се опитва да изпълни клиента и искането на URL за да намери, с кой ресурс да извърши това действие. Ще разгледаме по напреднал сървър <a href="./20_node.html#file_server">по-късно в тази глава.</a>.</p>
+<p><a class="p_ident" id="p_xP0LenM1Z0" href="./20_node.html#p_xP0LenM1Z0"></a>За да действа, като HTTP клиент можем да използваме <code>request</code> функция в <code>"http"</code> модула.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_Um4/fGC2Lq" href="./20_node.html#c_Um4/fGC2Lq"></a><span class="cm-keyword">var</span> <span class="cm-variable">http</span> <span class="cm-operator">=</span> <span class="cm-variable">require</span>(<span class="cm-string">"http"</span>);
+<span class="cm-keyword">var</span> <span class="cm-variable">request</span> <span class="cm-operator">=</span> <span class="cm-variable">http</span>.<span class="cm-property">request</span>({
+  <span class="cm-property">hostname</span>: <span class="cm-string">"eloquentjavascript.net"</span>,
+  <span class="cm-property">path</span>: <span class="cm-string">"/20_node.html"</span>,
+  <span class="cm-property">method</span>: <span class="cm-string">"GET"</span>,
+  <span class="cm-property">headers</span>: {<span class="cm-property">Accept</span>: <span class="cm-string">"text/html"</span>}
+}, <span class="cm-keyword">function</span>(<span class="cm-def">response</span>) {
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"Server responded with status code"</span>,
+              <span class="cm-variable-2">response</span>.<span class="cm-property">statusCode</span>);
+});
+<span class="cm-variable">request</span>.<span class="cm-property">end</span>();</pre>
+<p><a class="p_ident" id="p_3osXgsZbhQ" href="./20_node.html#p_3osXgsZbhQ"></a>Първият аргумент на <code>request</code> конфигурира искането, казва на Node с кой сървър да говори, какъв е пътя на искането до този сървър, кой метод да използва и т.н. Вторият аргумент е функция, която трябва да се извика, когато се получи отговор. На нея и е даден обект, който ни позволява да се запознаем с отговора, например, да разберем кода на статуса.</p>
+<p><a class="p_ident" id="p_9OfV0SuhAH" href="./20_node.html#p_9OfV0SuhAH"></a>Точно, както в <code>response</code> object
+we saw in the server, the object returned by <code>request</code> обекта, който видяхме на сървъра, обекта връща със заявката разрешение за потока данни в искането с <code>write</code> метод и завършва искането с <code>end</code> метод. Примерът не използва <code>write</code>, защото <code>GET</code> заявката не трябва да съдържа данни в тялото на искането.</p>
+<p><a class="p_ident" id="p_W+uNSMgm+u" href="./20_node.html#p_W+uNSMgm+u"></a>За да направим искане за защитени  HTTP (HTTPS) URL адреси, Node осигурява пакет, наречен <code>https</code>, който съдържа своя собствена <code>request</code> функция, подобно на <code>http.request</code>.</p>
+<h2><a class="h_ident" id="h_dJhdomfGgD" href="./20_node.html#h_dJhdomfGgD"></a>Потоци</h2>
+<p><a class="p_ident" id="p_hrW+qFyIS0" href="./20_node.html#p_hrW+qFyIS0"></a>Видяхме два примера на записващи потоци в HTTP-примерите, а именно обекта на отговор, в който сървъра може да пише и обекта за искане, който се връща от <code>http.request</code>.</p>
+<p><a class="p_ident" id="p_8sFjBmKCWT" href="./20_node.html#p_8sFjBmKCWT"></a>Записващите  потоци представляват  широко използвана концепция в интерфейса на Node. Всички записващи потоци имат <code>write</code> метод, който може да бъде прехвърлен на <em>string</em> или <code>Buffer</code> обект. Техния <code>end</code> метод затваря потока и ако му се даде аргумент, той също ще запише част от данните преди да го направи. И двата метода могат да приемат <em>callback</em>, като първи аргумент, който ще се извика, когато писането или затварянето на потока приключи.</p>
+<p><a class="p_ident" id="p_CL0ZXsd83G" href="./20_node.html#p_CL0ZXsd83G"></a>Възможно е да се създаде записваем поток, който сочи към файл с функцията <code>fs.createWriteStream</code>. След това можете да използвате <code>write</code> метода за запис върху получения обект, за да напишете едно парче файл в даден момент, а не в един изстрел, както с <code>fs.writeFile</code>.</p>
+<p><a class="p_ident" id="p_93VQIHGgFt" href="./20_node.html#p_93VQIHGgFt"></a>Четимите потоци са малко по-ангажиращи. И двете променливи: променливата на <code>request</code> искането, което се подава на функцията за обратно повикване на сървъра HTTP и променливата на <code>response</code> отговора подадена към клиента на HTTP са четими потоци. (Сървърът прочита заявката и след това пише отговорите, като има в предвид, че клиента първо пише искането и след това чете отговора.) Четене на поток се извършва с помощта на манипулатор на събитие, а не на методи.</p>
+<p><a class="p_ident" id="p_CaPkx6i5f+" href="./20_node.html#p_CaPkx6i5f+"></a>Обектите, които излъчват събития в Node имат метод наречен <code>on</code>, който е подобен на <code>addEventListener</code> метода в браузъра. Можете да му дадете име на събитие и след това функция и ще регистрира тази функция за да бъде призована винаги, когато настъпи даденото събитие.</p>
+<p><a class="p_ident" id="p_J1cQlNGHLA" href="./20_node.html#p_J1cQlNGHLA"></a>Четимите потоци имат <code>"data"</code> и
+<code>"end"</code> събития. Ефекта на първото се изпълнява всеки път, когато идват някакви данни, а второто се извиква, когато потока е в своя край. Този модел е най-подходящ за streaming (потоци) данни, които могат да се обработват веднага, дори ако целия документ не е на разположение. Файлът може да се чете, като четим поток с помощта на <code>fs.createReadStream</code> функцията.</p>
+<p><a class="p_ident" id="p_/VIRSW4CKl" href="./20_node.html#p_/VIRSW4CKl"></a>Следният код създава сървър, който чете тялото на заявката и го излъчва обратно на клиента, като текст от главни букви. </p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_YaTNnAfypQ" href="./20_node.html#c_YaTNnAfypQ"></a><span class="cm-keyword">var</span> <span class="cm-variable">http</span> <span class="cm-operator">=</span> <span class="cm-variable">require</span>(<span class="cm-string">"http"</span>);
+<span class="cm-variable">http</span>.<span class="cm-property">createServer</span>(<span class="cm-keyword">function</span>(<span class="cm-def">request</span>, <span class="cm-def">response</span>) {
+  <span class="cm-variable-2">response</span>.<span class="cm-property">writeHead</span>(<span class="cm-number">200</span>, {<span class="cm-string cm-property">"Content-Type"</span>: <span class="cm-string">"text/plain"</span>});
+  <span class="cm-variable-2">request</span>.<span class="cm-property">on</span>(<span class="cm-string">"data"</span>, <span class="cm-keyword">function</span>(<span class="cm-def">chunk</span>) {
+    <span class="cm-variable-2">response</span>.<span class="cm-property">write</span>(<span class="cm-variable-2">chunk</span>.<span class="cm-property">toString</span>().<span class="cm-property">toUpperCase</span>());
+  });
+  <span class="cm-variable-2">request</span>.<span class="cm-property">on</span>(<span class="cm-string">"end"</span>, <span class="cm-keyword">function</span>() {
+    <span class="cm-variable-2">response</span>.<span class="cm-property">end</span>();
+  });
+}).<span class="cm-property">listen</span>(<span class="cm-number">8000</span>);</pre>
+<p><a class="p_ident" id="p_m3l1M7epAY" href="./20_node.html#p_m3l1M7epAY"></a>Променливата <code>chunk</code> се подава към манипулатора на данни, който е бинарен <code>Buffer</code>, с който можем да конвертираме в <em>string</em>, като извикаме <code>toString</code> върху него, който ще декодираме с помощта на кодировката по подразбиране UTF-8.</p>
+<p><a class="p_ident" id="p_6S1XXBZo7w" href="./20_node.html#p_6S1XXBZo7w"></a>Следващото парче от код, ако се пусне докато горния сървър работи, ще изпрати искане към този сървър и ще напише отговора, който получава.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_r1xiO57n8j" href="./20_node.html#c_r1xiO57n8j"></a><span class="cm-keyword">var</span> <span class="cm-variable">http</span> <span class="cm-operator">=</span> <span class="cm-variable">require</span>(<span class="cm-string">"http"</span>);
+<span class="cm-keyword">var</span> <span class="cm-variable">request</span> <span class="cm-operator">=</span> <span class="cm-variable">http</span>.<span class="cm-property">request</span>({
+  <span class="cm-property">hostname</span>: <span class="cm-string">"localhost"</span>,
+  <span class="cm-property">port</span>: <span class="cm-number">8000</span>,
+  <span class="cm-property">method</span>: <span class="cm-string">"POST"</span>
+}, <span class="cm-keyword">function</span>(<span class="cm-def">response</span>) {
+  <span class="cm-variable-2">response</span>.<span class="cm-property">on</span>(<span class="cm-string">"data"</span>, <span class="cm-keyword">function</span>(<span class="cm-def">chunk</span>) {
+    <span class="cm-variable">process</span>.<span class="cm-property">stdout</span>.<span class="cm-property">write</span>(<span class="cm-variable-2">chunk</span>.<span class="cm-property">toString</span>());
+  });
+});
+<span class="cm-variable">request</span>.<span class="cm-property">end</span>(<span class="cm-string">"Hello server"</span>);</pre>
+<p><a class="p_ident" id="p_H/08BRdstu" href="./20_node.html#p_H/08BRdstu"></a>Примерът пише <code>process.stdout</code> (стандартен изход на <em>process</em>, като записващ поток), вместо да използва <code>console.log</code>. ние не можем да използваме <code>console.log</code>, защото добавя допълнителен символ за нов ред след всяка част от текста, който пише, което не е подходящо тука.</p>
+<h2 id="file_server"><a class="h_ident" id="h_LvXChBt2KP" href="./20_node.html#h_LvXChBt2KP"></a>Един  прост  файлов  сървър</h2>
+<p><a class="p_ident" id="p_TeWTnqNsas" href="./20_node.html#p_TeWTnqNsas"></a>Нека да комбинираме нашите новооткрити знания за HTTP сървъри и поговорим с файловата система да създаде мост между тях: един HTTP сървър, който да позволява отдалечен достъп до файловата система. Такива сървъри имат много приложения. Те позволяват на уеб приложения да съхраняват и обменят данни или позволяват на една група от хора да споделят достъпа до един куп файлове.</p>
+<p><a class="p_ident" id="p_Pu9mO8Vutb" href="./20_node.html#p_Pu9mO8Vutb"></a>Когато третираме файлове, като HTTP  ресурси, методите на HTTP- <code>GET</code>, <code>PUT</code> и <code>DELETE</code> могат съответно да се използват за четене, писане и изтриване на файлове. Ние ще интерпретираме пътя в заявката, като път на файл, така че искането да се отнася до него.</p>
+<p><a class="p_ident" id="p_hv9uP+YLeb" href="./20_node.html#p_hv9uP+YLeb"></a>Вероятно не искаме да споделим цялата си файлова система, така че ще интерпретираме тези пътеки, като изходна работна директория на сървъра <code>/home/marijn/public/</code> (или <code>C:\Users\marijn\public\</code> на Windows), после искането за <code>/file.txt</code> следва да се отнася до <code>/home/marijn/public/file.txt</code> (или <code>C:\Users\marijn\public\file.txt</code>).</p>
+<p><a class="p_ident" id="p_laeh/qV5fJ" href="./20_node.html#p_laeh/qV5fJ"></a>Ние ще изградим парче по парче програма, с помощта на един обект, наречен <code>methods</code> за съхраняване на функциите, които се занимават с различните методи на HTTP.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_ANpQku2uoD" href="./20_node.html#c_ANpQku2uoD"></a><span class="cm-keyword">var</span> <span class="cm-variable">http</span> <span class="cm-operator">=</span> <span class="cm-variable">require</span>(<span class="cm-string">"http"</span>), <span class="cm-variable">fs</span> <span class="cm-operator">=</span> <span class="cm-variable">require</span>(<span class="cm-string">"fs"</span>);
+
+<span class="cm-keyword">var</span> <span class="cm-variable">methods</span> <span class="cm-operator">=</span> <span class="cm-variable">Object</span>.<span class="cm-property">create</span>(<span class="cm-atom">null</span>);
+
+<span class="cm-variable">http</span>.<span class="cm-property">createServer</span>(<span class="cm-keyword">function</span>(<span class="cm-def">request</span>, <span class="cm-def">response</span>) {
+  <span class="cm-keyword">function</span> <span class="cm-def">respond</span>(<span class="cm-def">code</span>, <span class="cm-def">body</span>, <span class="cm-def">type</span>) {
+    <span class="cm-keyword">if</span> (<span class="cm-operator">!</span><span class="cm-variable-2">type</span>) <span class="cm-variable-2">type</span> <span class="cm-operator">=</span> <span class="cm-string">"text/plain"</span>;
+    <span class="cm-variable-2">response</span>.<span class="cm-property">writeHead</span>(<span class="cm-variable-2">code</span>, {<span class="cm-string cm-property">"Content-Type"</span>: <span class="cm-variable-2">type</span>});
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">body</span> <span class="cm-operator">&amp;&amp;</span> <span class="cm-variable-2">body</span>.<span class="cm-property">pipe</span>)
+      <span class="cm-variable-2">body</span>.<span class="cm-property">pipe</span>(<span class="cm-variable-2">response</span>);
+    <span class="cm-keyword">else</span>
+      <span class="cm-variable-2">response</span>.<span class="cm-property">end</span>(<span class="cm-variable-2">body</span>);
+  }
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">request</span>.<span class="cm-property">method</span> <span class="cm-keyword">in</span> <span class="cm-variable">methods</span>)
+    <span class="cm-variable">methods</span>[<span class="cm-variable-2">request</span>.<span class="cm-property">method</span>](<span class="cm-variable">urlToPath</span>(<span class="cm-variable-2">request</span>.<span class="cm-property">url</span>),
+                            <span class="cm-variable-2">respond</span>, <span class="cm-variable-2">request</span>);
+  <span class="cm-keyword">else</span>
+    <span class="cm-variable-2">respond</span>(<span class="cm-number">405</span>, <span class="cm-string">"Method "</span> <span class="cm-operator">+</span> <span class="cm-variable-2">request</span>.<span class="cm-property">method</span> <span class="cm-operator">+</span>
+            <span class="cm-string">" not allowed."</span>);
+}).<span class="cm-property">listen</span>(<span class="cm-number">8000</span>);</pre>
+<p><a class="p_ident" id="p_znP+YS4c6v" href="./20_node.html#p_znP+YS4c6v"></a>Стартирането на този сървър, ще върне отговор за грешка 405, което е кодът, който се използва за указване, че даден метод не се обработва от сървъра.</p>
+<p><a class="p_ident" id="p_5pDM8svy8I" href="./20_node.html#p_5pDM8svy8I"></a>Функцията <code>respond</code> се предава на функциите, които се занимават с различните методи и действия, като обратно извикване за завършване на искането. Това взема код за статут на HTTP тялото и по желание типа на съдържанието, като аргумент. Ако стойността подадена, като тяло е четим поток, тя ще има <code>pipe</code> метод, който се използва  за да предаде четимия поток към записващия поток. Ако не е, се предполага, че е  <code>null</code> (не тяло) или <em>string</em>, и преминава директно в отговора на <code>end</code> метода.</p>
+<p><a class="p_ident" id="p_gSrvCsfWuQ" href="./20_node.html#p_gSrvCsfWuQ"></a>За да получим пътя от URL в искането, <code>urlToPath</code> функцията използва вградения в Node <code>"url"</code> модул, за да направи разбор на URL адреса. Тя взема името на пътя, който ще бъде нещо като <code>/file.txt</code>, декодира го, за да се отървем от <code>%20</code> - ескейпването на кода и слага префикс - една точка, за да произведе път спрямо текущата директория. </p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_0wEX6AxULv" href="./20_node.html#c_0wEX6AxULv"></a><span class="cm-keyword">function</span> <span class="cm-variable">urlToPath</span>(<span class="cm-def">url</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">path</span> <span class="cm-operator">=</span> <span class="cm-variable">require</span>(<span class="cm-string">"url"</span>).<span class="cm-property">parse</span>(<span class="cm-variable-2">url</span>).<span class="cm-property">pathname</span>;
+  <span class="cm-keyword">return</span> <span class="cm-string">"."</span> <span class="cm-operator">+</span> <span class="cm-variable">decodeURIComponent</span>(<span class="cm-variable-2">path</span>);
+}</pre>
+<p><a class="p_ident" id="p_ZsCml7c8nG" href="./20_node.html#p_ZsCml7c8nG"></a>Ако се притеснявате за сигурността на <code>urlToPath</code> функцията, прави сте. Ще се върнем към това в упражненията.</p>
+<p><a class="p_ident" id="p_hLccVoyVPH" href="./20_node.html#p_hLccVoyVPH"></a>Ние ще създадем  <code>GET</code> метод, за да върне списък от файловете, когато чете директорията и да върне съдържанието на файла, когато чете обикновен файл.</p>
+<p><a class="p_ident" id="p_zj6fKVP9SD" href="./20_node.html#p_zj6fKVP9SD"></a>Един труден въпрос е какъв вид <code>Content-Type</code> заглавие трябва да сложим, когато се връща съдържанието на даден файл. Тъй като тези файлове могат да бъдат всичко, нашият сървър не може просто да върне един и същи тип за всички тях. Но NPM може да ни помогне с това. Пакет <code>mime</code> (съдържа типове показатели, като <code>text/plain</code>, които също се наричат <em>MIME types</em> типове) знае правилният тип за огромен брой файлови разширения.</p>
+<p><a class="p_ident" id="p_HzGhiQfi8f" href="./20_node.html#p_HzGhiQfi8f"></a>Ако изпълнявате следната <code>npm</code> команда в директорията, в която се намира вашия скрипт, вие ще бъдете в състояние да използвате <code>require("mime")</code> за да получите достъп до библиотеката:</p>
+<pre>$ npm install mime
+npm http GET https://registry.npmjs.org/mime
+npm http 304 https://registry.npmjs.org/mime
+mime@1.2.11 node_modules/mime</pre>
+<p><a class="p_ident" id="p_0oNrzailqn" href="./20_node.html#p_0oNrzailqn"></a>Когато търсеният файл не съществува, правилният код за HTTP грешка, е да върне 404. Ние ще използваме <code>fs.stat</code>, който търси по информацията за даден файл и ще разбере дали файлът съществува и дали е директория.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_wY8qKO1/aF" href="./20_node.html#c_wY8qKO1/aF"></a><span class="cm-variable">methods</span>.<span class="cm-property">GET</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">path</span>, <span class="cm-def">respond</span>) {
+  <span class="cm-variable">fs</span>.<span class="cm-property">stat</span>(<span class="cm-variable-2">path</span>, <span class="cm-keyword">function</span>(<span class="cm-def">error</span>, <span class="cm-def">stats</span>) {
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">error</span> <span class="cm-operator">&amp;&amp;</span> <span class="cm-variable-2">error</span>.<span class="cm-property">code</span> <span class="cm-operator">==</span> <span class="cm-string">"ENOENT"</span>)
+      <span class="cm-variable-2">respond</span>(<span class="cm-number">404</span>, <span class="cm-string">"File not found"</span>);
+    <span class="cm-keyword">else</span> <span class="cm-keyword">if</span> (<span class="cm-variable-2">error</span>)
+      <span class="cm-variable-2">respond</span>(<span class="cm-number">500</span>, <span class="cm-variable-2">error</span>.<span class="cm-property">toString</span>());
+    <span class="cm-keyword">else</span> <span class="cm-keyword">if</span> (<span class="cm-variable-2">stats</span>.<span class="cm-property">isDirectory</span>())
+      <span class="cm-variable">fs</span>.<span class="cm-property">readdir</span>(<span class="cm-variable-2">path</span>, <span class="cm-keyword">function</span>(<span class="cm-def">error</span>, <span class="cm-def">files</span>) {
+        <span class="cm-keyword">if</span> (<span class="cm-variable-2">error</span>)
+          <span class="cm-variable-2">respond</span>(<span class="cm-number">500</span>, <span class="cm-variable-2">error</span>.<span class="cm-property">toString</span>());
+        <span class="cm-keyword">else</span>
+          <span class="cm-variable-2">respond</span>(<span class="cm-number">200</span>, <span class="cm-variable-2">files</span>.<span class="cm-property">join</span>(<span class="cm-string">"\n"</span>));
+      });
+    <span class="cm-keyword">else</span>
+      <span class="cm-variable-2">respond</span>(<span class="cm-number">200</span>, <span class="cm-variable">fs</span>.<span class="cm-property">createReadStream</span>(<span class="cm-variable-2">path</span>),
+              <span class="cm-variable">require</span>(<span class="cm-string">"mime"</span>).<span class="cm-property">lookup</span>(<span class="cm-variable-2">path</span>));
+  });
+};</pre>
+<p><a class="p_ident" id="p_mV/qPzXlQf" href="./20_node.html#p_mV/qPzXlQf"></a>Понеже има работа с диска и по този начин може да отнеме известно време, <code>fs.stat</code> е асинхронен. Ако файлът не съществува, <code>fs.stat</code> ще подаде <em>error</em> обект с <code>code</code>  свойство <code>"ENOENT"</code>, като негово обратно извикване. Би било хубаво, ако Node дефинираше различни подтипове на <code>Error</code> за различните видове грешки, но не го прави. Вместо това, поставя неясни Unix кодове там.</p>
+<p><a class="p_ident" id="p_jHOsnGBkYC" href="./20_node.html#p_jHOsnGBkYC"></a>Ние ще докладваме всякакви неочаквани грешки с код на състоянието 500, което показва, че проблемът съществува на сървъра, за разлика от кодове започващи с 4 (като 404), които се отнасят за лоши заявки. Има някои ситуации, в които това не е съвсем точно, но за един малък пример като този, е достатъчно добре.</p>
+<p><a class="p_ident" id="p_fZyZfbXY6J" href="./20_node.html#p_fZyZfbXY6J"></a>В <code>stats</code> обекта върнат от <code>fs.stat</code> се казва няколко неща за даден файл, като размерите му (<code>size</code> свойство) и неговата дата на промяна (<em>mtime</em> свойство). Тук се интересуваме от въпроса дали е директория  или обикновен файл, което метода <code>isDirectory</code> ни казва.</p>
+<p><a class="p_ident" id="p_4F379sRM4r" href="./20_node.html#p_4F379sRM4r"></a>Ние използваме <code>fs.readdir</code> да чете списъка с файлове в дадена директория и с още едно обратно извикване, го връща на потребителя. За нормални файлове, ние създаваме четим поток с <code>fs.createReadStream</code> и го подаваме на <code>respond</code> заедно с вида на съдържанието, което“<code>"mime"</code> модула ни дава, като име на файла.</p>
+<p><a class="p_ident" id="p_3SF21U54yR" href="./20_node.html#p_3SF21U54yR"></a>Кода за справяне с <code>DELETE</code> заявките е малко по-лесен.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_Csqxn3/Ymy" href="./20_node.html#c_Csqxn3/Ymy"></a><span class="cm-variable">methods</span>.<span class="cm-property">DELETE</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">path</span>, <span class="cm-def">respond</span>) {
+  <span class="cm-variable">fs</span>.<span class="cm-property">stat</span>(<span class="cm-variable-2">path</span>, <span class="cm-keyword">function</span>(<span class="cm-def">error</span>, <span class="cm-def">stats</span>) {
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">error</span> <span class="cm-operator">&amp;&amp;</span> <span class="cm-variable-2">error</span>.<span class="cm-property">code</span> <span class="cm-operator">==</span> <span class="cm-string">"ENOENT"</span>)
+      <span class="cm-variable-2">respond</span>(<span class="cm-number">204</span>);
+    <span class="cm-keyword">else</span> <span class="cm-keyword">if</span> (<span class="cm-variable-2">error</span>)
+      <span class="cm-variable-2">respond</span>(<span class="cm-number">500</span>, <span class="cm-variable-2">error</span>.<span class="cm-property">toString</span>());
+    <span class="cm-keyword">else</span> <span class="cm-keyword">if</span> (<span class="cm-variable-2">stats</span>.<span class="cm-property">isDirectory</span>())
+      <span class="cm-variable">fs</span>.<span class="cm-property">rmdir</span>(<span class="cm-variable-2">path</span>, <span class="cm-variable">respondErrorOrNothing</span>(<span class="cm-variable-2">respond</span>));
+    <span class="cm-keyword">else</span>
+      <span class="cm-variable">fs</span>.<span class="cm-property">unlink</span>(<span class="cm-variable-2">path</span>, <span class="cm-variable">respondErrorOrNothing</span>(<span class="cm-variable-2">respond</span>));
+  });
+};</pre>
+<p><a class="p_ident" id="p_nmATyMSIB9" href="./20_node.html#p_nmATyMSIB9"></a>Може би се чудите, защо когато се опитва да изтрие не съществуващ файл, връща състояние 204, а не грешка. Когато файлът, който се заличава не е там, може да се каже, че целта на искането вече е изпълнена. Стандартът за HTTP насърчава хората да правят искания <em>idempotent</em>, което означава, че прилагането им няколко пъти не произвежда различен резултат.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_TmTqeaFkjP" href="./20_node.html#c_TmTqeaFkjP"></a><span class="cm-keyword">function</span> <span class="cm-variable">respondErrorOrNothing</span>(<span class="cm-def">respond</span>) {
+  <span class="cm-keyword">return</span> <span class="cm-keyword">function</span>(<span class="cm-def">error</span>) {
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">error</span>)
+      <span class="cm-variable-2">respond</span>(<span class="cm-number">500</span>, <span class="cm-variable-2">error</span>.<span class="cm-property">toString</span>());
+    <span class="cm-keyword">else</span>
+      <span class="cm-variable-2">respond</span>(<span class="cm-number">204</span>);
+  };
+}</pre>
+<p><a class="p_ident" id="p_M3IjJtc656" href="./20_node.html#p_M3IjJtc656"></a>Когато HTTP отговора не съдържа никакви данни, кодът за състоянието 204 (няма съдържание) може да се използва за да покаже това. Тъй като трябва да предоставим обратно извикване за докладване на грешка или да върнем 204 отговор в рамките на няколко различни ситуации, написахме функцията <code>respondErrorOrNothing</code>, която създава такова обратно извикване.</p>
+<p><a class="p_ident" id="p_gwRQ8JoXxf" href="./20_node.html#p_gwRQ8JoXxf"></a>Това е манипулатор за <code>PUT</code> заявки:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_qYzyFBRF7T" href="./20_node.html#c_qYzyFBRF7T"></a><span class="cm-variable">methods</span>.<span class="cm-property">PUT</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">path</span>, <span class="cm-def">respond</span>, <span class="cm-def">request</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">outStream</span> <span class="cm-operator">=</span> <span class="cm-variable">fs</span>.<span class="cm-property">createWriteStream</span>(<span class="cm-variable-2">path</span>);
+  <span class="cm-variable-2">outStream</span>.<span class="cm-property">on</span>(<span class="cm-string">"error"</span>, <span class="cm-keyword">function</span>(<span class="cm-def">error</span>) {
+    <span class="cm-variable-2">respond</span>(<span class="cm-number">500</span>, <span class="cm-variable-2">error</span>.<span class="cm-property">toString</span>());
+  });
+  <span class="cm-variable-2">outStream</span>.<span class="cm-property">on</span>(<span class="cm-string">"finish"</span>, <span class="cm-keyword">function</span>() {
+    <span class="cm-variable-2">respond</span>(<span class="cm-number">204</span>);
+  });
+  <span class="cm-variable-2">request</span>.<span class="cm-property">pipe</span>(<span class="cm-variable-2">outStream</span>);
+};</pre>
+<p><a class="p_ident" id="p_ItuasUF74h" href="./20_node.html#p_ItuasUF74h"></a>Тука не трябва да проверяваме дали файла съществува, ако съществува просто го презаписваме. Ние отново използваме <code>pipe</code> за да пренесем данните от четимия поток към записващия, в този случай, искането до файла. Ако създаването на потока не успее, се повдига едно <code>"error"</code> събитие, което отчитаме в нашия отговор. Когато данните се прехвърлят успешно, <code>pipe</code> ще затвори двата потока, което ще доведе до ефекта на <code>"finish"</code> събитие на записващия поток. Когато това се случи, можем да докладваме успех на клиента с отговор 204.</p>
+<p><a class="p_ident" id="p_ig7HitKqRz" href="./20_node.html#p_ig7HitKqRz"></a> Пълният скрипт за сървъра е на разположение на <a href="./code/file_server.js"><em>eloquentjavascript.net/code/file_server.js</em></a>. Можете да го изтеглите и ползвате с Node, като свой собствен файлов сървър. И разбира се, можете да го променяте и удължавате за решаване на упражненията в тази глава или просто да експериментирате.</p>
+<p><a class="p_ident" id="p_fBFWTJncql" href="./20_node.html#p_fBFWTJncql"></a>Инструмента на командния ред <code>curl</code>, е на разположение за Unix-подобни системи и може да се използва за направата на HTTP заявки. Следващата сесия тества накратко нашия сървър. Имайте в предвид, че <code>-X</code> се използва за задаване на метода на искането и <code>-d</code> за включване на заявката.</p>
+<pre>$ curl http://localhost:8000/file.txt
+File not found
+$ curl -X PUT -d hello http://localhost:8000/file.txt
+$ curl http://localhost:8000/file.txt
+hello
+$ curl -X DELETE http://localhost:8000/file.txt
+$ curl http://localhost:8000/file.txt
+File not found</pre>
+<p><a class="p_ident" id="p_AmMFBJGSkb" href="./20_node.html#p_AmMFBJGSkb"></a>Първото искане за <code>file.txt</code> се провали, тъй като преписката все още не съществува. <code>PUT</code> искането създава файла и на следващата заявка успешно го извлича. След изтриването с <code>DELETE</code> заявката, файлът отново липсва.</p>
+<h2><a class="h_ident" id="h_c2MdfwNW/b" href="./20_node.html#h_c2MdfwNW/b"></a>Боравене  с  Error</h2>
+<p><a class="p_ident" id="p_AzJTO0+z/M" href="./20_node.html#p_AzJTO0+z/M"></a>В кода на файловия сървър има шест места, където изрично определяме маршрута на изключенията, но не знаем как се справят в отговор на грешки. Защото изключенията не се размножават автоматично с обратните извиквания, а по-скоро преминават към тях като аргументи и за това те трябва да бъдат обработени всеки път. Това напълно обезсмисля предимството на обработката на изключения, а именно способността да се централизира манипулирането на условията за отказ.</p>
+<p><a class="p_ident" id="p_LZHdJfKLv3" href="./20_node.html#p_LZHdJfKLv3"></a>Какво се случва, когато нещо наистина хвърля изключение в тази система? Тъй като ние не използваме никакви <code>try</code> блокове, изключенията се разпространяват до върха на стека за извикване. Node прекъсва програмата и пише информация за изключение (включително и следата в стека) към стандартния поток за грешка в програмата.</p>
+<p><a class="p_ident" id="p_dYLIN1E+o4" href="./20_node.html#p_dYLIN1E+o4"></a>Това означава, че нашия сървър ще се срине, когато се сблъскаме с проблем вътре в кода на сървъра, за разлика от асинхронни проблеми, които  ще бъдат предадени като аргументи към обратните извиквания. Ако искаме да се справим с всички изключения, повдигнати по време на обработката на искането, за да сме сигурни, че е изпратен отговор, ние трябва да добавим <code>try/catch</code> блок на всяко обратно извикване.</p>
+<p><a class="p_ident" id="p_lyKlcWotG5" href="./20_node.html#p_lyKlcWotG5"></a>Това не работи. Много Node програми са писани да направят малката употреба на изключения възможна с предположението, че ако изключението е било повдигнато, това не е нещо, с което програмата може да справи и счупва правилния отговор.</p>
+<p><a class="p_ident" id="p_m6CCLIC9PT" href="./20_node.html#p_m6CCLIC9PT"></a>Друг подход е използването на обещания, които бяха въведени в <a href="./17_http.html#promises">Глава 17</a>. Тези прихванати изключения, са повдигнати от функцията за обратно извикване и се разпространяват, като провал. Възможно е да заредите обещание от библиотека в Node и да го използвате за управление на вашия асинхронен контрол. Малко библиотеки на Node интегрират обещания, но често е тривиално да ги увиете. Отличният модул <code>"promise"</code> от NPM съдържа функция наречена <code>denodeify</code>, която взема асинхронна функция, като <code>fs.readFile</code> и я превръща във функция връщаща обещание.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_iQiE8XcBIL" href="./20_node.html#c_iQiE8XcBIL"></a><span class="cm-keyword">var</span> <span class="cm-variable">Promise</span> <span class="cm-operator">=</span> <span class="cm-variable">require</span>(<span class="cm-string">"promise"</span>);
+<span class="cm-keyword">var</span> <span class="cm-variable">fs</span> <span class="cm-operator">=</span> <span class="cm-variable">require</span>(<span class="cm-string">"fs"</span>);
+
+<span class="cm-keyword">var</span> <span class="cm-variable">readFile</span> <span class="cm-operator">=</span> <span class="cm-variable">Promise</span>.<span class="cm-property">denodeify</span>(<span class="cm-variable">fs</span>.<span class="cm-property">readFile</span>);
+<span class="cm-variable">readFile</span>(<span class="cm-string">"file.txt"</span>, <span class="cm-string">"utf8"</span>).<span class="cm-property">then</span>(<span class="cm-keyword">function</span>(<span class="cm-def">content</span>) {
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"The file contained: "</span> <span class="cm-operator">+</span> <span class="cm-variable-2">content</span>);
+}, <span class="cm-keyword">function</span>(<span class="cm-def">error</span>) {
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"Failed to read file: "</span> <span class="cm-operator">+</span> <span class="cm-variable-2">error</span>);
+});</pre>
+<p><a class="p_ident" id="p_XJLTFNkV/a" href="./20_node.html#p_XJLTFNkV/a"></a>За сравнение, съм написал друга версия на файловия сървър на базата на обещания, която може да намерите на <a href="./code/file_server_promises.js"><em>eloquentjavascript.net/code/file_server_promises.js</em></a>. Тя е малко по-чиста, защото сега функциите могат да връщат техните резултати, а не да се налага извикването на обратното извикване и определя маршрута на изключенията по подразбиране, а не изрично.</p>
+<p><a class="p_ident" id="p_/tLwA645Vy" href="./20_node.html#p_/tLwA645Vy"></a>Ще изброим няколко реда от базирания на обещания файлов сървър, за да илюстрираме разликата в стила на програмиране.</p>
+<p><a class="p_ident" id="p_sAe0M1se8f" href="./20_node.html#p_sAe0M1se8f"></a>Обекта <code>fsp</code>, който се използва в този код съдържа варианти на начини на стил - обещания от редица <code>fs</code> функции, обвити в <code>Promise.denodeify</code>. Обекта се връща от метод манипулатор с код и тяло, които ще се превърнат в крайния резултат от веригата от обещания и ще бъде използван за да се определи, какъв вид отговор да бъде изпратен на клиента.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_jgK5KWXaO8" href="./20_node.html#c_jgK5KWXaO8"></a><span class="cm-variable">methods</span>.<span class="cm-property">GET</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">path</span>) {
+  <span class="cm-keyword">return</span> <span class="cm-variable">inspectPath</span>(<span class="cm-variable-2">path</span>).<span class="cm-property">then</span>(<span class="cm-keyword">function</span>(<span class="cm-def">stats</span>) {
+    <span class="cm-keyword">if</span> (<span class="cm-operator">!</span><span class="cm-variable-2">stats</span>) <span class="cm-comment">// Does not exist</span>
+      <span class="cm-keyword">return</span> {<span class="cm-property">code</span>: <span class="cm-number">404</span>, <span class="cm-property">body</span>: <span class="cm-string">"File not found"</span>};
+    <span class="cm-keyword">else</span> <span class="cm-keyword">if</span> (<span class="cm-variable-2">stats</span>.<span class="cm-property">isDirectory</span>())
+      <span class="cm-keyword">return</span> <span class="cm-variable">fsp</span>.<span class="cm-property">readdir</span>(<span class="cm-variable-2">path</span>).<span class="cm-property">then</span>(<span class="cm-keyword">function</span>(<span class="cm-def">files</span>) {
+        <span class="cm-keyword">return</span> {<span class="cm-property">code</span>: <span class="cm-number">200</span>, <span class="cm-property">body</span>: <span class="cm-variable-2">files</span>.<span class="cm-property">join</span>(<span class="cm-string">"\n"</span>)};
+      });
+    <span class="cm-keyword">else</span>
+      <span class="cm-keyword">return</span> {<span class="cm-property">code</span>: <span class="cm-number">200</span>,
+              <span class="cm-property">type</span>: <span class="cm-variable">require</span>(<span class="cm-string">"mime"</span>).<span class="cm-property">lookup</span>(<span class="cm-variable-2">path</span>),
+              <span class="cm-property">body</span>: <span class="cm-variable">fs</span>.<span class="cm-property">createReadStream</span>(<span class="cm-variable-2">path</span>)};
+  });
+};
+
+<span class="cm-keyword">function</span> <span class="cm-variable">inspectPath</span>(<span class="cm-def">path</span>) {
+  <span class="cm-keyword">return</span> <span class="cm-variable">fsp</span>.<span class="cm-property">stat</span>(<span class="cm-variable-2">path</span>).<span class="cm-property">then</span>(<span class="cm-atom">null</span>, <span class="cm-keyword">function</span>(<span class="cm-def">error</span>) {
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">error</span>.<span class="cm-property">code</span> <span class="cm-operator">==</span> <span class="cm-string">"ENOENT"</span>) <span class="cm-keyword">return</span> <span class="cm-atom">null</span>;
+    <span class="cm-keyword">else</span> <span class="cm-keyword">throw</span> <span class="cm-variable-2">error</span>;
+  });
+}</pre>
+<p><a class="p_ident" id="p_LEaRcBuKCq" href="./20_node.html#p_LEaRcBuKCq"></a>Функцията <code>inspectPath</code> е просто обвита около <code>fs.stat</code>, която обработва случаите, когато не е намерен файла. В този случай, ние заменяме провала с успех, който връща <code>null</code>. На всички други грешки им е позволено да се разпространяват. Когато обещанието, което се връща от тези манипулатори се провали, HTTP сървърът отговаря с код на състоянието 500.</p>
+<h2><a class="h_ident" id="h_ErccPg/l98" href="./20_node.html#h_ErccPg/l98"></a>Резюме</h2>
+<p><a class="p_ident" id="p_iV5lhu5NQo" href="./20_node.html#p_iV5lhu5NQo"></a>Node хубава, ясна програма, която ни позволява да стартираме JavaScript  без браузър. Тя първоначално е била предназначена за мрежови задачи, които да играят роля на разклонения в мрежата. Но тя се поддава на всички видове скриптови задачи и ако писането на JavaScript  е нещо, което обичате, автоматизирането на ежедневните задачи с Node работи чудесно.</p>
+<p><a class="p_ident" id="p_kDMJDKzKTZ" href="./20_node.html#p_kDMJDKzKTZ"></a>NPM осигурява библиотеки за всичко, което можете да се сетите (и доста неща, за които най-вероятно никога няма да се сетите) и ви позволява да извлечете и инсталирате тези библиотеки с стартирането на една проста команда. Node също така идва с редица вградени модули, включително <code>"fs"</code> модул, за работа с файловата система и <code>"http"</code> модул за управление на HTTP сървъри и вземане на HTTP заявки.</p>
+<p><a class="p_ident" id="p_vfv/Kj/H3N" href="./20_node.html#p_vfv/Kj/H3N"></a>Целият вход и изход в Node се извършва асинхронно, освен ако изрично не използвате синхронен вариант на функцията, като например <code>fs.readFileSync</code>. можете да предоставите функции за обратно извикване и Node ще ги извика в подходящо време, когато I/O иска да приключи.</p>
+<h2><a class="h_ident" id="h_TcUD2vzyMe" href="./20_node.html#h_TcUD2vzyMe"></a>Упражнения</h2>
+<h3><a class="h_ident" id="h_R/n4kTrgEX" href="./20_node.html#h_R/n4kTrgEX"></a>Преговори  content отново</h3>
+<p><a class="p_ident" id="p_1sc3cgSDRc" href="./20_node.html#p_1sc3cgSDRc"></a>В <a href="./17_http.html#exercise_accept">Глава 17</a> първото упражнение е да се направят няколко искания за <a href="./author"><em>eloquentjavascript.net/author</em></a>, които питат за различните видове съдържание чрез подаване на различни <code>Accept</code> заглавия.</p>
+<p><a class="p_ident" id="p_FReC/gLaW+" href="./20_node.html#p_FReC/gLaW+"></a>Направете това отново, използвайки <code>http.request</code> функцията на Node. Питайте за най-малките видове медии <code>text/plain</code>, <code>text/html</code> и <code>application/json</code>. Не забравяйте, че заглавието на искането може да се даде, като обект в свойството на <code>headers</code> (заглавията) на <code>http.request</code>, като първи аргумент.</p>
+<p><a class="p_ident" id="p_ZG9mFshMgi" href="./20_node.html#p_ZG9mFshMgi"></a>Напишете съдържанието на отговорите за всяка заявка.</p>
+<div class="solution"><div class="solution-text">
+<p><a class="p_ident" id="p_Hhj148ONNC" href="./20_node.html#p_Hhj148ONNC"></a>Не забравяйте да извикате <code>end</code> метода на обекта върнат от <code>http.request</code> за действително изстрелване на искането.</p>
+<p><a class="p_ident" id="p_g86B/NOrvT" href="./20_node.html#p_g86B/NOrvT"></a>Обекта на отговора подава към обратното извикване на <code>http.request</code> четим поток. Това означава, че не е съвсем тривиално да получите цялото тяло на отговора от него. Следната програма функция чете целия поток и извиква функцията за обратно извикване с резултата използвайки обичайния модел за подаване на <em>error</em>, ако срещне някава грешка, като първи аргумент за обратното извикване:</p>
+<pre data-language="text/javascript" class="snippet cm-s-default"><a class="c_ident" id="c_6U3GR/cEk1" href="./20_node.html#c_6U3GR/cEk1"></a><span class="cm-keyword">function</span> <span class="cm-variable">readStreamAsString</span>(<span class="cm-def">stream</span>, <span class="cm-def">callback</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">data</span> <span class="cm-operator">=</span> <span class="cm-string">""</span>;
+  <span class="cm-variable-2">stream</span>.<span class="cm-property">on</span>(<span class="cm-string">"data"</span>, <span class="cm-keyword">function</span>(<span class="cm-def">chunk</span>) {
+    <span class="cm-variable-2">data</span> <span class="cm-operator">+=</span> <span class="cm-variable-2">chunk</span>.<span class="cm-property">toString</span>();
+  });
+  <span class="cm-variable-2">stream</span>.<span class="cm-property">on</span>(<span class="cm-string">"end"</span>, <span class="cm-keyword">function</span>() {
+    <span class="cm-variable-2">callback</span>(<span class="cm-atom">null</span>, <span class="cm-variable-2">data</span>);
+  });
+  <span class="cm-variable-2">stream</span>.<span class="cm-property">on</span>(<span class="cm-string">"error"</span>, <span class="cm-keyword">function</span>(<span class="cm-def">error</span>) {
+    <span class="cm-variable-2">callback</span>(<span class="cm-variable-2">error</span>);
+  });
+}</pre>
+</div></div>
+<h3><a class="h_ident" id="h_yunNtKqBKK" href="./20_node.html#h_yunNtKqBKK"></a>Определяне на течове</h3>
+<p><a class="p_ident" id="p_VfOcuona0c" href="./20_node.html#p_VfOcuona0c"></a>За лесен отдалечен достъп до някои файлове, можех да злоупотребя имайки <a href="./20_node.html#file_server">файловия сървър</a> (дефиниран в настоящата глава) работещ на моята машина в <code>/home/marijn/public</code>. Тогава един ден разбирам, че някой е получил достъп до всички пароли, които съхранявах на браузъра си.</p>
+<p><a class="p_ident" id="p_dmHmWR/Zqs" href="./20_node.html#p_dmHmWR/Zqs"></a>Как се случи това?</p>
+<p><a class="p_ident" id="p_DI3INnE8nA" href="./20_node.html#p_DI3INnE8nA"></a>Ако още не ви е ясно, се върнете обратно на <code>urlToPath</code> функцията, дефинирана, като това:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_0wEX6AxULv" href="./20_node.html#c_0wEX6AxULv"></a><span class="cm-keyword">function</span> <span class="cm-variable">urlToPath</span>(<span class="cm-def">url</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">path</span> <span class="cm-operator">=</span> <span class="cm-variable">require</span>(<span class="cm-string">"url"</span>).<span class="cm-property">parse</span>(<span class="cm-variable-2">url</span>).<span class="cm-property">pathname</span>;
+  <span class="cm-keyword">return</span> <span class="cm-string">"."</span> <span class="cm-operator">+</span> <span class="cm-variable">decodeURIComponent</span>(<span class="cm-variable-2">path</span>);
+}</pre>
+<p><a class="p_ident" id="p_mQL5b2p0bF" href="./20_node.html#p_mQL5b2p0bF"></a>Сега да разгледаме факта, че пътеките подадени към <code>"fs"</code> функцията, могат да бъдат относителни - те могат да съдържат <code>"../"</code> и да се изкачат нагоре по директорията. Какво ще се случи, ако един клиент изпрати искане за URL адреси, като тези показани тук?</p>
+<pre>http://myhostname:8000/../.config/config/google-chrome/Default/Web%20Data
+http://myhostname:8000/../.ssh/id_dsa
+http://myhostname:8000/../../../etc/passwd</pre>
+<p><a class="p_ident" id="p_kaATEvJoFT" href="./20_node.html#p_kaATEvJoFT"></a>Променете <code>urlToPath</code> за да решите този проблем. Вземете под внимание факта, че Node на Windows позволява двете наклонени черти и обратно наклонените черти за отделяне на директории.</p>
+<p><a class="p_ident" id="p_N2cR0sagWP" href="./20_node.html#p_N2cR0sagWP"></a>Също така, помислете върху факта, че веднага след като се изложат някои половинчати системи в Интернет, бъговете в тези системи могат да бъдат използвани, за правенето на лоши неща на вашата машина.</p>
+<div class="solution"><div class="solution-text">
+<p><a class="p_ident" id="p_Rimkg2pT5M" href="./20_node.html#p_Rimkg2pT5M"></a>Достатъчно е да се оголят всички срещания на две точки, които имат наклонена черта, обратно наклонена черта или в края на <em>string</em> от двете страни. Използвайки <code>replace</code> метода с регулярен израз е най-лесният начин да се направи това. Да не забравяме и <code>g</code> флага на израза или <code>replace</code> ще замени само един случай и хората все още могат да заобикалят тази мярка за безопасност чрез включване на допълнителни двойни точки в пътищата си! Също така се уврете, че правите замени (<em>replace</em>) след декодиране на <em>string</em> или е възможно да се саботира проверката чрез кодиране на точка или наклонена черта.</p>
+<p><a class="p_ident" id="p_m6OlUUopqO" href="./20_node.html#p_m6OlUUopqO"></a>Друг потенциално тревожен случай е, когато пътеките (<em>path</em>) започват с наклонена черта, което се тълкува, като абслулютни пътеки. Но тъй като <code>urlToPath</code> поставя характер на точка пред пътя, не е възможно да се създаде искане, което води по такъв път. Множество наклонени черти на един ред във вътрешноста на пътя  са странни, но ще се третират, като една наклонена черта от файловата система.</p>
+</div></div>
+<h3><a class="h_ident" id="h_NHUcwC79fZ" href="./20_node.html#h_NHUcwC79fZ"></a>Създаване на директории</h3>
+<p><a class="p_ident" id="p_No30amwBdC" href="./20_node.html#p_No30amwBdC"></a>Въпреки, че метода <code>DELETE</code> е свързан с изтриването на директории (използвайки <code>fs.rmdir</code>), файловият сървър в момента няма никакъв начин да създаде директория.</p>
+<p><a class="p_ident" id="p_6UFSFAp8Vj" href="./20_node.html#p_6UFSFAp8Vj"></a>Добавете поддръжка към метода <code>MKCOL</code>, който трябва да създаде директория с извикването на <code>fs.mkdir</code>. <code>MKCOL</code> не е от основните методи на HTTP, но съществува с това също предназначение в стандарта на <em>WebDAV</em>, който определя набор от разширения за HTTP, правейки го подходящ за писане на ресурси, а не само да ги чете.</p>
+<div class="solution"><div class="solution-text">
+<p><a class="p_ident" id="p_PBd92Poc3B" href="./20_node.html#p_PBd92Poc3B"></a>Можете да използвате функцията, която изпълнява <code>DELETE</code> метода, като модел за <code>MKCOL</code> метода. Когато няма намерен файл, опитайте се да създадете директория с <code>fs.mkdir</code>. Когато съществува директория на този път може да върнете отговор 204, така че исканията за създаване на директория са <em>idempotent</em>. Ако няма такава директория на съществуващ файл, върнете код за грешка. Кодът 400 ("лошо искане") би бил подходящ за това.</p>
+</div></div>
+<h3><a class="h_ident" id="h_TLRTlwK6ZU" href="./20_node.html#h_TLRTlwK6ZU"></a>Публично пространство в Интернет</h3>
+<p><a class="p_ident" id="p_45IRHCEqky" href="./20_node.html#p_45IRHCEqky"></a>Тъй като файловият сървър служи за всякакъв вид файлове и дори включва десния <code>Content-Type</code> хедър, можете да го използвате  да послужи за уеб-сайт. Но тъй като това позволява на всеки да изтрие и замени файлове, ще бъде интересен вид уеб-сайт: който може да бъде модифициран, обезобразен и унищожен от всеки, който отдели време да създаде правилното искане за HTTP.  Все пак това ще бъде един уеб-сайт.</p>
+<p><a class="p_ident" id="p_S5RQ8T3sNn" href="./20_node.html#p_S5RQ8T3sNn"></a>Напишете основната HTML страница, която включва един прост JavaScript файл. Сложете файловете в директорията обслужвана от файловия сървър и го отворете в браузъра си.</p>
+<p><a class="p_ident" id="p_UerJ/YohV1" href="./20_node.html#p_UerJ/YohV1"></a>На следващо място, като специално упражнение или дори проект за уикенд, комбинирайте всички знания, които сте придобили от тази книга за изграждане на по-лесен за употреба от потребителя  интерфейс за промяна на уеб-сайта, отвътре на уеб-сайта.</p>
+<p><a class="p_ident" id="p_/XOhzawYGD" href="./20_node.html#p_/XOhzawYGD"></a>Използвайте HTML форма (<a href="./18_forms.html#forms">Глава 18</a>), за да редактирате съдържанието на файловете, които правят уеб-сайта, което позволява на потребителя да ги актуализира в сървъра с помощта на HTTP заявки, както е описано в <a href="./17_http.html#http">Глава 17</a>.</p>
+<p><a class="p_ident" id="p_hWSA1+odAv" href="./20_node.html#p_hWSA1+odAv"></a>Започнете само с един файл, който може да се редактира. След това го направете така, че потребителя да може да избере кой файл да редактира. Използвайте факта, че нашият файлов сървър връща списъци с файлове, когато чете директории.</p>
+<p><a class="p_ident" id="p_Ph56FG1hyk" href="./20_node.html#p_Ph56FG1hyk"></a>Не работи директно в кода на файловия сървър, понеже ако допуснете грешка има вероятност да наредите на файловете там. Вместо това, дръж своята работа извън публично достъпна директория и го копирайте там когато се изпробва.</p>
+<p><a class="p_ident" id="p_3aqVNaF+TI" href="./20_node.html#p_3aqVNaF+TI"></a>Ако компютърът ви е директно вързан към Интернет, без защитна стена, рутер или друго устройство, което се намесва между тях, може да успеете да поканите приятел да използва вашия сайт. За проверка, отидете на <a href="http://www.whatismyip.com/"><em>whatismyip.com</em></a>, копирайте IP адреса даден в адресния бар на браузъра ви и добавете : <code>:8000</code> след него, за да изберете правилния порт. Ако ви отведе на вашия сайт, то той е онлайн за всеки да го види.</p>
+<div class="solution"><div class="solution-text">
+<p><a class="p_ident" id="p_v9JKMD5WJI" href="./20_node.html#p_v9JKMD5WJI"></a>Можете да създадете елемент <code>&lt;textarea&gt;</code> за поддържане на съдържанието на файла, който се редактира. Можете да използвате <code>GET</code> заявката използвайни <code>XMLHttpRequest</code>, за да получите текущото съдържание на файла. Можете да използвате относителни URL адреси, като <em>index.html</em> вместо <a href="http://localhost:8000/index.html"><em>http://localhost:8000/index.html</em></a> да се отнасят към файловете на същия сървър, като стартирания скрипт.</p>
+<p><a class="p_ident" id="p_AddxfNwTA3" href="./20_node.html#p_AddxfNwTA3"></a>След това, когато потребителя кликне на бутон (може да използвате <code>&lt;form&gt;</code> елемент и <code>"submit"</code> събитие или просто <code>"click"</code> манипулатор) да направи <code>PUT</code> заявка до същия URL адрес със съдържанието на <code>&lt;textarea&gt;</code>, като тяло на заявката, за да запишете файла.</p>
+<p><a class="p_ident" id="p_LI3MHsPkwQ" href="./20_node.html#p_LI3MHsPkwQ"></a>След това можете да добавите <code>&lt;select&gt;</code> елемент, който съдържа всички файлове в главната директория на сървъра чрез добавяне на <code>&lt;option&gt;</code> елементи съдържащи линиите върнати от <code>GET</code> заявката към URL <code>/</code>. Когато потребителя избере друг файл (с <code>"change"</code> събитие на полето) сценарият трябва да донесе и покаже файл. Също така се уверете, че при запис на файл, който използвате в момента е избран с името на файла.</p>
+<p><a class="p_ident" id="p_z/PE8qzDXg" href="./20_node.html#p_z/PE8qzDXg"></a>За съжаление, сървърът е твърде опростен, за да може надлежно да чете файлове от поддиректории, тъй като не ни казва дали нещо, което е донесено с <code>GET</code> заявка е обикновен файл или директория. Сещате ли се за начин за разширяване на сървъра да се справи с това?</p>
+</div></div>
+<nav>
+  <a href="./19_paint.html" title="previous chapter">◀</a>
+  <a href="./index.html" title="cover">◆</a>
+  <a href="./21_skillsharing.html" title="next chapter">▶</a>
+</nav>
+</article>
+</body></html>

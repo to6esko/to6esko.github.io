@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<!-- saved from url=(0044)http:./06_object.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <title>The Secret Life of Objects :: Eloquent JavaScript</title>
+  <link rel="stylesheet" href="./media/codemirror.css">
+  <script src="./media/acorn_codemirror.js"></script>
+  <link rel="stylesheet" href="./media/ejs.css">
+  <script src="./media/sandbox.js"></script>
+  <script src="./media/ejs.js"></script>
+  <script>var chapNum = 6;var sandboxLoadFiles = ["code/mountains.js", "code/chapter/06_object.js"];</script>
+</head>
+
+<body><article>
+<nav>
+  <a href="http:./05_higher_order.html" title="previous chapter">◀</a>
+  <a href="http:./index.html" title="cover">◆</a>
+  <a href="http:./07_elife.html" title="next chapter">▶</a>
+</nav>
+
+<h1><div class="chap_num">Глава 6</div>Тайният живот на обектите</h1>
+<blockquote>
+<p><a class="p_ident" id="p_C9NMk2tmA4" href="http:./06_object.html#p_C9NMk2tmA4"></a>Проблемът с обекто - ориентираните езици е, че те имат абсолютно всичко в средата , която носят със себе си. Ти искаш банан, но това което получаваш е горила държаща банан и цялата джунгла”</p>
+ <footer>Joe Armstrong, <cite>интервюиран в Coders при работа</cite></footer>
+</blockquote>
+<p><a class="p_ident" id="p_fPdVAHtS9s" href="http:./06_object.html#p_fPdVAHtS9s"></a>Когато един програмист казва “обект”, това е препълнен термин. В моята професия, обектите са начин на живот, предмет на свещени войни, обичана модерна дума, която още не е загубила своята сила.</p>
+<p><a class="p_ident" id="p_1l/AXS0w/+" href="http:./06_object.html#p_1l/AXS0w/+"></a>За външен човек, това е може би малко объркващо. Нека да започнем с кратка история на обектите, като програмни конструктори.</p>
+<h2><a class="h_ident" id="h_kMzWSXQAtV" href="http:./06_object.html#h_kMzWSXQAtV"></a>История</h2>
+<p><a class="p_ident" id="p_7Qth+HqmZl" href="http:./06_object.html#p_7Qth+HqmZl"></a>Тази история, както повечето истории за програмиране, започва с проблема за сложността. Една философия казва, че могат да се направят сложности, които се управляват от малки отделения, които са изолирани едно от друго. Тези отделения, били наречени <em>objects</em> (обекти).</p>
+<p id="interface"><a class="p_ident" id="p_UuUhBp47+J" href="http:./06_object.html#p_UuUhBp47+J"></a>Един обект е твърда черупка, която крие лепкава сложност в нея и вместо това ни предлага няколко копчета и конектори (като методи), които предоставят интерфейс, чрез който обекта може да се използва. Идеята е интерфейса да е сравнително прост, а всички сложни неща, които се случват в обекта да бъдат игнорирани, когато се работи с него.</p>
+<div class="image">
+  <img src="./media/object.jpg" alt="A simple interface can hide a lot of complexity.">
+</div>
+<p><a class="p_ident" id="p_KUiP7xA3eo" href="http:./06_object.html#p_KUiP7xA3eo"></a>Като пример, можете да си представите един обект, който осигурява интерфейса на вашия екран. Той осигурява начини да се чертаят фигури и текст в пространството, но крие всички детайли, как тези форми се конвертират в пиксели на вашия екран. Ще имаме набори от методи, като например <code>drawCircle</code> и това е единственото нещо, което трябва да знаете за да използвате такъв обект.</p>
+<p><a class="p_ident" id="p_2cwmac7A3z" href="http:./06_object.html#p_2cwmac7A3z"></a>Тези идеи бяха първоначално разработени през 1970г. и 1980г., но през 1990г е била извършена революция в обекто-ориентираното програмиране. Внезапно много хора започват да казват, че обектите са правилният начин за програмиране и всичко, което не включва обекти е остаряла глупост.</p>
+<p><a class="p_ident" id="p_g9yaxQcUB0" href="http:./06_object.html#p_g9yaxQcUB0"></a>Този вид фанатизъм винаги прави много непрактични глупости и има нещо, като контра-революция от тогава. В някои кръгове, обектите имат доста лоша репутация в днешно време.</p>
+<p><a class="p_ident" id="p_yDJcWLiV1q" href="http:./06_object.html#p_yDJcWLiV1q"></a>Аз предпочитам да разгледаме въпроса от практическия, а не от идеологическия ъгъл. Има няколко полезни концепции, като една от важните е капсулиране( прави разлика между вътрешна сложност и външен интерфейс), това популяризира обекто-ориентираната култура. И тя заслужава да се изучава.</p>
+<p><a class="p_ident" id="p_uZjg5Fd1Wj" href="http:./06_object.html#p_uZjg5Fd1Wj"></a>Тази глава описва доста ексцентрични ползвания на обекти в JavaScript и начини, които се отнасят до класически обекто-ориентирани техники.</p>
+<h2 id="obj_methods"><a class="h_ident" id="h_fkrGgDyRWc" href="http:./06_object.html#h_fkrGgDyRWc"></a>Методи</h2>
+<p><a class="p_ident" id="p_cbCII9cU5W" href="http:./06_object.html#p_cbCII9cU5W"></a>Методите са просто свойства, които притежават функциите. Това е един прост метод:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_l1xlJAtYi3" href="http:./06_object.html#c_l1xlJAtYi3"></a><span class="cm-keyword">var</span> <span class="cm-variable">rabbit</span> <span class="cm-operator">=</span> {};
+<span class="cm-variable">rabbit</span>.<span class="cm-property">speak</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">line</span>) {
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"The rabbit says '"</span> <span class="cm-operator">+</span> <span class="cm-variable-2">line</span> <span class="cm-operator">+</span> <span class="cm-string">"'"</span>);
+};
+
+<span class="cm-variable">rabbit</span>.<span class="cm-property">speak</span>(<span class="cm-string">"I'm alive."</span>);
+<span class="cm-comment">// → The rabbit says 'I'm alive.'</span></pre>
+<p><a class="p_ident" id="p_N+6e0UGvFo" href="http:./06_object.html#p_N+6e0UGvFo"></a>Обикновено метода трябва да прави нещо с обекта, върху който е извикан. Когато дадена функция е извикана, като метод - погледни за свойство и незабавно го извикай, като <code>object.method()</code>. Има   специална променлива <code>this</code> в нейното тяло с точка за обекта, за който е извикана.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_nD7BzYTooL" href="http:./06_object.html#c_nD7BzYTooL"></a><span class="cm-keyword">function</span> <span class="cm-variable">speak</span>(<span class="cm-def">line</span>) {
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"The "</span> <span class="cm-operator">+</span> <span class="cm-keyword">this</span>.<span class="cm-property">type</span> <span class="cm-operator">+</span> <span class="cm-string">" rabbit says '"</span> <span class="cm-operator">+</span>
+              <span class="cm-variable-2">line</span> <span class="cm-operator">+</span> <span class="cm-string">"'"</span>);
+}
+<span class="cm-keyword">var</span> <span class="cm-variable">whiteRabbit</span> <span class="cm-operator">=</span> {<span class="cm-property">type</span>: <span class="cm-string">"white"</span>, <span class="cm-property">speak</span>: <span class="cm-variable">speak</span>};
+<span class="cm-keyword">var</span> <span class="cm-variable">fatRabbit</span> <span class="cm-operator">=</span> {<span class="cm-property">type</span>: <span class="cm-string">"fat"</span>, <span class="cm-property">speak</span>: <span class="cm-variable">speak</span>};
+
+<span class="cm-variable">whiteRabbit</span>.<span class="cm-property">speak</span>(<span class="cm-string">"Oh my ears and whiskers, "</span> <span class="cm-operator">+</span>
+                  <span class="cm-string">"how late it's getting!"</span>);
+<span class="cm-comment">// → The white rabbit says 'Oh my ears and whiskers, how</span>
+<span class="cm-comment">//   late it's getting!'</span>
+<span class="cm-variable">fatRabbit</span>.<span class="cm-property">speak</span>(<span class="cm-string">"I could sure use a carrot right now."</span>);
+<span class="cm-comment">// → The fat rabbit says 'I could sure use a carrot</span>
+<span class="cm-comment">//   right now.'</span></pre>
+<p><a class="p_ident" id="p_FbPIv/+6x+" href="http:./06_object.html#p_FbPIv/+6x+"></a>Кодът използва ключовата дума <code>this</code> на изхода, където заека говори. Спомнете си, че методите <code>apply</code> и <code>bind</code> използват първия аргумент за извикване на метод. Този първи аргумент в действителност се използва за задаване на стойност на <code>this</code>.</p>
+<p id="call_method"><a class="p_ident" id="p_jHNP07w/lm" href="http:./06_object.html#p_jHNP07w/lm"></a>Съществува метод, подобен на <code>apply</code>, наречен <code>call</code>. Той също извиква метод функция, но взема аргументите си нормално, а не като масив. Както <code>apply</code> и <code>bind</code>, <code>call</code> може да предава специфичната <code>this</code> стойност.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_hpZYGIH9dn" href="http:./06_object.html#c_hpZYGIH9dn"></a><span class="cm-variable">speak</span>.<span class="cm-property">apply</span>(<span class="cm-variable">fatRabbit</span>, [<span class="cm-string">"Burp!"</span>]);
+<span class="cm-comment">// → The fat rabbit says 'Burp!'</span>
+<span class="cm-variable">speak</span>.<span class="cm-property">call</span>({<span class="cm-property">type</span>: <span class="cm-string">"old"</span>}, <span class="cm-string">"Oh my."</span>);
+<span class="cm-comment">// → The old rabbit says 'Oh my.'</span></pre>
+<h2 id="prototypes"><a class="h_ident" id="h_SumMlRB7yn" href="http:./06_object.html#h_SumMlRB7yn"></a>Прототипи</h2>
+<p><a class="p_ident" id="p_hi1TWnD/2p" href="http:./06_object.html#p_hi1TWnD/2p"></a>Гледайте внимателно:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_i8erz5n1Nn" href="http:./06_object.html#c_i8erz5n1Nn"></a><span class="cm-keyword">var</span> <span class="cm-variable">empty</span> <span class="cm-operator">=</span> {};
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">empty</span>.<span class="cm-property">toString</span>);
+<span class="cm-comment">// → function toString(){…}</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">empty</span>.<span class="cm-property">toString</span>());
+<span class="cm-comment">// → [object Object]</span></pre>
+<p><a class="p_ident" id="p_aX24Mkkmn9" href="http:./06_object.html#p_aX24Mkkmn9"></a>Аз просто превърнах свойство в празен обект. Магия!</p>
+<p><a class="p_ident" id="p_ymaGpRwPF5" href="http:./06_object.html#p_ymaGpRwPF5"></a>Е, не съвсем. Просто промених източника на информация за начина, по който в JavaScript обектите работят. В допълнение към своя набор от свойства, почти всички обекти имат <em>prototype</em> (прототип). Прототипът е друг обект, който се използва, като източник на аварийни свойства. Когато обектът получава искане за свойство, с което не разполага, неговият прототип ще потърси това свойство, а след това прототипа на прототипа и т.н.</p>
+<p><a class="p_ident" id="p_7FLJjsfmk4" href="http:./06_object.html#p_7FLJjsfmk4"></a>Така че, кой е прототипа на празния обект? Това е голяма поредица от прототипи, които стоят почти зад всички обекти <code>Object.prototype</code>.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_nuBDtl0kQy" href="http:./06_object.html#c_nuBDtl0kQy"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">Object</span>.<span class="cm-property">getPrototypeOf</span>({}) <span class="cm-operator">==</span>
+            <span class="cm-variable">Object</span>.<span class="cm-property">prototype</span>);
+<span class="cm-comment">// → true</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">Object</span>.<span class="cm-property">getPrototypeOf</span>(<span class="cm-variable">Object</span>.<span class="cm-property">prototype</span>));
+<span class="cm-comment">// → null</span></pre>
+<p><a class="p_ident" id="p_vHbNlN1h5h" href="http:./06_object.html#p_vHbNlN1h5h"></a>Както може би очаквате <code>Object.getPrototypeOf</code> функцията, връща прототипа на обекта.</p>
+<p><a class="p_ident" id="p_4S0XbM8aBm" href="http:./06_object.html#p_4S0XbM8aBm"></a>Отношенията на прототипите на обектите в JavaScript, образуват дървовидна структура, а в основата на тази структура стои <code>Object.prototype</code>. Той осигурява няколко метода, които са във всички обекти, като toString, който превръща  един обект в <em>string</em>.</p>
+<p><a class="p_ident" id="p_LPg9dSSFAi" href="http:./06_object.html#p_LPg9dSSFAi"></a>Много обекти нямат директно <code>Object.prototype</code>, като свой основен прототип, но вместо това имат друг обект, който предоставя своите собствени свойства по подразбиране. Функциите получават този обект от <code>Function.prototype</code>, а масивите от <code>Array.prototype</code>.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_sV0BBBJ/w/" href="http:./06_object.html#c_sV0BBBJ/w/"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">Object</span>.<span class="cm-property">getPrototypeOf</span>(<span class="cm-variable">isNaN</span>) <span class="cm-operator">==</span>
+            <span class="cm-variable">Function</span>.<span class="cm-property">prototype</span>);
+<span class="cm-comment">// → true</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">Object</span>.<span class="cm-property">getPrototypeOf</span>([]) <span class="cm-operator">==</span>
+            <span class="cm-variable">Array</span>.<span class="cm-property">prototype</span>);
+<span class="cm-comment">// → true</span></pre>
+<p><a class="p_ident" id="p_QVomcVCyPH" href="http:./06_object.html#p_QVomcVCyPH"></a>Такъв обект прототип ще има прототип, като <code>Object.prototype</code> и така ще може косвено да осигурява методи, като <code>toString</code>.</p>
+<p><a class="p_ident" id="p_TzOd94K1HD" href="http:./06_object.html#p_TzOd94K1HD"></a>Функцията <code>Object.getPrototypeOf</code> очевидно връща прототипа на даден обект. Може да използвате <code>Object.create</code> за да създадете обект с определен прототип.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_9H47vWZ096" href="http:./06_object.html#c_9H47vWZ096"></a><span class="cm-keyword">var</span> <span class="cm-variable">protoRabbit</span> <span class="cm-operator">=</span> {
+  <span class="cm-property">speak</span>: <span class="cm-keyword">function</span>(<span class="cm-def">line</span>) {
+    <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"The "</span> <span class="cm-operator">+</span> <span class="cm-keyword">this</span>.<span class="cm-property">type</span> <span class="cm-operator">+</span> <span class="cm-string">" rabbit says '"</span> <span class="cm-operator">+</span>
+                <span class="cm-variable-2">line</span> <span class="cm-operator">+</span> <span class="cm-string">"'"</span>);
+  }
+};
+<span class="cm-keyword">var</span> <span class="cm-variable">killerRabbit</span> <span class="cm-operator">=</span> <span class="cm-variable">Object</span>.<span class="cm-property">create</span>(<span class="cm-variable">protoRabbit</span>);
+<span class="cm-variable">killerRabbit</span>.<span class="cm-property">type</span> <span class="cm-operator">=</span> <span class="cm-string">"killer"</span>;
+<span class="cm-variable">killerRabbit</span>.<span class="cm-property">speak</span>(<span class="cm-string">"SKREEEE!"</span>);
+<span class="cm-comment">// → The killer rabbit says 'SKREEEE!'</span></pre>
+<p><a class="p_ident" id="p_y8kzFoQw1W" href="http:./06_object.html#p_y8kzFoQw1W"></a>“protoRabbit” работи, като контейнер за свойствата на всички зайци. Но един обект на заек “killerRabbit” съдържа свойства, които се прилагат само за него в този случай и извлича споделените свойства от своя прототип.</p>
+<h2 id="constructors"><a class="h_ident" id="h_YKXJZqcaJA" href="http:./06_object.html#h_YKXJZqcaJA"></a>Конструктори</h2>
+<p><a class="p_ident" id="p_y83XvnG8ez" href="http:./06_object.html#p_y83XvnG8ez"></a>По-удобен начин за създаване на обекти, които произлизат от някой споделен прототип е да се използва <em>constructor</em> (конструктор). В JavaScript извиквайки функция с ключовата дума <code>new</code> пред нея, определя тази функция, като конструктор. Конструкторът има променливата <code>this</code>, която свързва новия обект, и ако освен изрично не и е казано да върне друг обект, този нов обект ще бъде върнат от извикването и.</p>
+<p><a class="p_ident" id="p_uPw4dUu94k" href="http:./06_object.html#p_uPw4dUu94k"></a>Един обект създаден с <code>new</code> казва, че е инстанция на своя конструктор.</p>
+<p><a class="p_ident" id="p_v2jJnPrF/1" href="http:./06_object.html#p_v2jJnPrF/1"></a>Ето един прост конструктор за зайци. Това е конвенция на капитализация на имената на конструкторите, така че лесно да се различават от останалите функции.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_Th/OJfySgB" href="http:./06_object.html#c_Th/OJfySgB"></a><span class="cm-keyword">function</span> <span class="cm-variable">Rabbit</span>(<span class="cm-def">type</span>) {
+  <span class="cm-keyword">this</span>.<span class="cm-property">type</span> <span class="cm-operator">=</span> <span class="cm-variable-2">type</span>;
+}
+
+<span class="cm-keyword">var</span> <span class="cm-variable">killerRabbit</span> <span class="cm-operator">=</span> <span class="cm-keyword">new</span> <span class="cm-variable">Rabbit</span>(<span class="cm-string">"killer"</span>);
+<span class="cm-keyword">var</span> <span class="cm-variable">blackRabbit</span> <span class="cm-operator">=</span> <span class="cm-keyword">new</span> <span class="cm-variable">Rabbit</span>(<span class="cm-string">"black"</span>);
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">blackRabbit</span>.<span class="cm-property">type</span>);
+<span class="cm-comment">// → black</span></pre>
+<p><a class="p_ident" id="p_ZZ4u3YPk72" href="http:./06_object.html#p_ZZ4u3YPk72"></a>Конструкторите (в действителност всички функции) автоматично получават свойството на име <code>prototype</code>, което по подразбиране притежава един обикновен празен обект, който произлиза от <code>Object.prototype</code>. Всеки модел създаден с конструктор ще има този обект, като негов прототип. Така че, за да добавим <code>speak</code> метод на зайците, създадени с <code>Rabbit</code> конструктора, можем да направим това:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_NxM9pC8Uab" href="http:./06_object.html#c_NxM9pC8Uab"></a><span class="cm-variable">Rabbit</span>.<span class="cm-property">prototype</span>.<span class="cm-property">speak</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">line</span>) {
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"The "</span> <span class="cm-operator">+</span> <span class="cm-keyword">this</span>.<span class="cm-property">type</span> <span class="cm-operator">+</span> <span class="cm-string">" rabbit says '"</span> <span class="cm-operator">+</span>
+              <span class="cm-variable-2">line</span> <span class="cm-operator">+</span> <span class="cm-string">"'"</span>);
+};
+<span class="cm-variable">blackRabbit</span>.<span class="cm-property">speak</span>(<span class="cm-string">"Doom..."</span>);
+<span class="cm-comment">// → The black rabbit says 'Doom...'</span></pre>
+<p><a class="p_ident" id="p_4sWuvx6wkg" href="http:./06_object.html#p_4sWuvx6wkg"></a>Важно е да разберете разликата между начина, по който прототипа се свързва с конструктора (чрез своето <code>prototype</code> свойство) и начина по който обектите вземат прототип (което може да бъде направено с <code>Object.getPrototypeOf</code>). Действителния прототип на конструктора е <code>Function.prototype</code> , както за конструктори на функции. Неговото свойство <code>prototype</code> ще бъде копие на прототипа създаден през него, но не и неговия собствен прототип.</p>
+<h2><a class="h_ident" id="h_oUlUep3Os8" href="http:./06_object.html#h_oUlUep3Os8"></a>Първостепенно  получени  свойства</h2>
+<p><a class="p_ident" id="p_TULrs9Y+I2" href="http:./06_object.html#p_TULrs9Y+I2"></a>Когато добавим свойство към обект, независимо в прототипа или не, свойството е добавено на самия обект, който от тук на татък ще го има, като своя собственост. Ако има свойство със същото име в прототипа, това свойство няма да се отрази на обекта. Самият прототип  не се променя.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_QARcjiyYI7" href="http:./06_object.html#c_QARcjiyYI7"></a><span class="cm-variable">Rabbit</span>.<span class="cm-property">prototype</span>.<span class="cm-property">teeth</span> <span class="cm-operator">=</span> <span class="cm-string">"small"</span>;
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">killerRabbit</span>.<span class="cm-property">teeth</span>);
+<span class="cm-comment">// → small</span>
+<span class="cm-variable">killerRabbit</span>.<span class="cm-property">teeth</span> <span class="cm-operator">=</span> <span class="cm-string">"long, sharp, and bloody"</span>;
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">killerRabbit</span>.<span class="cm-property">teeth</span>);
+<span class="cm-comment">// → long, sharp, and bloody</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">blackRabbit</span>.<span class="cm-property">teeth</span>);
+<span class="cm-comment">// → small</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">Rabbit</span>.<span class="cm-property">prototype</span>.<span class="cm-property">teeth</span>);
+<span class="cm-comment">// → small</span></pre>
+<p><a class="p_ident" id="p_HM5YtS3KgJ" href="http:./06_object.html#p_HM5YtS3KgJ"></a>Диаграмата по-долу показва ситуацията след, като кода е свършил. Прототипите на <code>Rabbit</code> и <code>Object</code> стоят зад <code>killerRabbit</code>, като вид фон, където ако свойствата на обектите не са открити, могат да бъдат разгледани.</p>
+<div class="image">
+  <img src="./media/rabbits.svg" alt="Rabbit object prototype schema">
+</div>
+<p><a class="p_ident" id="p_or3/lz1DV8" href="http:./06_object.html#p_or3/lz1DV8"></a>Изключването  на свойства, които съществуват в прототипа е често полезно нещо, което може да се направи. Примера със заешките зъби показва, че може да се използва за изразяване на изключителни свойства в случай на по-общ клас от обекти, като оставя обектите - <em>nonexceptional</em> просто да вземат стандартна стойност от своя прототип.</p>
+<p><a class="p_ident" id="p_O8pyFABp7m" href="http:./06_object.html#p_O8pyFABp7m"></a>Това се използва за да се получи стандартна функция и масив с прототипи, на различен метод <code>toString</code> от основния обект прототип.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_lQG1eSFUan" href="http:./06_object.html#c_lQG1eSFUan"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">Array</span>.<span class="cm-property">prototype</span>.<span class="cm-property">toString</span> <span class="cm-operator">==</span>
+            <span class="cm-variable">Object</span>.<span class="cm-property">prototype</span>.<span class="cm-property">toString</span>);
+<span class="cm-comment">// → false</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>([<span class="cm-number">1</span>, <span class="cm-number">2</span>].<span class="cm-property">toString</span>());
+<span class="cm-comment">// → 1,2</span></pre>
+<p><a class="p_ident" id="p_qmKAzHrRQG" href="http:./06_object.html#p_qmKAzHrRQG"></a>Извикването на <code>toString</code> върху масива, дава резултат подобен на <code>.join(",")</code>, който поставя запетая между стойностите на масива. Директното извикване на <code>Object.prototype.toString</code> с масив, произвежда друг <em>string</em>. Тази функция не разбира от масиви, така че просто поставя думата “object” и името на типа между квадратни скоби.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_74xTJFhRVW" href="http:./06_object.html#c_74xTJFhRVW"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">Object</span>.<span class="cm-property">prototype</span>.<span class="cm-property">toString</span>.<span class="cm-property">call</span>([<span class="cm-number">1</span>, <span class="cm-number">2</span>]));
+<span class="cm-comment">// → [object Array]</span></pre>
+<h2><a class="h_ident" id="h_QIL5obVMhZ" href="http:./06_object.html#h_QIL5obVMhZ"></a>Prototype  interference</h2>
+<p><a class="p_ident" id="p_N34jQ1q+jC" href="http:./06_object.html#p_N34jQ1q+jC"></a>Прототипът може да се използва по всяко време за да се добавят нови свойства и методи на всички обекти базирани на него. Например може да се окаже необходимо зайците да танцуват.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_3EjiFcThqx" href="http:./06_object.html#c_3EjiFcThqx"></a><span class="cm-variable">Rabbit</span>.<span class="cm-property">prototype</span>.<span class="cm-property">dance</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>() {
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"The "</span> <span class="cm-operator">+</span> <span class="cm-keyword">this</span>.<span class="cm-property">type</span> <span class="cm-operator">+</span> <span class="cm-string">" rabbit dances a jig."</span>);
+};
+<span class="cm-variable">killerRabbit</span>.<span class="cm-property">dance</span>();
+<span class="cm-comment">// → The killer rabbit dances a jig.</span></pre>
+<p><a class="p_ident" id="p_U5nebQZlJ4" href="http:./06_object.html#p_U5nebQZlJ4"></a>Това е удобно. Но има ситуации, където причинява проблеми. В предните глави, ние използвахме един обект, като начин да се обединяват стойности с имена, като създадохме свойства за имената и задавахме съответната стойност на стойността им. Ето един пример от <a href="http:./04_data.html#object_map">Глава 4</a>:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_mm9wdDpout" href="http:./06_object.html#c_mm9wdDpout"></a><span class="cm-keyword">var</span> <span class="cm-variable">map</span> <span class="cm-operator">=</span> {};
+<span class="cm-keyword">function</span> <span class="cm-variable">storePhi</span>(<span class="cm-def">event</span>, <span class="cm-def">phi</span>) {
+  <span class="cm-variable">map</span>[<span class="cm-variable-2">event</span>] <span class="cm-operator">=</span> <span class="cm-variable-2">phi</span>;
+}
+
+<span class="cm-variable">storePhi</span>(<span class="cm-string">"pizza"</span>, <span class="cm-number">0.069</span>);
+<span class="cm-variable">storePhi</span>(<span class="cm-string">"touched tree"</span>, <span class="cm-operator">-</span><span class="cm-number">0.081</span>);</pre>
+<p><a class="p_ident" id="p_FtECKQ2UPV" href="http:./06_object.html#p_FtECKQ2UPV"></a>Можем да обходим всички <em>phi</em> стойности в обекта, като използваме <code>for</code>/<code>in</code> цикъл и тест за проверка дали дадено име е там с помощта на <code>in</code> оператора. Но за съжаление, прототипа на обекта застава на пътя ни.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_OFbCsuDw4K" href="http:./06_object.html#c_OFbCsuDw4K"></a><span class="cm-variable">Object</span>.<span class="cm-property">prototype</span>.<span class="cm-property">nonsense</span> <span class="cm-operator">=</span> <span class="cm-string">"hi"</span>;
+<span class="cm-keyword">for</span> (<span class="cm-keyword">var</span> <span class="cm-variable">name</span> <span class="cm-keyword">in</span> <span class="cm-variable">map</span>)
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">name</span>);
+<span class="cm-comment">// → pizza</span>
+<span class="cm-comment">// → touched tree</span>
+<span class="cm-comment">// → nonsense</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"nonsense"</span> <span class="cm-keyword">in</span> <span class="cm-variable">map</span>);
+<span class="cm-comment">// → true</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"toString"</span> <span class="cm-keyword">in</span> <span class="cm-variable">map</span>);
+<span class="cm-comment">// → true</span>
+
+<span class="cm-comment">// Delete the problematic property again</span>
+<span class="cm-keyword">delete</span> <span class="cm-variable">Object</span>.<span class="cm-property">prototype</span>.<span class="cm-property">nonsense</span>;</pre>
+<p><a class="p_ident" id="p_xoSFOumlvj" href="http:./06_object.html#p_xoSFOumlvj"></a>Това цялото е грешно. Няма събитие “nonsense” в нашия набор от данни. Там няма и събитие наречено “toString”.</p>
+<p><a class="p_ident" id="p_NGyDSRSyjr" href="http:./06_object.html#p_NGyDSRSyjr"></a>Странно е, че <code>toString</code> не се появи в <code>for</code>/<code>in</code> цикъла, но оператора <code>in</code> се върна за него. Това е така защото JavaScript  разграничава <em>enumerable</em> и <em>nonenumerable</em> свойствата.</p>
+<p><a class="p_ident" id="p_xfPTy1q4XS" href="http:./06_object.html#p_xfPTy1q4XS"></a>Всичките свойства, които създаваме, просто им възлагаме <em>enumerable</em>. Стандартните свойства в <code>Object.prototype</code> са <em>nonenumerable</em>, поради което не се появяват в <code>for</code>/<code>in</code> цикла.</p>
+<p><a class="p_ident" id="p_sgLvQxcvMV" href="http:./06_object.html#p_sgLvQxcvMV"></a>Възможно е да определим наши собствени  nonenumerable  свойства, чрез използване на функцията <code>Object.defineProperty</code>, която ни позволява да контролираме вида на стойността, която създаваме.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_SiEdkjWs9U" href="http:./06_object.html#c_SiEdkjWs9U"></a><span class="cm-variable">Object</span>.<span class="cm-property">defineProperty</span>(<span class="cm-variable">Object</span>.<span class="cm-property">prototype</span>, <span class="cm-string">"hiddenNonsense"</span>,
+                      {<span class="cm-property">enumerable</span>: <span class="cm-atom">false</span>, <span class="cm-property">value</span>: <span class="cm-string">"hi"</span>});
+<span class="cm-keyword">for</span> (<span class="cm-keyword">var</span> <span class="cm-variable">name</span> <span class="cm-keyword">in</span> <span class="cm-variable">map</span>)
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">name</span>);
+<span class="cm-comment">// → pizza</span>
+<span class="cm-comment">// → touched tree</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">map</span>.<span class="cm-property">hiddenNonsense</span>);
+<span class="cm-comment">// → hi</span></pre>
+<p><a class="p_ident" id="p_wMLrx6TIjh" href="http:./06_object.html#p_wMLrx6TIjh"></a>Така че, сега свойството е там, но то няма да се появи в цикъла. Това е добре. Но ние все още имаме проблем с оператора <code>in</code>, който твърди, че  свойствата на <code>Object.prototype</code> продължават да съществуват в нашия обект. За това можем да използваме върху обекта, метода <code>hasOwnProperty</code>.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_cKnuL5PvvB" href="http:./06_object.html#c_cKnuL5PvvB"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">map</span>.<span class="cm-property">hasOwnProperty</span>(<span class="cm-string">"toString"</span>));
+<span class="cm-comment">// → false</span></pre>
+<p><a class="p_ident" id="p_1/lgWgImJc" href="http:./06_object.html#p_1/lgWgImJc"></a>Този метод ни казва дали обекта има това свойство, без да поглежда в своите прототипи. Това често е по-полезна информация от това, което оператора <code>in</code> ни дава.</p>
+<p><a class="p_ident" id="p_BFvrJTamlf" href="http:./06_object.html#p_BFvrJTamlf"></a>Когато се притеснявате, че някакъв друг код, който се зарежда в програмата ви, може да се бърка с базовите прототипи на обекта, ви препоръчвам да напишете един <code>for</code>/<code>in</code> цикъл, като този:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_KDS7ZDPuiN" href="http:./06_object.html#c_KDS7ZDPuiN"></a><span class="cm-keyword">for</span> (<span class="cm-keyword">var</span> <span class="cm-variable">name</span> <span class="cm-keyword">in</span> <span class="cm-variable">map</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-variable">map</span>.<span class="cm-property">hasOwnProperty</span>(<span class="cm-variable">name</span>)) {
+    <span class="cm-comment">// ... this is an own property</span>
+  }
+}</pre>
+<h2><a class="h_ident" id="h_1vS5Ik5kV5" href="http:./06_object.html#h_1vS5Ik5kV5"></a>Prototype-less objects</h2>
+<p><a class="p_ident" id="p_kSmosu1+EH" href="http:./06_object.html#p_kSmosu1+EH"></a>Но заешката дупка не свършва до тук. Какво става, ако някой е регистрирал името <code>hasOwnProperty</code> в нашия <code>map</code> обект и го е настроил на стойност 42? Сега <code>map.hasOwnProperty</code> ще се опита да извика локалното свойство, което притежава номера, а не функцията.</p>
+<p><a class="p_ident" id="p_tjlKDpfc75" href="http:./06_object.html#p_tjlKDpfc75"></a>В такъв случай прототипите просто стоят на пътя и ние бихме предпочели обектите да са без прототипи. Видяхме функцията <code>Object.create</code>, която ни позволява да създадем обект с определен прототип. Ние имаме право да вземем <code>null</code>, като прототип за създаване на нов обект, без прототипи. За обекти, като <code>map</code>, където свойствата могат да бъдат всичко друго това е точно онова, което искаме.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_NhO7nqeTuz" href="http:./06_object.html#c_NhO7nqeTuz"></a><span class="cm-keyword">var</span> <span class="cm-variable">map</span> <span class="cm-operator">=</span> <span class="cm-variable">Object</span>.<span class="cm-property">create</span>(<span class="cm-atom">null</span>);
+<span class="cm-variable">map</span>[<span class="cm-string">"pizza"</span>] <span class="cm-operator">=</span> <span class="cm-number">0.069</span>;
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"toString"</span> <span class="cm-keyword">in</span> <span class="cm-variable">map</span>);
+<span class="cm-comment">// → false</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"pizza"</span> <span class="cm-keyword">in</span> <span class="cm-variable">map</span>);
+<span class="cm-comment">// → true</span></pre>
+<p><a class="p_ident" id="p_jKSTfVS3KH" href="http:./06_object.html#p_jKSTfVS3KH"></a>Много добре! Вече не се нуждаем от <code>hasOwnProperty</code> защото всички свойства на обекта са само собствените му свойства. Сега спокойно можем да използваме <code>for</code>/<code>in</code> цикъла, без значение, колко хора са правили <code>Object.prototype</code>.</p>
+<h2><a class="h_ident" id="h_mJ/JHQRHg9" href="http:./06_object.html#h_mJ/JHQRHg9"></a>Полиморфизъм</h2>
+<p><a class="p_ident" id="p_+2Ates4jdf" href="http:./06_object.html#p_+2Ates4jdf"></a>Когато извиквате <code>String</code> функцията, която превръща стойност в <em>string</em> в даден обект, тя ще извика метода <code>toString</code> върху този обект, за да се опита да създаде смислен <em>string</em>, който да върне. Споменах, че някои стандартни прототипи определят своя собствена версия на <code>toString</code>, така че да могат да създадат <em>string</em>, който съдържа по-полезна информация, от колкото <code>"[object Object]"</code>.</p>
+<p><a class="p_ident" id="p_HgUFdFB6vM" href="http:./06_object.html#p_HgUFdFB6vM"></a>Това е прост пример за мощна идея. Когато част от кода е писан да работи с обекти, които имат определен интерфейс (в този случай <code>toString</code> метод) всякакъв вид обекти, които са в подкрепа на този интерфейс, могат да бъдат включени в кода и те просто ще работят.</p>
+<p><a class="p_ident" id="p_phZ92zNL98" href="http:./06_object.html#p_phZ92zNL98"></a>Тази техника се нарича <em>polymorphism</em> (полиморфизъм) - въпреки, че не извършва реална смяна на формата. Полиморфния код може да работи с различни форми на стойности, стига да може интерфейса да ги подържа.</p>
+<h2 id="tables"><a class="h_ident" id="h_36C2FHHi44" href="http:./06_object.html#h_36C2FHHi44"></a>Поставяне извън таблицата</h2>
+<p><a class="p_ident" id="p_nOQLqBWk1x" href="http:./06_object.html#p_nOQLqBWk1x"></a>Ще работим върху леко по-ангажиращ пример, като се опитам да ви дам по-ясна представа, какво е полиморфизъм и обекто-ориентирано програмиране, като цяло. Проекта е : да се опитаме да напишем програма, която по даден масив от масиви с клетки на таблица, се натрупва <em>string</em>, който съдържа добре подредени и изправени колони и редове на таблица. Нещо такова:</p>
+<pre data-language="text/plain" class="snippet cm-s-default"><a class="c_ident" id="c_eMPUYfBonM" href="http:./06_object.html#c_eMPUYfBonM"></a>name         height country
+------------ ------ -------------
+Kilimanjaro    5895 Tanzania
+Everest        8848 Nepal
+Mount Fuji     3776 Japan
+Mont Blanc     4808 Italy/France
+Vaalserberg     323 Netherlands
+Denali         6168 United States
+Popocatepetl   5465 Mexico</pre>
+<p><a class="p_ident" id="p_qmL/8YKol6" href="http:./06_object.html#p_qmL/8YKol6"></a>Начинът на изграждане на системата на нашата таблица е: функция конструктор, която да разбере, колко широка и висока е най-голямата клетка и след това да използва тази информация, за да определи ширината на колоните и височината на редовете. След това функцията строител, ще изготви правилния размер и монтаж на резултата в един <em>string</em>.</p>
+<p id="table_interface"><a class="p_ident" id="p_AbogVAH0Wj" href="http:./06_object.html#p_AbogVAH0Wj"></a>Програмата за оформление ще общува с клетъчните обекти, чрез добре дефиниран интерфейс. По този начин, видовете клетки, които програмата връща не са фиксирани предварително. Можем да добавим нови стилове-клетки по-късно, например, подчертаване на клетките за <em>headers</em>, които подкрепят нашия интерфейс, само ако те работят без да изискват промени в програмата за оформление.</p>
+<p><a class="p_ident" id="p_Oe6ruNqozx" href="http:./06_object.html#p_Oe6ruNqozx"></a>Това се отнася за интерфейса:</p>
+<div class="ulist"><ul>
+<li>
+<p><a class="p_ident" id="p_/UA7VFmSpc" href="http:./06_object.html#p_/UA7VFmSpc"></a>
+<code>minHeight()</code> връща число, показващо минималната височина, която клетката изисква (за линия).
+</p>
+</li>
+<li>
+<p><a class="p_ident" id="p_92QZ/amzwk" href="http:./06_object.html#p_92QZ/amzwk"></a>
+<code>minWidth()</code> връща число, показващо минималната ширина на тази клетка (букви).
+</p>
+</li>
+<li>
+<p><a class="p_ident" id="p_yx5zfEFlc0" href="http:./06_object.html#p_yx5zfEFlc0"></a>
+<code>draw(width, height)</code> връща масив с дължината на <code>height</code>, който съдържа серия от <em>strings</em>, като за всеки характер ширината е <code>width</code>. Това представлява съдържанието на клетката.
+</p>
+</li>
+</ul></div>
+<p><a class="p_ident" id="p_26lYAjlPjb" href="http:./06_object.html#p_26lYAjlPjb"></a>Ще направя тежки за използване по-високо ниво методи в масив за този пример, тъй като примера се поддава добре на този подход.</p>
+<p><a class="p_ident" id="p_GckWQ2f1q/" href="http:./06_object.html#p_GckWQ2f1q/"></a>В първата част на програмата изчисляваме масивите за минималната ширина на колоните и височината на редовете за мрежата от клетки. Променливата <code>rows</code> ще държи масив от масиви, като всеки вътрешен масив, представлява ред от клетки.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_1t+FkMSSZy" href="http:./06_object.html#c_1t+FkMSSZy"></a><span class="cm-keyword">function</span> <span class="cm-variable">rowHeights</span>(<span class="cm-def">rows</span>) {
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">rows</span>.<span class="cm-property">map</span>(<span class="cm-keyword">function</span>(<span class="cm-def">row</span>) {
+    <span class="cm-keyword">return</span> <span class="cm-variable-2">row</span>.<span class="cm-property">reduce</span>(<span class="cm-keyword">function</span>(<span class="cm-def">max</span>, <span class="cm-def">cell</span>) {
+      <span class="cm-keyword">return</span> <span class="cm-variable">Math</span>.<span class="cm-property">max</span>(<span class="cm-variable-2">max</span>, <span class="cm-variable-2">cell</span>.<span class="cm-property">minHeight</span>());
+    }, <span class="cm-number">0</span>);
+  });
+}
+
+<span class="cm-keyword">function</span> <span class="cm-variable">colWidths</span>(<span class="cm-def">rows</span>) {
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">rows</span>[<span class="cm-number">0</span>].<span class="cm-property">map</span>(<span class="cm-keyword">function</span>(<span class="cm-def">_</span>, <span class="cm-def">i</span>) {
+    <span class="cm-keyword">return</span> <span class="cm-variable-2">rows</span>.<span class="cm-property">reduce</span>(<span class="cm-keyword">function</span>(<span class="cm-def">max</span>, <span class="cm-def">row</span>) {
+      <span class="cm-keyword">return</span> <span class="cm-variable">Math</span>.<span class="cm-property">max</span>(<span class="cm-variable-2">max</span>, <span class="cm-variable-2">row</span>[<span class="cm-variable-2">i</span>].<span class="cm-property">minWidth</span>());
+    }, <span class="cm-number">0</span>);
+  });
+}</pre>
+<p><a class="p_ident" id="p_tFp8Lj1YMr" href="http:./06_object.html#p_tFp8Lj1YMr"></a>Използването на името на променливата  започващо с долна черта ( _ ) или състоящо се изцяло от една единствена долна черта е начин да се посочи ( на човешки читател), че този аргумент няма да се използва.</p>
+<p><a class="p_ident" id="p_LkGlygwwP+" href="http://eloquentjavascript.net/06_object.html#p_LkGlygwwP+"></a>Функцията <code>rowHeights</code> не трябва да бъде прекалено трудна за да се следва. Тя използва <code>reduce</code> за изчисляване на максималната височина на масива от клетки и е увита в <code>map</code> за да го направи за всички редове в <code>rows</code> масива.</p>
+<p><a class="p_ident" id="p_aeXoDNewFW" href="http:./06_object.html#p_aeXoDNewFW"></a>Ситуацията е малко по-трудна за <code>colWidths</code> функцията, тъй като външния масив е масив от редове, а не от колони. До сега не съм споменавал, че <code>map</code> ( както <code>forEach</code>, <code>filter</code> и подобни методи на масиви) подават втори аргумент  на функцията, като и дават: индекса на текущия елемент. Чрез мапнатите елементи на първия ред и с помощта на втория аргумент на <em>map</em> функцията, <code>colWidths</code> изгражда масив с един елемент за всеки индекс от колоната. Извикването на <code>reduce</code> минава над външния масив <code>rows</code> за всеки индекс и избира ширината на индексите на най-широката клетка.</p>
+<p><a class="p_ident" id="p_/Tbz5eCViE" href="http:./06_object.html#p_/Tbz5eCViE"></a>Ето кода, за да се направи таблицата:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_vsR7akwib/" href="http:./06_object.html#c_vsR7akwib/"></a><span class="cm-keyword">function</span> <span class="cm-variable">drawTable</span>(<span class="cm-def">rows</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">heights</span> <span class="cm-operator">=</span> <span class="cm-variable">rowHeights</span>(<span class="cm-variable-2">rows</span>);
+  <span class="cm-keyword">var</span> <span class="cm-def">widths</span> <span class="cm-operator">=</span> <span class="cm-variable">colWidths</span>(<span class="cm-variable-2">rows</span>);
+
+  <span class="cm-keyword">function</span> <span class="cm-def">drawLine</span>(<span class="cm-def">blocks</span>, <span class="cm-def">lineNo</span>) {
+    <span class="cm-keyword">return</span> <span class="cm-variable-2">blocks</span>.<span class="cm-property">map</span>(<span class="cm-keyword">function</span>(<span class="cm-def">block</span>) {
+      <span class="cm-keyword">return</span> <span class="cm-variable-2">block</span>[<span class="cm-variable-2">lineNo</span>];
+    }).<span class="cm-property">join</span>(<span class="cm-string">" "</span>);
+  }
+
+  <span class="cm-keyword">function</span> <span class="cm-def">drawRow</span>(<span class="cm-def">row</span>, <span class="cm-def">rowNum</span>) {
+    <span class="cm-keyword">var</span> <span class="cm-def">blocks</span> <span class="cm-operator">=</span> <span class="cm-variable-2">row</span>.<span class="cm-property">map</span>(<span class="cm-keyword">function</span>(<span class="cm-def">cell</span>, <span class="cm-def">colNum</span>) {
+      <span class="cm-keyword">return</span> <span class="cm-variable-2">cell</span>.<span class="cm-property">draw</span>(<span class="cm-variable-2">widths</span>[<span class="cm-variable-2">colNum</span>], <span class="cm-variable-2">heights</span>[<span class="cm-variable-2">rowNum</span>]);
+    });
+    <span class="cm-keyword">return</span> <span class="cm-variable-2">blocks</span>[<span class="cm-number">0</span>].<span class="cm-property">map</span>(<span class="cm-keyword">function</span>(<span class="cm-def">_</span>, <span class="cm-def">lineNo</span>) {
+      <span class="cm-keyword">return</span> <span class="cm-variable-2">drawLine</span>(<span class="cm-variable-2">blocks</span>, <span class="cm-variable-2">lineNo</span>);
+    }).<span class="cm-property">join</span>(<span class="cm-string">"\n"</span>);
+  }
+
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">rows</span>.<span class="cm-property">map</span>(<span class="cm-variable-2">drawRow</span>).<span class="cm-property">join</span>(<span class="cm-string">"\n"</span>);
+}</pre>
+<p><a class="p_ident" id="p_QSCDyHczZF" href="http:./06_object.html#p_QSCDyHczZF"></a>Функцията <code>drawTable</code> използва помощната вътрешна функция <code>drawRow</code>, за да направи всички редове и след това се присъединява към тях заедно с знаците за нов ред.</p>
+<p><a class="p_ident" id="p_b8wKD7NyzT" href="http:./06_object.html#p_b8wKD7NyzT"></a>Самата функция <code>drawRow</code> първо преобразува клетъчните обекти в ред блокове , които са масиви от <em>strings</em>, представляващи съдържанието на клетките, разделени с линия. Една единствена клетка, съдържаща просто броя 3776 може да бъде представена от един масив, като <code>["3776"]</code>, като се има в предвид, че подчертана клетка може да отнеме до две линии, ще бъде представена в масива, като <code>["name", "----"]</code>.</p>
+<p><a class="p_ident" id="p_uYZRAIhAHn" href="http:./06_object.html#p_uYZRAIhAHn"></a>Блоковете за <em>row</em> , които имат една и съща височина, трябва да се появят един до друг в крайната продукция. Второто извикване на <code>map</code> в <code>drawRow</code> изгражда на изхода ред по ред мапнатите линии в лявата страна на полето и за всеки от тях събира линии от помеждутъци докато запълни ширината на таблицата. Тези линии са свързани със знаците за нов ред за предоставяне на целия ред, като върната стойност на <code>drawRow</code>.</p>
+<p><a class="p_ident" id="p_1AKETNclQn" href="http:./06_object.html#p_1AKETNclQn"></a>Функцията <code>drawLine</code> извлича линии, които трябва да появят една до друга от масива с блокове и се присъединява към тях с интервал за да създаде едносимволно разделение между колоните на таблицата.</p>
+<p id="split"><a class="p_ident" id="p_bbKpGggVOW" href="http:./06_object.html#p_bbKpGggVOW"></a>Сега нека напишем конструктора за клетки, които съдържат текст, който реализира интерфейса на клетките в таблицата. Конструктора разделя <em>string</em>-а в масив от линии, използвайки метода <code>split</code>, който реже <em>string</em>-а  при всяка поява на аргумента и връща масив от парчета. Методът <code>minWidth</code> намира максималната ширина на линия в този масив.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_7NDpmoh43p" href="http:./06_object.html#c_7NDpmoh43p"></a><span class="cm-keyword">function</span> <span class="cm-variable">repeat</span>(<span class="cm-def">string</span>, <span class="cm-def">times</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">result</span> <span class="cm-operator">=</span> <span class="cm-string">""</span>;
+  <span class="cm-keyword">for</span> (<span class="cm-keyword">var</span> <span class="cm-def">i</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>; <span class="cm-variable-2">i</span> <span class="cm-operator">&lt;</span> <span class="cm-variable-2">times</span>; <span class="cm-variable-2">i</span><span class="cm-operator">++</span>)
+    <span class="cm-variable-2">result</span> <span class="cm-operator">+=</span> <span class="cm-variable-2">string</span>;
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">result</span>;
+}
+
+<span class="cm-keyword">function</span> <span class="cm-variable">TextCell</span>(<span class="cm-def">text</span>) {
+  <span class="cm-keyword">this</span>.<span class="cm-property">text</span> <span class="cm-operator">=</span> <span class="cm-variable-2">text</span>.<span class="cm-property">split</span>(<span class="cm-string">"\n"</span>);
+}
+<span class="cm-variable">TextCell</span>.<span class="cm-property">prototype</span>.<span class="cm-property">minWidth</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>() {
+  <span class="cm-keyword">return</span> <span class="cm-keyword">this</span>.<span class="cm-property">text</span>.<span class="cm-property">reduce</span>(<span class="cm-keyword">function</span>(<span class="cm-def">width</span>, <span class="cm-def">line</span>) {
+    <span class="cm-keyword">return</span> <span class="cm-variable">Math</span>.<span class="cm-property">max</span>(<span class="cm-variable-2">width</span>, <span class="cm-variable-2">line</span>.<span class="cm-property">length</span>);
+  }, <span class="cm-number">0</span>);
+};
+<span class="cm-variable">TextCell</span>.<span class="cm-property">prototype</span>.<span class="cm-property">minHeight</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>() {
+  <span class="cm-keyword">return</span> <span class="cm-keyword">this</span>.<span class="cm-property">text</span>.<span class="cm-property">length</span>;
+};
+<span class="cm-variable">TextCell</span>.<span class="cm-property">prototype</span>.<span class="cm-property">draw</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">width</span>, <span class="cm-def">height</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">result</span> <span class="cm-operator">=</span> [];
+  <span class="cm-keyword">for</span> (<span class="cm-keyword">var</span> <span class="cm-def">i</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>; <span class="cm-variable-2">i</span> <span class="cm-operator">&lt;</span> <span class="cm-variable-2">height</span>; <span class="cm-variable-2">i</span><span class="cm-operator">++</span>) {
+    <span class="cm-keyword">var</span> <span class="cm-def">line</span> <span class="cm-operator">=</span> <span class="cm-keyword">this</span>.<span class="cm-property">text</span>[<span class="cm-variable-2">i</span>] <span class="cm-operator">||</span> <span class="cm-string">""</span>;
+    <span class="cm-variable-2">result</span>.<span class="cm-property">push</span>(<span class="cm-variable-2">line</span> <span class="cm-operator">+</span> <span class="cm-variable">repeat</span>(<span class="cm-string">" "</span>, <span class="cm-variable-2">width</span> <span class="cm-operator">-</span> <span class="cm-variable-2">line</span>.<span class="cm-property">length</span>));
+  }
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">result</span>;
+};</pre>
+<p><a class="p_ident" id="p_XqC4cWwgYI" href="http:./06_object.html#p_XqC4cWwgYI"></a>Кодът използва помощна функция наречена <code>repeat</code>, която се основава на <code>string</code> и аргумент за повтаряне <code>times</code> броя пъти. Метода <code>draw</code> използва това , за да добави “подплънка” от линии, така че всички да имат необходимата дължина.</p>
+<p><a class="p_ident" id="p_4T1Kk1qpd9" href="http:./06_object.html#p_4T1Kk1qpd9"></a>Нека да пробваме всичко, което сме написали до сега, на шахматна дъска с размери 5х5.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_KZr3Gjzueh" href="http:./06_object.html#c_KZr3Gjzueh"></a><span class="cm-keyword">var</span> <span class="cm-variable">rows</span> <span class="cm-operator">=</span> [];
+<span class="cm-keyword">for</span> (<span class="cm-keyword">var</span> <span class="cm-variable">i</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>; <span class="cm-variable">i</span> <span class="cm-operator">&lt;</span> <span class="cm-number">5</span>; <span class="cm-variable">i</span><span class="cm-operator">++</span>) {
+   <span class="cm-keyword">var</span> <span class="cm-variable">row</span> <span class="cm-operator">=</span> [];
+   <span class="cm-keyword">for</span> (<span class="cm-keyword">var</span> <span class="cm-variable">j</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>; <span class="cm-variable">j</span> <span class="cm-operator">&lt;</span> <span class="cm-number">5</span>; <span class="cm-variable">j</span><span class="cm-operator">++</span>) {
+     <span class="cm-keyword">if</span> ((<span class="cm-variable">j</span> <span class="cm-operator">+</span> <span class="cm-variable">i</span>) <span class="cm-operator">%</span> <span class="cm-number">2</span> <span class="cm-operator">==</span> <span class="cm-number">0</span>)
+       <span class="cm-variable">row</span>.<span class="cm-property">push</span>(<span class="cm-keyword">new</span> <span class="cm-variable">TextCell</span>(<span class="cm-string">"##"</span>));
+     <span class="cm-keyword">else</span>
+       <span class="cm-variable">row</span>.<span class="cm-property">push</span>(<span class="cm-keyword">new</span> <span class="cm-variable">TextCell</span>(<span class="cm-string">"  "</span>));
+   }
+   <span class="cm-variable">rows</span>.<span class="cm-property">push</span>(<span class="cm-variable">row</span>);
+}
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">drawTable</span>(<span class="cm-variable">rows</span>));
+<span class="cm-comment">// → ##    ##    ##</span>
+<span class="cm-comment">//      ##    ##</span>
+<span class="cm-comment">//   ##    ##    ##</span>
+<span class="cm-comment">//      ##    ##</span>
+<span class="cm-comment">//   ##    ##    ##</span></pre>
+<p><a class="p_ident" id="p_ZlgwbD41JK" href="http:./06_object.html#p_ZlgwbD41JK"></a>Работи! Но тъй като всички клетки са с един и същи размер, кода за оформление на таблицата, не прави нищо интересно.</p>
+<p id="mountains"><a class="p_ident" id="p_ziLMS9iu5Y" href="http:./06_object.html#p_ziLMS9iu5Y"></a>Данните за таблицата на планините, които се опитваме да изградим, са налични в промеливата <code>MOUNTAINS</code> в пясъчника на главата и също в файл за <a href="http:./code/mountains.js">сваляне</a> от Интернет страницата.</p>
+<p><a class="p_ident" id="p_UiCC/VFl9F" href="http:./06_object.html#p_UiCC/VFl9F"></a>Ние искаме да се подчертае най-горния ред, който съдържа имената на колоните, като акцент върху клетките, с поредица от тирета. Няма проблем - просто ще напишем клетките, който трябва да се подчертаят.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_+e6Xt5s1Yy" href="http:./06_object.html#c_+e6Xt5s1Yy"></a><span class="cm-keyword">function</span> <span class="cm-variable">UnderlinedCell</span>(<span class="cm-def">inner</span>) {
+  <span class="cm-keyword">this</span>.<span class="cm-property">inner</span> <span class="cm-operator">=</span> <span class="cm-variable-2">inner</span>;
+}
+<span class="cm-variable">UnderlinedCell</span>.<span class="cm-property">prototype</span>.<span class="cm-property">minWidth</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>() {
+  <span class="cm-keyword">return</span> <span class="cm-keyword">this</span>.<span class="cm-property">inner</span>.<span class="cm-property">minWidth</span>();
+};
+<span class="cm-variable">UnderlinedCell</span>.<span class="cm-property">prototype</span>.<span class="cm-property">minHeight</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>() {
+  <span class="cm-keyword">return</span> <span class="cm-keyword">this</span>.<span class="cm-property">inner</span>.<span class="cm-property">minHeight</span>() <span class="cm-operator">+</span> <span class="cm-number">1</span>;
+};
+<span class="cm-variable">UnderlinedCell</span>.<span class="cm-property">prototype</span>.<span class="cm-property">draw</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">width</span>, <span class="cm-def">height</span>) {
+  <span class="cm-keyword">return</span> <span class="cm-keyword">this</span>.<span class="cm-property">inner</span>.<span class="cm-property">draw</span>(<span class="cm-variable-2">width</span>, <span class="cm-variable-2">height</span> <span class="cm-operator">-</span> <span class="cm-number">1</span>)
+    .<span class="cm-property">concat</span>([<span class="cm-variable">repeat</span>(<span class="cm-string">"-"</span>, <span class="cm-variable-2">width</span>)]);
+};</pre>
+<p><a class="p_ident" id="p_1VGPKHtYoJ" href="http:./06_object.html#p_1VGPKHtYoJ"></a>Подчертаната клетка съдържа друга клетка. Тя съобщава, минималния размер, като същия този на вътрешната клетка (с извикване на методите <code>minWidth</code> и <code>minHeight</code>) но добавя само една към височината за да отчете, че е заета от подчертаването.</p>
+<p><a class="p_ident" id="p_9oFg/rPQCi" href="http:./06_object.html#p_9oFg/rPQCi"></a>Чертането на такава клетка е много просто - вземаме съдържанието на вътрешната клетка и залепяме една линия с тирета за него.</p>
+<p><a class="p_ident" id="p_e8CuToYm1C" href="http:./06_object.html#p_e8CuToYm1C"></a>Имайки вече подчертаващия механизъм, сега можем да напишем функция, която изгражда мрежа от клетки с нашия набор от данни.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_D7Pdre4OZl" href="http:./06_object.html#c_D7Pdre4OZl"></a><span class="cm-keyword">function</span> <span class="cm-variable">dataTable</span>(<span class="cm-def">data</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">keys</span> <span class="cm-operator">=</span> <span class="cm-variable">Object</span>.<span class="cm-property">keys</span>(<span class="cm-variable-2">data</span>[<span class="cm-number">0</span>]);
+  <span class="cm-keyword">var</span> <span class="cm-def">headers</span> <span class="cm-operator">=</span> <span class="cm-variable-2">keys</span>.<span class="cm-property">map</span>(<span class="cm-keyword">function</span>(<span class="cm-def">name</span>) {
+    <span class="cm-keyword">return</span> <span class="cm-keyword">new</span> <span class="cm-variable">UnderlinedCell</span>(<span class="cm-keyword">new</span> <span class="cm-variable">TextCell</span>(<span class="cm-variable-2">name</span>));
+  });
+  <span class="cm-keyword">var</span> <span class="cm-def">body</span> <span class="cm-operator">=</span> <span class="cm-variable-2">data</span>.<span class="cm-property">map</span>(<span class="cm-keyword">function</span>(<span class="cm-def">row</span>) {
+    <span class="cm-keyword">return</span> <span class="cm-variable-2">keys</span>.<span class="cm-property">map</span>(<span class="cm-keyword">function</span>(<span class="cm-def">name</span>) {
+      <span class="cm-keyword">return</span> <span class="cm-keyword">new</span> <span class="cm-variable">TextCell</span>(<span class="cm-variable">String</span>(<span class="cm-variable-2">row</span>[<span class="cm-variable-2">name</span>]));
+    });
+  });
+  <span class="cm-keyword">return</span> [<span class="cm-variable-2">headers</span>].<span class="cm-property">concat</span>(<span class="cm-variable-2">body</span>);
+}
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">drawTable</span>(<span class="cm-variable">dataTable</span>(<span class="cm-variable">MOUNTAINS</span>)));
+<span class="cm-comment">// → name         height country</span>
+<span class="cm-comment">//   ------------ ------ -------------</span>
+<span class="cm-comment">//   Kilimanjaro  5895   Tanzania</span>
+<span class="cm-comment">//   … etcetera</span></pre>
+<p id="keys"><a class="p_ident" id="p_cv0EdFlmx8" href="http:./06_object.html#p_cv0EdFlmx8"></a>Стандартната функция <code>Object.keys</code> връща масив с имена на стойности за даден обект. Най-горният ред на таблицата трябва да съдържа подчертаните клетки, които дават имената на колоните. По-долу са стойностите от всички обекти в масива от данни и се показват, като нормални клетки - ние ги извличаме мапнати от <code>keys</code> масива, така че да сме сигурни, че последователноста на клетките е една и съща за всеки ред.</p>
+<p><a class="p_ident" id="p_8Kn9AmEQyS" href="http:./06_object.html#p_8Kn9AmEQyS"></a>Получената таблица наподобява примера, показан преди, но без да го прави с дясно подравняване на данните в <code>height</code> колоната. Ще стигнем до това след малко.</p>
+<h2><a class="h_ident" id="h_Kd3nnpSvTd" href="http:./06_object.html#h_Kd3nnpSvTd"></a>Getters and setters</h2>
+<p><a class="p_ident" id="p_nkLul78hk8" href="http:./06_object.html#p_nkLul78hk8"></a>Когато се определя интерфейс, е възможно да се включат свойства, които не са методи. Можехме да дефинираме <code>minHeight</code> и <code>minWidth</code> просто, като поддържащи номера. Но тогава трябваше да ги изчислим в конструктора, който добавя код и е строго свързан с изграждането на обекта. Това ще предизвика проблеми, ако например вътрешната клетка на подчертаната клетка се промени , при което и размера на подчертаната клетка трябва да се промени.</p>
+<p><a class="p_ident" id="p_U+A3uiYe5T" href="http:./06_object.html#p_U+A3uiYe5T"></a>Това е довело някои хора да приемат принципа, никога да не включват <em>nonmethod</em> свойства в интерфейси. Вместо да имат просто директен достъп до свойствата на стойност, те използват <code>getSomething</code> и <code>setSomething</code> методи, за да четат и пишат свойство. Този подход има недостатък, може да се окажете пред писане и четене на много допълнителни методи.</p>
+<p><a class="p_ident" id="p_SkpjeeWsdC" href="http:./06_object.html#p_SkpjeeWsdC"></a>За щастие JavaScript осигурява техника, която взема най-доброто от двата свята. Ние можем да уточним свойства, които от външна страна изглеждат като нормални свойства, но имат скрити методи свързани с тях.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_ntMbCYFmyG" href="http:./06_object.html#c_ntMbCYFmyG"></a><span class="cm-keyword">var</span> <span class="cm-variable">pile</span> <span class="cm-operator">=</span> {
+  <span class="cm-property">elements</span>: [<span class="cm-string">"eggshell"</span>, <span class="cm-string">"orange peel"</span>, <span class="cm-string">"worm"</span>],
+  <span class="cm-property">get</span> <span class="cm-property">height</span>() {
+    <span class="cm-keyword">return</span> <span class="cm-keyword">this</span>.<span class="cm-property">elements</span>.<span class="cm-property">length</span>;
+  },
+  <span class="cm-property">set</span> <span class="cm-property">height</span>(<span class="cm-def">value</span>) {
+    <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"Ignoring attempt to set height to"</span>, <span class="cm-variable-2">value</span>);
+  }
+};
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">pile</span>.<span class="cm-property">height</span>);
+<span class="cm-comment">// → 3</span>
+<span class="cm-variable">pile</span>.<span class="cm-property">height</span> <span class="cm-operator">=</span> <span class="cm-number">100</span>;
+<span class="cm-comment">// → Ignoring attempt to set height to 100</span></pre>
+<p><a class="p_ident" id="p_av+X6VQ/sQ" href="http:./06_object.html#p_av+X6VQ/sQ"></a>В точен, прецизен обект, нотацията <code>get</code> и <code>set</code> за свойства ви позволява да зададете функция, която да чете или пише свойството дословно. Можете също да добавите такова свойство по отношение на съществуващ обект, например прототип, използвайки функцията <code>Object.defineProperty</code> (която преди това използвахме за създаване на nonenumerable свойства).</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_cIP0PL5CZB" href="http:./06_object.html#c_cIP0PL5CZB"></a><span class="cm-variable">Object</span>.<span class="cm-property">defineProperty</span>(<span class="cm-variable">TextCell</span>.<span class="cm-property">prototype</span>, <span class="cm-string">"heightProp"</span>, {
+  <span class="cm-property">get</span>: <span class="cm-keyword">function</span>() { <span class="cm-keyword">return</span> <span class="cm-keyword">this</span>.<span class="cm-property">text</span>.<span class="cm-property">length</span>; }
+});
+
+<span class="cm-keyword">var</span> <span class="cm-variable">cell</span> <span class="cm-operator">=</span> <span class="cm-keyword">new</span> <span class="cm-variable">TextCell</span>(<span class="cm-string">"no\nway"</span>);
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">cell</span>.<span class="cm-property">heightProp</span>);
+<span class="cm-comment">// → 2</span>
+<span class="cm-variable">cell</span>.<span class="cm-property">heightProp</span> <span class="cm-operator">=</span> <span class="cm-number">100</span>;
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">cell</span>.<span class="cm-property">heightProp</span>);
+<span class="cm-comment">// → 2</span></pre>
+<p><a class="p_ident" id="p_g533VU/mhK" href="http:./06_object.html#p_g533VU/mhK"></a>Можете да използвате подобно <code>set</code> свойство в обекта подадено към <code>defineProperty</code>, като определите <em>setter</em> метод. Когато се определя getter, писането на свойство просто се игнорира.</p>
+<h2><a class="h_ident" id="h_/a3bnONnws" href="http:./06_object.html#h_/a3bnONnws"></a>Наследяване</h2>
+<p><a class="p_ident" id="p_pcw8AFLxa1" href="http:./06_object.html#p_pcw8AFLxa1"></a>Още не сме свършили с нашето упражнение за таблица. Не сме  оправили оформлението на дясно с подравняването на колоната от цифри. Трябва да създадем друг тип клетки, които са като <code>TextCell</code>, но вместо да попълним линиите на дясната страна ги попълваме от ляво и ги съгласуваме с дясната страна.</p>
+<p><a class="p_ident" id="p_ozN/QrVH/c" href="http:./06_object.html#p_ozN/QrVH/c"></a>Бихме могли да напишем изцяло нов конструктор с трите метода в неговия прототип. Но прототипите могат да имат прототипи и това ни позволява да направим нещо умно.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_IZO3vruzSN" href="http:./06_object.html#c_IZO3vruzSN"></a><span class="cm-keyword">function</span> <span class="cm-variable">RTextCell</span>(<span class="cm-def">text</span>) {
+  <span class="cm-variable">TextCell</span>.<span class="cm-property">call</span>(<span class="cm-keyword">this</span>, <span class="cm-variable-2">text</span>);
+}
+<span class="cm-variable">RTextCell</span>.<span class="cm-property">prototype</span> <span class="cm-operator">=</span> <span class="cm-variable">Object</span>.<span class="cm-property">create</span>(<span class="cm-variable">TextCell</span>.<span class="cm-property">prototype</span>);
+<span class="cm-variable">RTextCell</span>.<span class="cm-property">prototype</span>.<span class="cm-property">draw</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">width</span>, <span class="cm-def">height</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">result</span> <span class="cm-operator">=</span> [];
+  <span class="cm-keyword">for</span> (<span class="cm-keyword">var</span> <span class="cm-def">i</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>; <span class="cm-variable-2">i</span> <span class="cm-operator">&lt;</span> <span class="cm-variable-2">height</span>; <span class="cm-variable-2">i</span><span class="cm-operator">++</span>) {
+    <span class="cm-keyword">var</span> <span class="cm-def">line</span> <span class="cm-operator">=</span> <span class="cm-keyword">this</span>.<span class="cm-property">text</span>[<span class="cm-variable-2">i</span>] <span class="cm-operator">||</span> <span class="cm-string">""</span>;
+    <span class="cm-variable-2">result</span>.<span class="cm-property">push</span>(<span class="cm-variable">repeat</span>(<span class="cm-string">" "</span>, <span class="cm-variable-2">width</span> <span class="cm-operator">-</span> <span class="cm-variable-2">line</span>.<span class="cm-property">length</span>) <span class="cm-operator">+</span> <span class="cm-variable-2">line</span>);
+  }
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">result</span>;
+};</pre>
+<p><a class="p_ident" id="p_+8Q1+4H5LI" href="http:./06_object.html#p_+8Q1+4H5LI"></a>Ние повторно използваме конструктора с методите <code>minHeight</code> и <code>minWidth</code> от регулиращия <code>TextCell</code>. <code>RTextCell</code> е еквивалентен на TextCell , освен че метода <code>draw</code> съдържа различна функция.</p>
+<p><a class="p_ident" id="p_hncaW/95ov" href="http:./06_object.html#p_hncaW/95ov"></a>Този модел се нарича <em>inheritance</em> (наследяване). Той ни позволява да изградим малко по различни типове данни от съществуващите типове данни с относително малко работа. Обикновено новия конструктор извиква стария конструктор (с помощта на <code>call</code> метод, за да бъде в състояние да предаде на новия обект своята <code>this</code> стойност). След като конструктора е определен, можем да предположим, че всички полета, които се съдържат в стария тип обект, са добавени в новия. Ние определяме прототип на конструктора , който да извлече данните от стария прототип, така че всички инстанции на новия прототип да имат достъп до свойствата на стария прототип. И накрая можем да заменим някои от тези свойства, като ги добавим към нашия нов прототип.</p>
+<p><a class="p_ident" id="p_EcSCrpVw4N" href="http:./06_object.html#p_EcSCrpVw4N"></a>Сега ако леко коригираме функцията <code>dataTable</code>, като използваме <code>RTextCell</code> за клетките, чиято стойност са числа, ще получим таблицата, към която се стремим.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_1S9JP3tD2k" href="http:./06_object.html#c_1S9JP3tD2k"></a><span class="cm-keyword">function</span> <span class="cm-variable">dataTable</span>(<span class="cm-def">data</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">keys</span> <span class="cm-operator">=</span> <span class="cm-variable">Object</span>.<span class="cm-property">keys</span>(<span class="cm-variable-2">data</span>[<span class="cm-number">0</span>]);
+  <span class="cm-keyword">var</span> <span class="cm-def">headers</span> <span class="cm-operator">=</span> <span class="cm-variable-2">keys</span>.<span class="cm-property">map</span>(<span class="cm-keyword">function</span>(<span class="cm-def">name</span>) {
+    <span class="cm-keyword">return</span> <span class="cm-keyword">new</span> <span class="cm-variable">UnderlinedCell</span>(<span class="cm-keyword">new</span> <span class="cm-variable">TextCell</span>(<span class="cm-variable-2">name</span>));
+  });
+  <span class="cm-keyword">var</span> <span class="cm-def">body</span> <span class="cm-operator">=</span> <span class="cm-variable-2">data</span>.<span class="cm-property">map</span>(<span class="cm-keyword">function</span>(<span class="cm-def">row</span>) {
+    <span class="cm-keyword">return</span> <span class="cm-variable-2">keys</span>.<span class="cm-property">map</span>(<span class="cm-keyword">function</span>(<span class="cm-def">name</span>) {
+      <span class="cm-keyword">var</span> <span class="cm-def">value</span> <span class="cm-operator">=</span> <span class="cm-variable-2">row</span>[<span class="cm-variable-2">name</span>];
+      <span class="cm-comment">// This was changed:</span>
+      <span class="cm-keyword">if</span> (<span class="cm-keyword">typeof</span> <span class="cm-variable-2">value</span> <span class="cm-operator">==</span> <span class="cm-string">"number"</span>)
+        <span class="cm-keyword">return</span> <span class="cm-keyword">new</span> <span class="cm-variable">RTextCell</span>(<span class="cm-variable">String</span>(<span class="cm-variable-2">value</span>));
+      <span class="cm-keyword">else</span>
+        <span class="cm-keyword">return</span> <span class="cm-keyword">new</span> <span class="cm-variable">TextCell</span>(<span class="cm-variable">String</span>(<span class="cm-variable-2">value</span>));
+    });
+  });
+  <span class="cm-keyword">return</span> [<span class="cm-variable-2">headers</span>].<span class="cm-property">concat</span>(<span class="cm-variable-2">body</span>);
+}
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">drawTable</span>(<span class="cm-variable">dataTable</span>(<span class="cm-variable">MOUNTAINS</span>)));
+<span class="cm-comment">// → … beautifully aligned table</span></pre>
+<p><a class="p_ident" id="p_XiWor+mk9j" href="http:./06_object.html#p_XiWor+mk9j"></a>Наследяването е основна част от обекто-ориентираното програмиране, редом с капсулирането и полиморфизма. Но докато последните две се считат за чудесни идеи, наследяването е малко спорно.</p>
+<p><a class="p_ident" id="p_Q82/17hIfZ" href="http:./06_object.html#p_Q82/17hIfZ"></a>Основната причина за това е, че то често се бърка с полиморфизма, използван, като по-мощен инструмент от колкото е в действителност, а субективно във всички видове-грозен начин. Като се има в предвид, че капсулирането и полиморфизма се използват за разделяне на части от код от друг код, намалявайки заплитането на цялостната програма, то наследяването фундаментуално свързва видовете заедно създавайки по-голяма плетеница.</p>
+<p><a class="p_ident" id="p_jis0SWYeNY" href="http:./06_object.html#p_jis0SWYeNY"></a>Можете да имате полиморфизъм без наследяване, както видяхме. Не ви казвам да избягвате изцяло наследяването, аз го използвам редовно в моите собствени програми. Но вие трябва да го видите, като леко завъртян трик, който може да ви помогне да определите нови видове с малко код, а не като основен принцип за организиране на кода. Предпочитан начин за разширяване на типовете е чрез композиция, като например <code>UnderlinedCell</code>, който гради върху друг обект клетка, като просто го съхранява в свойство и препраща метод към него, извикан от собствените си методи.</p>
+<h2><a class="h_ident" id="h_Fdk67dJHwg" href="http:./06_object.html#h_Fdk67dJHwg"></a>Операторът  instanceof</h2>
+<p><a class="p_ident" id="p_j4pk5Qzlwd" href="http:./06_object.html#p_j4pk5Qzlwd"></a>От време на време е полезно да знаете, дали даден обект е бил получен от специфичен конструктор. За това JavaScript осигурява бинарен оператор, наречен <code>instanceof</code>.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_3YbTJpj72O" href="http:./06_object.html#c_3YbTJpj72O"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-keyword">new</span> <span class="cm-variable">RTextCell</span>(<span class="cm-string">"A"</span>) <span class="cm-keyword">instanceof</span> <span class="cm-variable">RTextCell</span>);
+<span class="cm-comment">// → true</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-keyword">new</span> <span class="cm-variable">RTextCell</span>(<span class="cm-string">"A"</span>) <span class="cm-keyword">instanceof</span> <span class="cm-variable">TextCell</span>);
+<span class="cm-comment">// → true</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-keyword">new</span> <span class="cm-variable">TextCell</span>(<span class="cm-string">"A"</span>) <span class="cm-keyword">instanceof</span> <span class="cm-variable">RTextCell</span>);
+<span class="cm-comment">// → false</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>([<span class="cm-number">1</span>] <span class="cm-keyword">instanceof</span> <span class="cm-variable">Array</span>);
+<span class="cm-comment">// → true</span></pre>
+<p><a class="p_ident" id="p_o+ZFEn1oZl" href="http:./06_object.html#p_o+ZFEn1oZl"></a>Операторът вижда през наследените типове. <code>RTextCell</code> е инстанция на <code>TextCell</code>, защото <code>RTextCell.prototype</code> произлиза от <code>TextCell.prototype</code>. Операторът може да се прилага, както за стандартни конструктори, така и за масиви. Почти всеки обект е инстанция на <code>Object</code>.</p>
+<h2><a class="h_ident" id="h_ErccPg/l98" href="http:./06_object.html#h_ErccPg/l98"></a>Резюме</h2>
+<p><a class="p_ident" id="p_StNbsy1mmY" href="http:./06_object.html#p_StNbsy1mmY"></a>И така, обектите са по-сложни, от колкото си мислех. Те имат прототипи, които са други обекти, те действат дълго ако имат свойство, но не толкова дълго, колкото прототипът ако има това свойство. Всички прости обекти имат <code>Object.prototype</code>, като свой прототип.</p>
+<p><a class="p_ident" id="p_qMN9iu/ELN" href="http:./06_object.html#p_qMN9iu/ELN"></a>Конструкторите, които са функции, чиито имена започват с главни букви, могат да бъдат използвани с оператора <code>new</code> за създаване на нови обекти. Прототипа на новия обект ще бъде обект намерен в свойствата на прототипа на функцията конструктор. Може да направите добро използване на свойствата, като всички стойности на даден тип ги споделите в неговия прототип. Операторът <code>instanceof</code> може да бъде използван върху даден обект и конструктор за да ви каже дали този обект е част от този конструктор.</p>
+<p><a class="p_ident" id="p_zzr1L1PppY" href="http:./06_object.html#p_zzr1L1PppY"></a>Едно полезно нещо за обекти е да им зададете интерфейс и да кажете на всички, че трябва да общуват с вашия обект само чрез този интерфейс. Останалата част от детайлите, които изграждат вашия обект са капсулирани, скрити зад интерфейса.</p>
+<p><a class="p_ident" id="p_5POqDFEqYS" href="http:./06_object.html#p_5POqDFEqYS"></a>Дали само един вид обект може да се приложи  на този интерфейс? Ако имате различни видове обекти изложени в този интерфейс и напишете код, който да работи с всеки обект от интерфейса се нарича полиморфизъм. Това е много полезно.</p>
+<p><a class="p_ident" id="p_9dzDvJ4kxT" href="http:./06_object.html#p_9dzDvJ4kxT"></a>При изпълнението на множество типове, които се различават само в някои детайли, е добре да се направи просто прототип на новия тип, който произтича от прототипа на стария тип и вашия нов конструктор да комуникира със стария. Това ни дава тип обект подобен на стария, но в който може да добавите или замените свойства, както намерите за добре.</p>
+<h2><a class="h_ident" id="h_TcUD2vzyMe" href="http:./06_object.html#h_TcUD2vzyMe"></a>Упражнения</h2>
+<h3 id="exercise_vector"><a class="h_ident" id="h_zO8FRQBMAy" href="http:./06_object.html#h_zO8FRQBMAy"></a>Тип вектор</h3>
+<p><a class="p_ident" id="p_/6RUkCsOAv" href="http:./06_object.html#p_/6RUkCsOAv"></a>Напиши конструктор <code>Vector</code>, който представлява вектор в двумерно пространство. Той има <code>x</code> и <code>y</code> параметри (номера), които трябва да запази в свойства със същото име.</p>
+<p><a class="p_ident" id="p_smri4stKuh" href="http:./06_object.html#p_smri4stKuh"></a>Дайте на прототипа на <code>Vector</code> два метода, <code>plus</code> и <code>minus</code>, които могат да се ползват от друг вектор, като параметри и връщат нов вектор, който има плюсът и минусът на двата вектора - <em>x</em> и <em>y</em> стойности.</p>
+<p><a class="p_ident" id="p_F5nP+jpza3" href="http:./06_object.html#p_F5nP+jpza3"></a>Добавете свойство <code>length</code> на прототипа, който изчислява дължината на вектора, тоест разстоянието между точка (<em>x</em>, <em>y</em>) от първоизточника (0, 0).</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_6ArTbGu09l" href="http:./06_object.html#c_6ArTbGu09l"></a><span class="cm-comment">// Your code here.</span>
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-keyword">new</span> <span class="cm-variable">Vector</span>(<span class="cm-number">1</span>, <span class="cm-number">2</span>).<span class="cm-property">plus</span>(<span class="cm-keyword">new</span> <span class="cm-variable">Vector</span>(<span class="cm-number">2</span>, <span class="cm-number">3</span>)));
+<span class="cm-comment">// → Vector{x: 3, y: 5}</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-keyword">new</span> <span class="cm-variable">Vector</span>(<span class="cm-number">1</span>, <span class="cm-number">2</span>).<span class="cm-property">minus</span>(<span class="cm-keyword">new</span> <span class="cm-variable">Vector</span>(<span class="cm-number">2</span>, <span class="cm-number">3</span>)));
+<span class="cm-comment">// → Vector{x: -1, y: -1}</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-keyword">new</span> <span class="cm-variable">Vector</span>(<span class="cm-number">3</span>, <span class="cm-number">4</span>).<span class="cm-property">length</span>);
+<span class="cm-comment">// → 5</span></pre>
+<div class="solution"><div class="solution-text">
+<p><a class="p_ident" id="p_92t0jiHPOP" href="http:./06_object.html#p_92t0jiHPOP"></a>Вашето решение може тясно да следва модела на <code>Rabbit</code> конструктора от тази глава.</p>
+<p><a class="p_ident" id="p_9pw44RYeg9" href="http:./06_object.html#p_9pw44RYeg9"></a>Добавянето на getter свойство на конструктора може да се направи с <code>Object.defineProperty</code> функцията. За да изчислите разстоянието от (0, 0) до (x, y) може да използвате Питагоровата теорема, която казва, че квадрата на разстоянието, което търсим е равно на квадрата на х-координата плюс квадрата на y- координата. По този начин, √(x<sup>2</sup> + y<sup>2</sup>) е номера, който искаме, а <code>Math.sqrt</code> е начина по който се изчислява корен квадратен в JavaScritp.</p>
+</div></div>
+<h3><a class="h_ident" id="h_nLNNevzcF7" href="http:./06_object.html#h_nLNNevzcF7"></a>Друга клетка</h3>
+<p><a class="p_ident" id="p_fkvt0g2UPk" href="http:./06_object.html#p_fkvt0g2UPk"></a>Прилагането на клетъчен тип с име <code>StretchCell(inner, width, height)</code> който съответства на интерфейса на <a href="http:./06_object.html#table_interface">клетка от таблица </a> е описано по рано в тази глава. Тя трябва да е увита в друга клетка (както <code>UnderlinedCell</code> прави) и да гарантира , че получената клетка има дадена ширина и височина, дори ако вътрешната клетка е по-малка.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_jmfd83vFd2" href="http:./06_object.html#c_jmfd83vFd2"></a><span class="cm-comment">// Your code here.</span>
+
+<span class="cm-keyword">var</span> <span class="cm-variable">sc</span> <span class="cm-operator">=</span> <span class="cm-keyword">new</span> <span class="cm-variable">StretchCell</span>(<span class="cm-keyword">new</span> <span class="cm-variable">TextCell</span>(<span class="cm-string">"abc"</span>), <span class="cm-number">1</span>, <span class="cm-number">2</span>);
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">sc</span>.<span class="cm-property">minWidth</span>());
+<span class="cm-comment">// → 3</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">sc</span>.<span class="cm-property">minHeight</span>());
+<span class="cm-comment">// → 2</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">sc</span>.<span class="cm-property">draw</span>(<span class="cm-number">3</span>, <span class="cm-number">2</span>));
+<span class="cm-comment">// → ["abc", "   "]</span></pre>
+<div class="solution"><div class="solution-text">
+<p><a class="p_ident" id="p_YA/P+rsyIP" href="http:./06_object.html#p_YA/P+rsyIP"></a>Ще трябва да се съхраняват всичките три аргумента на конструктора в обекта на инстанцията. Методите <code>minWidth</code> и <code>minHeight</code> трябва да извикаме чрез съответните методи на вътрешната клетка, но като гарантираме, че не връщат номер по-малък от определения размер (евентуално с помощта на <code>Math.max</code>).</p>
+<p><a class="p_ident" id="p_dHbeqBDeSx" href="http:./06_object.html#p_dHbeqBDeSx"></a>Не забравяйте да добавите <code>draw</code> метод, който просто изпраща извикване към вътрешната клетка.</p>
+</div></div>
+<h3><a class="h_ident" id="h_a0w19Kx5iq" href="http:./06_object.html#h_a0w19Kx5iq"></a>Sequence интерфейс</h3>
+<p><a class="p_ident" id="p_zIiyP1YArp" href="http:./06_object.html#p_zIiyP1YArp"></a>Направете дизайн на интерфейс, който извлича цялата итерация от колекция със стойности. Един обект, който предоставя този интерфейс представлява поредица от елементи, а интерфейсът трябва по някакъв начин да даде възможност на кода, който използва такъв обект, да обходи тази поредица, за да търси стойностите на елементите и да намери начин да разбере, кога стига края на поредицата.</p>
+<p><a class="p_ident" id="p_n9mbvCSpi+" href="http:./06_object.html#p_n9mbvCSpi+"></a>Когато сте задали вашия интерфейс, опитайте да напишете функция <code>logFive</code>, която ползва обекта от последователности и призовава console <code>console.log</code> на първите пет елемента или по-малко ако поредицата има по-малко от пет елемента.</p>
+<p><a class="p_ident" id="p_8fIkJ9NfIu" href="http:./06_object.html#p_8fIkJ9NfIu"></a>След това приложете обект тип <code>ArraySeq</code> опакован  в масив и позволява повторение на масива с помощта на интерфейса, който проектирахте. Приложете и друг тип обект <code>RangeSeq</code>, който преминава през обхвата на цели числа от/до (<code>from</code> и <code>to</code>, които са аргументи на конструктора).</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_RtuZFzccp9" href="http:./06_object.html#c_RtuZFzccp9"></a><span class="cm-comment">// Your code here.</span>
+
+<span class="cm-variable">logFive</span>(<span class="cm-keyword">new</span> <span class="cm-variable">ArraySeq</span>([<span class="cm-number">1</span>, <span class="cm-number">2</span>]));
+<span class="cm-comment">// → 1</span>
+<span class="cm-comment">// → 2</span>
+<span class="cm-variable">logFive</span>(<span class="cm-keyword">new</span> <span class="cm-variable">RangeSeq</span>(<span class="cm-number">100</span>, <span class="cm-number">1000</span>));
+<span class="cm-comment">// → 100</span>
+<span class="cm-comment">// → 101</span>
+<span class="cm-comment">// → 102</span>
+<span class="cm-comment">// → 103</span>
+<span class="cm-comment">// → 104</span></pre>
+<div class="solution"><div class="solution-text">
+<p><a class="p_ident" id="p_mGNHzWPOz6" href="http:./06_object.html#p_mGNHzWPOz6"></a>Един от начините за решаване на това е да се даде последователност на състоянието на обектите, което означава, че техните свойства се променят в процеса на използването им. Можете да съхранявате брояч, който да показва напредъка на последователноста на обекта.</p>
+<p><a class="p_ident" id="p_XeygOj1rUp" href="http:./06_object.html#p_XeygOj1rUp"></a>Вашият интерфейс трябва да се изложи най-малко един път, за да получи следващия елемент и да разбере дали итерацията не е достигнала края на поредицата все още. Изкушаващо е там да се търкаля още един метод <code>next</code>, който да връща <code>null</code> или <code>undefined</code>, когато поредицата е в своя край. Но ще имате проблем, ако поредицата съдържа <code>null</code>. Така че за предпочитане е отделен метод (или <em>getter</em> свойство), за да разберете дали е достигнат края.</p>
+<p><a class="p_ident" id="p_5ZGAXiv2dh" href="http:./06_object.html#p_5ZGAXiv2dh"></a>Друго решение е да се избегне промяната на състоянието в обекта. Можете да изложите метод за получаване на текущия елемент (без напредъка на брояча) и друг за получаване на нова поредица, която представлява останалите елементи след текущия (или специална стойност, ако е достигнат края на поредицата). Това е доста елегантна последователност на стойност, която ще "остане себе си" дори след като се използва и по този начин може да се споделя с друг код, без да се притесняваме за това, което може да се случи с нея. Това за съжаление, също е донякъде неефективно в езика на JavaScript, тъй като включва създаването на много обекти по време на итерация.</p>
+</div></div>
+<nav>
+  <a href="http:./05_higher_order.html" title="previous chapter">◀</a>
+  <a href="http:./index.html" title="cover">◆</a>
+  <a href="http:./07_elife.html" title="next chapter">▶</a>
+</nav>
+</article>
+</body></html>

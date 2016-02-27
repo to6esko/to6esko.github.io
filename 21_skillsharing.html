@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<!-- saved from url=(0050)./21_skillsharing.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <title>Project: Skill-Sharing Website :: Eloquent JavaScript</title>
+  <link rel="stylesheet" href="./media/codemirror.css">
+  <script src="./media/acorn_codemirror.js"></script>
+  <link rel="stylesheet" href="./media/ejs.css">
+  <script src="./media/sandbox.js"></script>
+  <script src="./media/ejs.js"></script>
+  <script>var chapNum = 21;</script>
+</head>
+
+<body><article>
+<nav>
+  <a href="./20_node.html" title="previous chapter">◀</a>
+  <a href="./index.html" title="cover">◆</a>
+  
+</nav>
+
+<h1><div class="chap_num">Глава 21</div>Проект: Skill-Sharing Website</h1>
+<p><a class="p_ident" id="p_lJLUX5aYTh" href="./21_skillsharing.html#p_lJLUX5aYTh"></a><em>Skill-sharing</em> срещите е събитие, където хората с общи интереси се събират и споделят малки, неформални презентации за неща, които те знаят. На <em>skill-sharing</em> срещите за градинарство, някой може да обясни как се култивира целина. Или в програмно-ориентираната <em>skill-sharing</em> група, вие може да се отбиете и да кажете на всички за Node.js.</p>
+<p><a class="p_ident" id="p_a0XqWGdMH9" href="./21_skillsharing.html#p_a0XqWGdMH9"></a>Такива <em>meetups</em>, също често се наричат групи от потребители, когато те са за компютри и са чудесен начин за разширяване на вашия хоризонт, да научите за нови разработки или само да се срещнете с хора с подобни интереси. Много от големите градове имат JavaScript <em>meetup</em>. Те обикновено са свободни за посетители, аз открих една и когато и гостувах, бяха приятелски настроени и приветливи.</p>
+<p><a class="p_ident" id="p_PVL3M81JFR" href="./21_skillsharing.html#p_PVL3M81JFR"></a>В тази последна глава - проект, нашата цел е да се създаде уеб сайт за управление на разговорите в дадена <em>skill-sharing</em> среща. Представете си една малка група от хора, които се срещат редовно в офиса на някой член, за да говорят за <em>unicycling</em>. Проблемът е, че когато предишният организатор на срещите се премести в друг град, никой не поиска да поеме тази задача. Искаме система, която да позволи на участниците да продължат разговорите си без централния организатор.</p>
+<div class="image">
+  <img src="./media/unicycle.svg" alt="The unicycling meetup">
+</div>
+<p><a class="p_ident" id="p_We9gc8FghX" href="./21_skillsharing.html#p_We9gc8FghX"></a>Точно както в <a href="./20_node.html#node">предишната глава</a>, кодът в тази глава е написан за Node.js и използван директно в HTML страницата, която разглеждаме, най -вероятно няма да работи. Пълният код на проекта може да бъде изтеглен от <a href="./code/skillsharing.zip"><em>eloquentjavascript.net/code/skillsharing.zip</em></a>.</p>
+<h2><a class="h_ident" id="h_WbA1NnIRqT" href="./21_skillsharing.html#h_WbA1NnIRqT"></a>Дизайн</h2>
+<p><a class="p_ident" id="p_MplsNwNLhr" href="./21_skillsharing.html#p_MplsNwNLhr"></a>Има една сървър част на този проект написана за Node.js и клиентска част написана за браузъра. Сървърът съхранява данни за системата и ги предоставя на клиента. Той също така обслужва HTML и JavaScript файловете, които се прилагат от страна на системата на клиента.</p>
+<p><a class="p_ident" id="p_jXT76qvYdx" href="./21_skillsharing.html#p_jXT76qvYdx"></a>Сървърът поддържа списък на темите, предложени за следващата среща, а клиента показва този списък. Всяка тема има име на водещ, заглавие, резюме, както и списък с коментари свързани с нея. Клиентът дава възможност на потребителя да предложи нови теми (да ги добави към списъка), да изтрива теми и коментари към съществуващи теми. Всеки път, когато потребителя прави такава промяна, клиентът прави  HTTP заявка, за да каже на сървъра за това.</p>
+<div class="image">
+  <img src="./media/skillsharing.png" alt="Screenshot of the skill-sharing website">
+</div>
+<p><a class="p_ident" id="p_R3HdsDdi40" href="./21_skillsharing.html#p_R3HdsDdi40"></a>Приложението се създава за да покаже на живо предложенията за текущите теми и техните коментари. Всеки път, когато някой, някъде представя нова тема или добавя коментар, всички хора, които имат страницата отворена на своя браузър трябва незабавно да видят промяната. Това създава малко предизвикателство, тъй като няма начин за един уеб сървър да отвори връзка с клиента, нито пък има добър начин да знае кои клиенти в момента разглеждат даден уеб сайт.</p>
+<p><a class="p_ident" id="p_uVBydEeXpf" href="./21_skillsharing.html#p_uVBydEeXpf"></a>Едно общо решение на този проблем се нарича <em>long polling</em> (дълго съгласуване), което е един от мотивите за проектиране на Node.</p>
+<h2><a class="h_ident" id="h_Yxu7U155Cs" href="./21_skillsharing.html#h_Yxu7U155Cs"></a>Дълго  съгласуване</h2>
+<p><a class="p_ident" id="p_UARchLL3as" href="./21_skillsharing.html#p_UARchLL3as"></a>За да бъдем в състояние незабавно да уведомим клиента, че нещо се променя, ни трябва връзка с този клиент. Понеже браузърите обичайно не приемат връзки и клиенти, които обикновено са зад устройства и които ще блокират такива връзки така или иначе, започването на тази връзка от сървъра не е практично.</p>
+<p><a class="p_ident" id="p_0nqsjRmsQ7" href="./21_skillsharing.html#p_0nqsjRmsQ7"></a>Ние можем да организираме за клиента да отвори връзката и да я държи наоколо, така че сървърт да може да я използва, за да изпрати информация, когато се нуждаят от нея.</p>
+<p><a class="p_ident" id="p_nPHiUyGtEt" href="./21_skillsharing.html#p_nPHiUyGtEt"></a>Но заявката за HTTP позволява само прост поток от информация, където клиента изпраща заявка, а сървърът връща един отговор и толкова. Има технология, наречена уеб гнезда, поддържана от съвременните браузъри, която прави възможно отварянето на връзка за произволен обмен на данни. Но правилното и използване е малко по сложно.</p>
+<p><a class="p_ident" id="p_h/JHQAq292" href="./21_skillsharing.html#p_h/JHQAq292"></a>В тази глава ще използваме сравнително проста техника - дълго гласуване, където клиентите непрекъснато питат сървъра за нова информация посредством редовни HTTP заявки и сървъра просто излага своя отговор, когато има нещо ново да се докладва.</p>
+<p><a class="p_ident" id="p_jgdXNb8hyw" href="./21_skillsharing.html#p_jgdXNb8hyw"></a>Стига клиента да се грижи постоянно да има отворени заявки към дългото гласуване, той веднага ще получи информация от сървъра. Например ако Алис има <em>skill-sharing</em> приложение отворено на нейния браузър, този браузър ще направи искане за ъпдейти и ще чака отговор за това искане. Когато Боб предостави тема на Extreme Downhill Unicycling, сървърът ще забележи, че Алис е в очакване на ъпдейти и ще изпрати информацията за новата тема в отговор на нейното искане, което е на изчакване. Браузърът на Алис ще получи данните и ще актуализира екрана, за да покаже темата.</p>
+<p><a class="p_ident" id="p_SAbyKs9a4Y" href="./21_skillsharing.html#p_SAbyKs9a4Y"></a>За да се предотврати затваряне на връзката поради изтичане на времето (прекратяване поради липса на дейност), техника на дългото съгласуване обикновено определя максимално време за всяко искане, след което сървърът ще отговори така или иначе въпреки, че няма, какво да докладва, и клиента ще започне нова връзка. Периодичното рестартиране на искането, също така прави техниката по-стабилна, което позволява на клиента да се възстанови от предходни неуспехи на връзката или проблеми на сървъра.</p>
+<p><a class="p_ident" id="p_G3JjyqG0SD" href="./21_skillsharing.html#p_G3JjyqG0SD"></a>Зает сървър, който използва дългото съгласуване може да има хиляди искания на изчакване и следователно отворени TCP връзки. Node, който прави лесно управлението на много връзки без да създава отделни нишки на контрол за всяка е подходящ за такава система.</p>
+<h2><a class="h_ident" id="h_a1H+QQ9w0g" href="./21_skillsharing.html#h_a1H+QQ9w0g"></a>HTTP  интерфейс</h2>
+<p><a class="p_ident" id="p_pnq2n4wyAS" href="./21_skillsharing.html#p_pnq2n4wyAS"></a>Преди да започнем с уточняване на съдържанието на сървъра или клиента, нека помислим за точката където те се допират: това е HTTP интерфейса, чрез който общуват.</p>
+<p><a class="p_ident" id="p_b+doiaw86m" href="./21_skillsharing.html#p_b+doiaw86m"></a>Ние ще базираме интерфейса на JSON, както файловия сървър от <a href="./20_node.html#file_server">Chapter 20</a> и ще се опитаме да направим добра употреба на HTTP методи. Интерфейса е центриран около <code>/talks</code> пътя. Пътища, които не започват с <code>/talks</code> ще бъдат използвани за обслужване на статични файлове на HTML и JavaScript кода, който се реализира от страна на системата на клиента.</p>
+<p><a class="p_ident" id="p_4DScu49oMT" href="./21_skillsharing.html#p_4DScu49oMT"></a><code>GET</code> заявката до <code>/talks</code> връща JSON документ, подобен на този:</p>
+<pre data-language="application/json" class="snippet cm-s-default"><a class="c_ident" id="c_MPPA7y/f9p" href="./21_skillsharing.html#c_MPPA7y/f9p"></a>{<span class="cm-string cm-property">"serverTime"</span>: <span class="cm-number">1405438911833</span>,
+ <span class="cm-string cm-property">"talks"</span>: [{<span class="cm-string cm-property">"title"</span>: <span class="cm-string">"Unituning"</span>,
+            <span class="cm-string cm-property">"presenter"</span>: <span class="cm-string">"Carlos"</span>,
+            <span class="cm-string cm-property">"summary"</span>: <span class="cm-string">"Modifying your cycle for extra style"</span>,
+            <span class="cm-string cm-property">"comment"</span>: []}]}</pre>
+<p><a class="p_ident" id="p_/qoYuRF/YK" href="./21_skillsharing.html#p_/qoYuRF/YK"></a>Полето <code>serverTime</code> ще използваме за направим дългото съгласуване възможно. Ще се върнем към това <a href="./21_skillsharing.html#poll_time">по-късно</a>.</p>
+<p><a class="p_ident" id="p_S84lcaMrne" href="./21_skillsharing.html#p_S84lcaMrne"></a>Създаването на нова тема се извършва чрез вземане на <code>PUT</code> заявка към URL, както <code>/talks/Unituning</code>, където частта след втората черта е заглавието на темата. Тялото на <code>PUT</code> искането следва да съдържа JSON обект, който има <code>presenter</code> и <code>summary</code> свойства.</p>
+<p><a class="p_ident" id="p_KfmhZR585o" href="./21_skillsharing.html#p_KfmhZR585o"></a>Понеже заглавията на темите могат да съдържат интервали и други характери, които не могат да се появяват обикновено в URL, <em>string</em> на заглавието трябва да бъде кодирано от <code>encodeURIComponent</code> функцията, когато изграждаме такъв URL.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_WZrQjfPzaC" href="./21_skillsharing.html#c_WZrQjfPzaC"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"/talks/"</span> <span class="cm-operator">+</span> <span class="cm-variable">encodeURIComponent</span>(<span class="cm-string">"How to Idle"</span>));
+<span class="cm-comment">// → /talks/How%20to%20Idle</span></pre>
+<p><a class="p_ident" id="p_lVTXP6zy/G" href="./21_skillsharing.html#p_lVTXP6zy/G"></a>Искането за създаване на празна тема може да изглежда така:</p>
+<pre data-language="http" class="snippet cm-s-default"><a class="c_ident" id="c_SBTL1faUH8" href="./21_skillsharing.html#c_SBTL1faUH8"></a><span class="cm-keyword">PUT</span> <span class="cm-string-2">/talks/How%20to%20Idle</span> <span class="cm-keyword">HTTP/1.1</span>
+<span class="cm-atom">Content-Type:</span><span class="cm-string"> application/json</span>
+<span class="cm-atom">Content-Length:</span><span class="cm-string"> 92</span>
+
+{"presenter": "Dana",
+ "summary": "Standing still on a unicycle"}</pre>
+<p><a class="p_ident" id="p_MlEec58Mz7" href="./21_skillsharing.html#p_MlEec58Mz7"></a>Такива URL адреси също подкрепят <code>GET</code> заявки за извличане на JSON представяне на теми и <code>DELETE</code> искания за изтриване на теми.</p>
+<p><a class="p_ident" id="p_cq5rvlZpbo" href="./21_skillsharing.html#p_cq5rvlZpbo"></a>Добавянето на коментари към темата се прави с <code>POST</code> заявка към URL, както <code>/talks/Unituning/comments</code> с JSON обект, който има <code>author</code> и <code>message</code> свойства, като тяло на искането.</p>
+<pre data-language="http" class="snippet cm-s-default"><a class="c_ident" id="c_q6wZi+hCG/" href="./21_skillsharing.html#c_q6wZi+hCG/"></a><span class="cm-keyword">POST</span> <span class="cm-string-2">/talks/Unituning/comments</span> <span class="cm-keyword">HTTP/1.1</span>
+<span class="cm-atom">Content-Type:</span><span class="cm-string"> application/json</span>
+<span class="cm-atom">Content-Length:</span><span class="cm-string"> 72</span>
+
+{"author": "Alice",
+ "message": "Will you talk about raising a cycle?"}</pre>
+<p><a class="p_ident" id="p_nTbHD0Z9xy" href="./21_skillsharing.html#p_nTbHD0Z9xy"></a>За да поддържат дългото съгласуване, <code>GET</code> заявките за <code>/talks</code> могат да включват параметър на заявката наречен <code>changesSince</code>, който се използва за обозначаване на това, че клиента се интересува от обновяване, което се случва в даден момент от време. Когато има такива промени те ще бъдат незабавно върнати. Когато няма, отговора се бави докато нещо не се случи или докато определен период от време не изтече (ние ще използваме 90 секунди).</p>
+<p id="poll_time"><a class="p_ident" id="p_zbkFppI/Py" href="./21_skillsharing.html#p_zbkFppI/Py"></a>Времето трябва да бъде посочено, като брой на милисекунди изминали от началото на 1970г. със същия номер, който се връща от <code>Date.now()</code>. За да се гарантира, че се получават всички актуализации и не получава една и съща актуализация повече от веднъж, клиента трябва да премине момента, в който последно е получил информация от сървъра. Часовника на сървъра може да не е точно в синхрон с часовника на клиента, но дори и да беше, пак щеше да е невъзможно за клиента да знае точното време, в което сървърът е изпратил отговор, защото прехвърлянето на данни през мрежата отнема време.</p>
+<p><a class="p_ident" id="p_O0TBchv5t6" href="./21_skillsharing.html#p_O0TBchv5t6"></a>Това е причината за съществуването на <code>serverTime</code> свойството в отговорите изпратени към <code>GET</code> заявките на <code>/talks</code>. Това свойство казва на клиента точното време от гледна точка на сървъра, на който са създадени данните, които получава. Клиента може да съхрани това време и да го подаде в следващата заявка на дългото съгласуване, за да се увери, че получава точно актуализациите, които не е видял преди.</p>
+<pre>GET /talks?changesSince=1405438911833 HTTP/1.1
+
+(time passes)
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 95
+
+{"serverTime": 1405438913401,
+ "talks": [{"title": "Unituning",
+            "deleted": true}]}</pre>
+<p><a class="p_ident" id="p_IIvPCQ2yb6" href="./21_skillsharing.html#p_IIvPCQ2yb6"></a>Когато една тема е променена, тя е ново-създадена или има добавен коментар, пълното представяне на темата е включено в отговора на следващото искане на дългото съгласуване. Когато темата се заличава са включени само заглавието и свойството <code>deleted</code>. Клиента може после да добави теми със заглавия, които не е виждал преди на екрана, но актуализацията казва, че са били показани и премахне онези, които са били изтрити.</p>
+<p><a class="p_ident" id="p_7eI6fi/el3" href="./21_skillsharing.html#p_7eI6fi/el3"></a>Протокола описан в тази глава не прави никакъв контрол на достъпа. Всеки може да коментира, модифицира теми и дори да ги изтрива. Тъй като Интернет е пълен с хулигани, извеждайки такава система онлайн без допълнителна защита, най-вероятно ще завърши с катастрофа.</p>
+<p><a class="p_ident" id="p_dRsn3VsD/D" href="./21_skillsharing.html#p_dRsn3VsD/D"></a>Просто решение би било да се сложи системата зад <em>reverse proxy</em>, което е сървър за HTTP, който приема връзки от страни извън системата и препраща на HTTP сървъри, които се изпълняват локално. Такъв помощник може да бъде конфигуриран да изисква потребителско име и парола и може да се погрижите само участниците в <em>skill-sharing</em> групата да получат тази парола.</p>
+<h2><a class="h_ident" id="h_wTUn7xllPe" href="./21_skillsharing.html#h_wTUn7xllPe"></a>Сървърът</h2>
+<p><a class="p_ident" id="p_/iHn83lKOE" href="./21_skillsharing.html#p_/iHn83lKOE"></a>Нека започнем с писането на страната на сървърната част от програмата. Кодът в този раздел работи с Node.js.</p>
+<h3><a class="h_ident" id="h_fRXdG+wuBV" href="./21_skillsharing.html#h_fRXdG+wuBV"></a>Routing</h3>
+<p><a class="p_ident" id="p_YGBPHzmANZ" href="./21_skillsharing.html#p_YGBPHzmANZ"></a>Нашият сървър ще използва <code>http.createServer</code> за начало на HTTP сървъра. В конфигурацията, която се занимава с нова заявка, ще трябва да се прави разлика между различните видове заявки (както е определено с метода и пътя), които поддържаме. Това може да стане с дълга верига от <code>if</code> изявления, но има и по-добър начин.</p>
+<p><a class="p_ident" id="p_leW0rMWKfc" href="./21_skillsharing.html#p_leW0rMWKfc"></a><em>Router</em> е компонент, който помага да се изпрати  искане до функцията, която може да се справи с това. Можем да кажем на рутера, например, че <code>PUT</code> заявки с пътя, който съвпада с този регулярен израз <code>/^\/talks\/([^\/]+)$/</code> (което съвпада с <code>/talks/</code> последвано от заглавието на темата) може да се обработва от дадената функция. В допълнение, тя може да помогне за извличане на смислени части от пътя, в този случай заглавието на темата, увито в скоби на регулярен израз и подадено към функция манипулатор.</p>
+<p><a class="p_ident" id="p_l/CAybKBxr" href="./21_skillsharing.html#p_l/CAybKBxr"></a>Има редица пакети на добри рутери за NPM, но тука ще напишем един за да илюстрираме принципа.</p>
+<p><a class="p_ident" id="p_76UeceNiA/" href="./21_skillsharing.html#p_76UeceNiA/"></a>Това е <code>router.js</code>, which we will later <code>require</code>, който по-късно ще изискаме от нашия сървър модул.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_QH06ksI6zt" href="./21_skillsharing.html#c_QH06ksI6zt"></a><span class="cm-keyword">var</span> <span class="cm-variable">Router</span> <span class="cm-operator">=</span> <span class="cm-keyword">module</span>.<span class="cm-variable">exports</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>() {
+  <span class="cm-keyword">this</span>.<span class="cm-property">routes</span> <span class="cm-operator">=</span> [];
+};
+
+<span class="cm-variable">Router</span>.<span class="cm-property">prototype</span>.<span class="cm-property">add</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">method</span>, <span class="cm-def">url</span>, <span class="cm-def">handler</span>) {
+  <span class="cm-keyword">this</span>.<span class="cm-property">routes</span>.<span class="cm-property">push</span>({<span class="cm-property">method</span>: <span class="cm-variable-2">method</span>,
+                    <span class="cm-property">url</span>: <span class="cm-variable-2">url</span>,
+                    <span class="cm-property">handler</span>: <span class="cm-variable-2">handler</span>});
+};
+
+<span class="cm-variable">Router</span>.<span class="cm-property">prototype</span>.<span class="cm-property">resolve</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">request</span>, <span class="cm-def">response</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">path</span> <span class="cm-operator">=</span> <span class="cm-variable">require</span>(<span class="cm-string">"url"</span>).<span class="cm-property">parse</span>(<span class="cm-variable-2">request</span>.<span class="cm-property">url</span>).<span class="cm-property">pathname</span>;
+
+  <span class="cm-keyword">return</span> <span class="cm-keyword">this</span>.<span class="cm-property">routes</span>.<span class="cm-property">some</span>(<span class="cm-keyword">function</span>(<span class="cm-def">route</span>) {
+    <span class="cm-keyword">var</span> <span class="cm-def">match</span> <span class="cm-operator">=</span> <span class="cm-variable-2">route</span>.<span class="cm-property">url</span>.<span class="cm-property">exec</span>(<span class="cm-variable-2">path</span>);
+    <span class="cm-keyword">if</span> (<span class="cm-operator">!</span><span class="cm-variable-2">match</span> <span class="cm-operator">||</span> <span class="cm-variable-2">route</span>.<span class="cm-property">method</span> <span class="cm-operator">!=</span> <span class="cm-variable-2">request</span>.<span class="cm-property">method</span>)
+      <span class="cm-keyword">return</span> <span class="cm-atom">false</span>;
+
+    <span class="cm-keyword">var</span> <span class="cm-def">urlParts</span> <span class="cm-operator">=</span> <span class="cm-variable-2">match</span>.<span class="cm-property">slice</span>(<span class="cm-number">1</span>).<span class="cm-property">map</span>(<span class="cm-variable">decodeURIComponent</span>);
+    <span class="cm-variable-2">route</span>.<span class="cm-property">handler</span>.<span class="cm-property">apply</span>(<span class="cm-atom">null</span>, [<span class="cm-variable-2">request</span>, <span class="cm-variable-2">response</span>]
+                                .<span class="cm-property">concat</span>(<span class="cm-variable-2">urlParts</span>));
+    <span class="cm-keyword">return</span> <span class="cm-atom">true</span>;
+  });
+};</pre>
+<p><a class="p_ident" id="p_4UgvQPflKR" href="./21_skillsharing.html#p_4UgvQPflKR"></a>Модулът изнася <code>Router</code> конструктора. Обекта на рутера  позволява да бъдат регистрирани нови манипулатори с <code>add</code>метода и могат да разрешат искания със своя <code>resolve</code> метод.</p>
+<p><a class="p_ident" id="p_zGaZWr/Iyt" href="./21_skillsharing.html#p_zGaZWr/Iyt"></a>Последното ще върне Булева стойност, която показва дали е намерен манипулатор. В <code>some</code> метода на масива на рутера, ще пробва рутерите един по един (в реда, в който са дефинирани) и ще спре връщайки <code>true</code>, ако е намерил съвпадение с един.</p>
+<p><a class="p_ident" id="p_OL5KXeAkmE" href="./21_skillsharing.html#p_OL5KXeAkmE"></a>Функцията на манипулатора се извиква с <code>request</code> и <code>response</code> обекти. Когато регулярния израз съвпадне с URL адреса, който съдържа всички групи, съответстващите <em>srings</em> се подават на манипулатора, като допълнителни аргументи. Тези <em>srings</em> трябва да бъдат декодирани URL, тъй като суровия URL съдържа  <code>%20</code> - стил на кода.</p>
+<h3><a class="h_ident" id="h_WmSQ4nnG8k" href="./21_skillsharing.html#h_WmSQ4nnG8k"></a>Сервиране на файлове</h3>
+<p><a class="p_ident" id="p_G58QvpWZ3S" href="./21_skillsharing.html#p_G58QvpWZ3S"></a>Когато искането не съвпадне с нито една от видовете заявки, определени в нашия рутер, сървърът трябва да го тълкува, като искане за даден файл в <code>public</code> директорията. Щеше да е възможно използването на файловия сървър дефиниран в <a href="./20_node.html#file_server">Глава 20</a> за сервиране на такива файлове, но ние нито имаме нужда нито искаме поддръжка на <code>PUT</code> и <code>DELETE</code> искания на файловете, а бихме желали да имаме допълнителни функции, като поддръжка на кеширане. Така че, вместо това, нека използваме солиден, добре изпитан статичен файлов сървър от NPM.</p>
+<p><a class="p_ident" id="p_tOJqwN8CJl" href="./21_skillsharing.html#p_tOJqwN8CJl"></a>Аз съм избрал <code>ecstatic</code>. Той не е единственият такъв сървър на NPM, но работи добре и пасва на нашите цели. Модула на <code>ecstatic</code> изнася функция, която може да се извика с конфигуриращия обект за производство на искания за манипулатора на функцията. Ние използваме <code>root</code> опцията да кажем на сървъра, къде да търси за файлове. Функцията манипулатор приема <code>request</code> и <code>response</code> параметри и може да се подава директно на <code>createServer</code> за да създаде сървър, който служи само за файлове. Ние искаме първо да проверим за искания, които се занимават специално, въпреки че сме ги увили в друга функция.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_7vql8hmflt" href="./21_skillsharing.html#c_7vql8hmflt"></a><span class="cm-keyword">var</span> <span class="cm-variable">http</span> <span class="cm-operator">=</span> <span class="cm-variable">require</span>(<span class="cm-string">"http"</span>);
+<span class="cm-keyword">var</span> <span class="cm-variable">Router</span> <span class="cm-operator">=</span> <span class="cm-variable">require</span>(<span class="cm-string">"./router"</span>);
+<span class="cm-keyword">var</span> <span class="cm-variable">ecstatic</span> <span class="cm-operator">=</span> <span class="cm-variable">require</span>(<span class="cm-string">"ecstatic"</span>);
+
+<span class="cm-keyword">var</span> <span class="cm-variable">fileServer</span> <span class="cm-operator">=</span> <span class="cm-variable">ecstatic</span>({<span class="cm-property">root</span>: <span class="cm-string">"./public"</span>});
+<span class="cm-keyword">var</span> <span class="cm-variable">router</span> <span class="cm-operator">=</span> <span class="cm-keyword">new</span> <span class="cm-variable">Router</span>();
+
+<span class="cm-variable">http</span>.<span class="cm-property">createServer</span>(<span class="cm-keyword">function</span>(<span class="cm-def">request</span>, <span class="cm-def">response</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-operator">!</span><span class="cm-variable">router</span>.<span class="cm-property">resolve</span>(<span class="cm-variable-2">request</span>, <span class="cm-variable-2">response</span>))
+    <span class="cm-variable">fileServer</span>(<span class="cm-variable-2">request</span>, <span class="cm-variable-2">response</span>);
+}).<span class="cm-property">listen</span>(<span class="cm-number">8000</span>);</pre>
+<p><a class="p_ident" id="p_aqqI6AlQfN" href="./21_skillsharing.html#p_aqqI6AlQfN"></a>Обработващите функции <code>respond</code> и <code>respondJSON</code> се използват навсякъде в кода на сървъра за изпращане на отговори с едно извикване на функцията.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_xvMKUIpXbr" href="./21_skillsharing.html#c_xvMKUIpXbr"></a><span class="cm-keyword">function</span> <span class="cm-variable">respond</span>(<span class="cm-def">response</span>, <span class="cm-def">status</span>, <span class="cm-def">data</span>, <span class="cm-def">type</span>) {
+  <span class="cm-variable-2">response</span>.<span class="cm-property">writeHead</span>(<span class="cm-variable-2">status</span>, {
+    <span class="cm-string cm-property">"Content-Type"</span>: <span class="cm-variable-2">type</span> <span class="cm-operator">||</span> <span class="cm-string">"text/plain"</span>
+  });
+  <span class="cm-variable-2">response</span>.<span class="cm-property">end</span>(<span class="cm-variable-2">data</span>);
+}
+
+<span class="cm-keyword">function</span> <span class="cm-variable">respondJSON</span>(<span class="cm-def">response</span>, <span class="cm-def">status</span>, <span class="cm-def">data</span>) {
+  <span class="cm-variable">respond</span>(<span class="cm-variable-2">response</span>, <span class="cm-variable-2">status</span>, <span class="cm-variable">JSON</span>.<span class="cm-property">stringify</span>(<span class="cm-variable-2">data</span>),
+          <span class="cm-string">"application/json"</span>);
+}</pre>
+<h3><a class="h_ident" id="h_soh9hQbmUg" href="./21_skillsharing.html#h_soh9hQbmUg"></a>Темите  като  ресурси</h3>
+<p><a class="p_ident" id="p_F7tu+Amiqq" href="./21_skillsharing.html#p_F7tu+Amiqq"></a>Сървърът поддържа темите, които са били предложени в един обект наречен <code>talks</code>, чиито имена са собственост на заглавията на темите. Те ще бъдат изложени, като HTTP ресурси в рамките на <code>/talks/[title]</code>, така че ние трябва да добавим манипулатор в нашия рутер, който да изпълнява различните методи, които клиентите могат да използват за да работят с тях.</p>
+<p><a class="p_ident" id="p_/JQcLOK+vv" href="./21_skillsharing.html#p_/JQcLOK+vv"></a>Операторът за исканията на <code>GET</code>, който получава една тема, трябва да прегледа темите и да отговори с JSON данни или с отговор за грешка 404.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_i3klcsNrYB" href="./21_skillsharing.html#c_i3klcsNrYB"></a><span class="cm-keyword">var</span> <span class="cm-variable">talks</span> <span class="cm-operator">=</span> <span class="cm-variable">Object</span>.<span class="cm-property">create</span>(<span class="cm-atom">null</span>);
+
+<span class="cm-variable">router</span>.<span class="cm-property">add</span>(<span class="cm-string">"GET"</span>, <span class="cm-string-2">/^\/talks\/([^\/]+)$/</span>,
+           <span class="cm-keyword">function</span>(<span class="cm-def">request</span>, <span class="cm-def">response</span>, <span class="cm-def">title</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">title</span> <span class="cm-keyword">in</span> <span class="cm-variable">talks</span>)
+    <span class="cm-variable">respondJSON</span>(<span class="cm-variable-2">response</span>, <span class="cm-number">200</span>, <span class="cm-variable">talks</span>[<span class="cm-variable-2">title</span>]);
+  <span class="cm-keyword">else</span>
+    <span class="cm-variable">respond</span>(<span class="cm-variable-2">response</span>, <span class="cm-number">404</span>, <span class="cm-string">"No talk '"</span> <span class="cm-operator">+</span> <span class="cm-variable-2">title</span> <span class="cm-operator">+</span> <span class="cm-string">"' found"</span>);
+});</pre>
+<p><a class="p_ident" id="p_3zgr/RdzUU" href="./21_skillsharing.html#p_3zgr/RdzUU"></a>Изтриването на теми се извършва чрез премахването им от <code>talks</code> обекта.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_IcieD1TcoW" href="./21_skillsharing.html#c_IcieD1TcoW"></a><span class="cm-variable">router</span>.<span class="cm-property">add</span>(<span class="cm-string">"DELETE"</span>, <span class="cm-string-2">/^\/talks\/([^\/]+)$/</span>,
+           <span class="cm-keyword">function</span>(<span class="cm-def">request</span>, <span class="cm-def">response</span>, <span class="cm-def">title</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">title</span> <span class="cm-keyword">in</span> <span class="cm-variable">talks</span>) {
+    <span class="cm-keyword">delete</span> <span class="cm-variable">talks</span>[<span class="cm-variable-2">title</span>];
+    <span class="cm-variable">registerChange</span>(<span class="cm-variable-2">title</span>);
+  }
+  <span class="cm-variable">respond</span>(<span class="cm-variable-2">response</span>, <span class="cm-number">204</span>, <span class="cm-atom">null</span>);
+});</pre>
+<p><a class="p_ident" id="p_pyoMvuSjhx" href="./21_skillsharing.html#p_pyoMvuSjhx"></a>Функцията <code>registerChange</code>, която ще определим <a href="./21_skillsharing.html#registerChange">по-късно</a>, не е уведомена да чака искания на дългото гласуване за промяна.</p>
+<p><a class="p_ident" id="p_OHqEGZA2TJ" href="./21_skillsharing.html#p_OHqEGZA2TJ"></a>За да извлече съдържанието на JSON- кодираната заявка на тялото, ние определяме функция наречена <code>readStreamAsJSON</code> и след това извикваме функцията за обратно извикване.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_xdc2fSFiD4" href="./21_skillsharing.html#c_xdc2fSFiD4"></a><span class="cm-keyword">function</span> <span class="cm-variable">readStreamAsJSON</span>(<span class="cm-def">stream</span>, <span class="cm-def">callback</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">data</span> <span class="cm-operator">=</span> <span class="cm-string">""</span>;
+  <span class="cm-variable-2">stream</span>.<span class="cm-property">on</span>(<span class="cm-string">"data"</span>, <span class="cm-keyword">function</span>(<span class="cm-def">chunk</span>) {
+    <span class="cm-variable-2">data</span> <span class="cm-operator">+=</span> <span class="cm-variable-2">chunk</span>;
+  });
+  <span class="cm-variable-2">stream</span>.<span class="cm-property">on</span>(<span class="cm-string">"end"</span>, <span class="cm-keyword">function</span>() {
+    <span class="cm-keyword">var</span> <span class="cm-def">result</span>, <span class="cm-def">error</span>;
+    <span class="cm-keyword">try</span> { <span class="cm-variable-2">result</span> <span class="cm-operator">=</span> <span class="cm-variable">JSON</span>.<span class="cm-property">parse</span>(<span class="cm-variable-2">data</span>); }
+    <span class="cm-keyword">catch</span> (<span class="cm-def">e</span>) { <span class="cm-variable-2">error</span> <span class="cm-operator">=</span> <span class="cm-variable-2">e</span>; }
+    <span class="cm-variable-2">callback</span>(<span class="cm-variable-2">error</span>, <span class="cm-variable-2">result</span>);
+  });
+  <span class="cm-variable-2">stream</span>.<span class="cm-property">on</span>(<span class="cm-string">"error"</span>, <span class="cm-keyword">function</span>(<span class="cm-def">error</span>) {
+    <span class="cm-variable-2">callback</span>(<span class="cm-variable-2">error</span>);
+  });
+}</pre>
+<p><a class="p_ident" id="p_nKzpVkDH6v" href="./21_skillsharing.html#p_nKzpVkDH6v"></a>Един манипулатор, който трябва да прочете отговорите на JSON е <code>PUT</code> манипулатора, който се използва за създаване на нови теми. Той трябва да провери дали данните, които които са му дадени имат <code>presenter</code> и <code>summary</code> свойства, които са <em>strings</em>. Всякакви данни идващи от вън на системата, може да са глупости, а ние не искаме да покваряваме нашия вътрешен модел с данни или дори да се срине, когато лошите искания идват отново.</p>
+<p><a class="p_ident" id="p_ptAYx9j8oM" href="./21_skillsharing.html#p_ptAYx9j8oM"></a>Ако данните изглеждат валидни, манипулатора съхранява един обект, който представлява нова тема в <code>talks</code> обекта, евентуално презаписва съществуваща тема с това заглавие и отново призовава <code>registerChange</code>.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_FOu4O/hPwE" href="./21_skillsharing.html#c_FOu4O/hPwE"></a><span class="cm-variable">router</span>.<span class="cm-property">add</span>(<span class="cm-string">"PUT"</span>, <span class="cm-string-2">/^\/talks\/([^\/]+)$/</span>,
+           <span class="cm-keyword">function</span>(<span class="cm-def">request</span>, <span class="cm-def">response</span>, <span class="cm-def">title</span>) {
+  <span class="cm-variable">readStreamAsJSON</span>(<span class="cm-variable-2">request</span>, <span class="cm-keyword">function</span>(<span class="cm-def">error</span>, <span class="cm-def">talk</span>) {
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">error</span>) {
+      <span class="cm-variable">respond</span>(<span class="cm-variable-2">response</span>, <span class="cm-number">400</span>, <span class="cm-variable-2">error</span>.<span class="cm-property">toString</span>());
+    } <span class="cm-keyword">else</span> <span class="cm-keyword">if</span> (<span class="cm-operator">!</span><span class="cm-variable-2">talk</span> <span class="cm-operator">||</span>
+               <span class="cm-keyword">typeof</span> <span class="cm-variable-2">talk</span>.<span class="cm-property">presenter</span> <span class="cm-operator">!=</span> <span class="cm-string">"string"</span> <span class="cm-operator">||</span>
+               <span class="cm-keyword">typeof</span> <span class="cm-variable-2">talk</span>.<span class="cm-property">summary</span> <span class="cm-operator">!=</span> <span class="cm-string">"string"</span>) {
+      <span class="cm-variable">respond</span>(<span class="cm-variable-2">response</span>, <span class="cm-number">400</span>, <span class="cm-string">"Bad talk data"</span>);
+    } <span class="cm-keyword">else</span> {
+      <span class="cm-variable">talks</span>[<span class="cm-variable-2">title</span>] <span class="cm-operator">=</span> {<span class="cm-property">title</span>: <span class="cm-variable-2">title</span>,
+                      <span class="cm-property">presenter</span>: <span class="cm-variable-2">talk</span>.<span class="cm-property">presenter</span>,
+                      <span class="cm-property">summary</span>: <span class="cm-variable-2">talk</span>.<span class="cm-property">summary</span>,
+                      <span class="cm-property">comments</span>: []};
+      <span class="cm-variable">registerChange</span>(<span class="cm-variable-2">title</span>);
+      <span class="cm-variable">respond</span>(<span class="cm-variable-2">response</span>, <span class="cm-number">204</span>, <span class="cm-atom">null</span>);
+    }
+  });
+});</pre>
+<p><a class="p_ident" id="p_5d2itdrhai" href="./21_skillsharing.html#p_5d2itdrhai"></a>Добавянето на коментари към темата работи по подобен начин. Използваме отново <code>readStreamAsJSON</code> за да получим съдържанието на искането, валидираме получените данни и го съхраняваме като коментар, когато изглежда валидно.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_LwOOalwVFz" href="./21_skillsharing.html#c_LwOOalwVFz"></a><span class="cm-variable">router</span>.<span class="cm-property">add</span>(<span class="cm-string">"POST"</span>, <span class="cm-string-2">/^\/talks\/([^\/]+)\/comments$/</span>,
+           <span class="cm-keyword">function</span>(<span class="cm-def">request</span>, <span class="cm-def">response</span>, <span class="cm-def">title</span>) {
+  <span class="cm-variable">readStreamAsJSON</span>(<span class="cm-variable-2">request</span>, <span class="cm-keyword">function</span>(<span class="cm-def">error</span>, <span class="cm-def">comment</span>) {
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">error</span>) {
+      <span class="cm-variable">respond</span>(<span class="cm-variable-2">response</span>, <span class="cm-number">400</span>, <span class="cm-variable-2">error</span>.<span class="cm-property">toString</span>());
+    } <span class="cm-keyword">else</span> <span class="cm-keyword">if</span> (<span class="cm-operator">!</span><span class="cm-variable-2">comment</span> <span class="cm-operator">||</span>
+               <span class="cm-keyword">typeof</span> <span class="cm-variable-2">comment</span>.<span class="cm-property">author</span> <span class="cm-operator">!=</span> <span class="cm-string">"string"</span> <span class="cm-operator">||</span>
+               <span class="cm-keyword">typeof</span> <span class="cm-variable-2">comment</span>.<span class="cm-property">message</span> <span class="cm-operator">!=</span> <span class="cm-string">"string"</span>) {
+      <span class="cm-variable">respond</span>(<span class="cm-variable-2">response</span>, <span class="cm-number">400</span>, <span class="cm-string">"Bad comment data"</span>);
+    } <span class="cm-keyword">else</span> <span class="cm-keyword">if</span> (<span class="cm-variable-2">title</span> <span class="cm-keyword">in</span> <span class="cm-variable">talks</span>) {
+      <span class="cm-variable">talks</span>[<span class="cm-variable-2">title</span>].<span class="cm-property">comments</span>.<span class="cm-property">push</span>(<span class="cm-variable-2">comment</span>);
+      <span class="cm-variable">registerChange</span>(<span class="cm-variable-2">title</span>);
+      <span class="cm-variable">respond</span>(<span class="cm-variable-2">response</span>, <span class="cm-number">204</span>, <span class="cm-atom">null</span>);
+    } <span class="cm-keyword">else</span> {
+      <span class="cm-variable">respond</span>(<span class="cm-variable-2">response</span>, <span class="cm-number">404</span>, <span class="cm-string">"No talk '"</span> <span class="cm-operator">+</span> <span class="cm-variable-2">title</span> <span class="cm-operator">+</span> <span class="cm-string">"' found"</span>);
+    }
+  });
+});</pre>
+<p><a class="p_ident" id="p_uLZ9tBoiGb" href="./21_skillsharing.html#p_uLZ9tBoiGb"></a>Опитвайки се да добавим коментар към несъществуваща тема трябва да върне 404 грешка, разбира се.</p>
+<h3><a class="h_ident" id="h_kDNUlKj7rv" href="./21_skillsharing.html#h_kDNUlKj7rv"></a>Поддръжка  на  дългото съгласуване</h3>
+<p><a class="p_ident" id="p_Q2AlAKJnYq" href="./21_skillsharing.html#p_Q2AlAKJnYq"></a>Най-интересният аспект на сървърната част е, когато се занимава с дългото съгласуване. Когато едно <code>GET</code> искане идва за <code>/talks</code> то може да бъде, както обикновено искане за всички теми или искане за актуализации с <code>changesSince</code> параметър.</p>
+<p><a class="p_ident" id="p_GhbQTw6SZ+" href="./21_skillsharing.html#p_GhbQTw6SZ+"></a>Ще има различни ситуации, в които трябва да се изпрати списък с теми на клиента, така че ние първо дефинираме малка помощна функция, която подава на <code>serverTime</code> полето такива отговори.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_qN3STb271J" href="./21_skillsharing.html#c_qN3STb271J"></a><span class="cm-keyword">function</span> <span class="cm-variable">sendTalks</span>(<span class="cm-def">talks</span>, <span class="cm-def">response</span>) {
+  <span class="cm-variable">respondJSON</span>(<span class="cm-variable-2">response</span>, <span class="cm-number">200</span>, {
+    <span class="cm-property">serverTime</span>: <span class="cm-variable">Date</span>.<span class="cm-property">now</span>(),
+    <span class="cm-property">talks</span>: <span class="cm-variable-2">talks</span>
+  });
+}</pre>
+<p><a class="p_ident" id="p_EltkhTQ54Y" href="./21_skillsharing.html#p_EltkhTQ54Y"></a>Самият манипулатор трябва да погледне в параметрите на заявките в URL искането, за да види дали <code>changesSince</code> е даден, като параметър. Ако дадем на <code>"url"</code> функция на <code>parse</code> модула, втори аргумент <code>true</code>, тя също така ще направи разбор на <em>query</em> частта на URL. Обекта, който се връща ще има <code>query</code> свойство, което притежава друг обект, в който са описани (<em>maps</em>) параметрите, като имена на стойности.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_zGJp6gCcDe" href="./21_skillsharing.html#c_zGJp6gCcDe"></a><span class="cm-variable">router</span>.<span class="cm-property">add</span>(<span class="cm-string">"GET"</span>, <span class="cm-string-2">/^\/talks$/</span>, <span class="cm-keyword">function</span>(<span class="cm-def">request</span>, <span class="cm-def">response</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">query</span> <span class="cm-operator">=</span> <span class="cm-variable">require</span>(<span class="cm-string">"url"</span>).<span class="cm-property">parse</span>(<span class="cm-variable-2">request</span>.<span class="cm-property">url</span>, <span class="cm-atom">true</span>).<span class="cm-property">query</span>;
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">query</span>.<span class="cm-property">changesSince</span> <span class="cm-operator">==</span> <span class="cm-atom">null</span>) {
+    <span class="cm-keyword">var</span> <span class="cm-def">list</span> <span class="cm-operator">=</span> [];
+    <span class="cm-keyword">for</span> (<span class="cm-keyword">var</span> <span class="cm-def">title</span> <span class="cm-keyword">in</span> <span class="cm-variable">talks</span>)
+      <span class="cm-variable-2">list</span>.<span class="cm-property">push</span>(<span class="cm-variable">talks</span>[<span class="cm-variable-2">title</span>]);
+    <span class="cm-variable">sendTalks</span>(<span class="cm-variable-2">list</span>, <span class="cm-variable-2">response</span>);
+  } <span class="cm-keyword">else</span> {
+    <span class="cm-keyword">var</span> <span class="cm-def">since</span> <span class="cm-operator">=</span> <span class="cm-variable">Number</span>(<span class="cm-variable-2">query</span>.<span class="cm-property">changesSince</span>);
+    <span class="cm-keyword">if</span> (<span class="cm-variable">isNaN</span>(<span class="cm-variable-2">since</span>)) {
+      <span class="cm-variable">respond</span>(<span class="cm-variable-2">response</span>, <span class="cm-number">400</span>, <span class="cm-string">"Invalid parameter"</span>);
+    } <span class="cm-keyword">else</span> {
+      <span class="cm-keyword">var</span> <span class="cm-def">changed</span> <span class="cm-operator">=</span> <span class="cm-variable">getChangedTalks</span>(<span class="cm-variable-2">since</span>);
+      <span class="cm-keyword">if</span> (<span class="cm-variable-2">changed</span>.<span class="cm-property">length</span> <span class="cm-operator">&gt;</span> <span class="cm-number">0</span>)
+         <span class="cm-variable">sendTalks</span>(<span class="cm-variable-2">changed</span>, <span class="cm-variable-2">response</span>);
+      <span class="cm-keyword">else</span>
+        <span class="cm-variable">waitForChanges</span>(<span class="cm-variable-2">since</span>, <span class="cm-variable-2">response</span>);
+    }
+  }
+});</pre>
+<p><a class="p_ident" id="p_0gOtQ9gRNI" href="./21_skillsharing.html#p_0gOtQ9gRNI"></a>Когато <code>changesSince</code> параметъра липсва, манипулатора просто изгражда списък с всички теми и връща това.</p>
+<p><a class="p_ident" id="p_i4f8K0rlnB" href="./21_skillsharing.html#p_i4f8K0rlnB"></a>В противен случай, <code>changeSince</code> параметъра първо трябва да бъде проверен за да се уверим, че той е валиден номер. Функцията <code>getChangedTalks</code>, дефинирана на скоро, връща масив от променени теми в даден момент от време. Ако тя връща празен масив, сървърът все още няма нищо, което да изпрати обратно на клиента, така че той съхранява обекта на отговора (използвайки <code>waitForChanges</code>) за да отговори на по-късен етап.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_FWUEnzp9Uh" href="./21_skillsharing.html#c_FWUEnzp9Uh"></a><span class="cm-keyword">var</span> <span class="cm-variable">waiting</span> <span class="cm-operator">=</span> [];
+
+<span class="cm-keyword">function</span> <span class="cm-variable">waitForChanges</span>(<span class="cm-def">since</span>, <span class="cm-def">response</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">waiter</span> <span class="cm-operator">=</span> {<span class="cm-property">since</span>: <span class="cm-variable-2">since</span>, <span class="cm-property">response</span>: <span class="cm-variable-2">response</span>};
+  <span class="cm-variable">waiting</span>.<span class="cm-property">push</span>(<span class="cm-variable-2">waiter</span>);
+  <span class="cm-variable">setTimeout</span>(<span class="cm-keyword">function</span>() {
+    <span class="cm-keyword">var</span> <span class="cm-def">found</span> <span class="cm-operator">=</span> <span class="cm-variable">waiting</span>.<span class="cm-property">indexOf</span>(<span class="cm-variable-2">waiter</span>);
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">found</span> <span class="cm-operator">&gt;</span> <span class="cm-operator">-</span><span class="cm-number">1</span>) {
+      <span class="cm-variable">waiting</span>.<span class="cm-property">splice</span>(<span class="cm-variable-2">found</span>, <span class="cm-number">1</span>);
+      <span class="cm-variable">sendTalks</span>([], <span class="cm-variable-2">response</span>);
+    }
+  }, <span class="cm-number">90</span> <span class="cm-operator">*</span> <span class="cm-number">1000</span>);
+}</pre>
+<p><a class="p_ident" id="p_KJPecJ2C8w" href="./21_skillsharing.html#p_KJPecJ2C8w"></a>Метода <code>splice</code>се използва да отреже парче от масива. Давайки му индекс и номер на елемент, той променя масива премахвайки всички елементи след дадения индекс. В този случай, премахва един елемент, това е обекта, който следи отговора на изчакване, чийто индекс намерихме, като извикахме <code>indexOf</code>. Ако подадем допълнителен аргумент на <code>splice</code>, неговите стойности ще бъдат вмъкнати в масива на дадена позиция заменяйки махнатите елементи.</p>
+<p><a class="p_ident" id="p_33ov2uS0wd" href="./21_skillsharing.html#p_33ov2uS0wd"></a>Когато един обект на отговора се съхранява в <code>waiting</code> масива, таймаута се включва веднага. След 90 секунди изчакване вижда дали искането е все още на изчакване и ако е така изпраща празен отговор и го премахва от <code>waiting</code> масива.</p>
+<p id="registerChange"><a class="p_ident" id="p_w3fgYDXBML" href="./21_skillsharing.html#p_w3fgYDXBML"></a>За да можем да намерим точно тези теми, които са били променени след определен момент от време, ние трябва да следим историята на промените. Регистриране на промяна с <code>registerChange</code> ще помни тази промяна заедно с текущото време в масив наречен <code>changes</code>. Когато настъпи промяна, това означава, че има нови данни, така че всички чакащи заявки да реагират незабавно. </p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_x3UM6XV9Bx" href="./21_skillsharing.html#c_x3UM6XV9Bx"></a><span class="cm-keyword">var</span> <span class="cm-variable">changes</span> <span class="cm-operator">=</span> [];
+
+<span class="cm-keyword">function</span> <span class="cm-variable">registerChange</span>(<span class="cm-def">title</span>) {
+  <span class="cm-variable">changes</span>.<span class="cm-property">push</span>({<span class="cm-property">title</span>: <span class="cm-variable-2">title</span>, <span class="cm-property">time</span>: <span class="cm-variable">Date</span>.<span class="cm-property">now</span>()});
+  <span class="cm-variable">waiting</span>.<span class="cm-property">forEach</span>(<span class="cm-keyword">function</span>(<span class="cm-def">waiter</span>) {
+    <span class="cm-variable">sendTalks</span>(<span class="cm-variable">getChangedTalks</span>(<span class="cm-variable-2">waiter</span>.<span class="cm-property">since</span>), <span class="cm-variable-2">waiter</span>.<span class="cm-property">response</span>);
+  });
+  <span class="cm-variable">waiting</span> <span class="cm-operator">=</span> [];
+}</pre>
+<p><a class="p_ident" id="p_IokNlBSqeg" href="./21_skillsharing.html#p_IokNlBSqeg"></a>Накрая, <code>getChangedTalks</code> използва <code>changes</code> масива за да изгради масив от променени теми, включително и обекти с <code>deleted</code> свойство за теми, които вече не съществуват. При изграждането на този масив <code>getChangedTalks</code> трябва да гарантира, че не включва едни и същи теми два пъти, тъй като може да е имало множество промени в темата след определен период от време.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_DGLeA1qeUU" href="./21_skillsharing.html#c_DGLeA1qeUU"></a><span class="cm-keyword">function</span> <span class="cm-variable">getChangedTalks</span>(<span class="cm-def">since</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">found</span> <span class="cm-operator">=</span> [];
+  <span class="cm-keyword">function</span> <span class="cm-def">alreadySeen</span>(<span class="cm-def">title</span>) {
+    <span class="cm-keyword">return</span> <span class="cm-variable-2">found</span>.<span class="cm-property">some</span>(<span class="cm-keyword">function</span>(<span class="cm-def">f</span>) {<span class="cm-keyword">return</span> <span class="cm-variable-2">f</span>.<span class="cm-property">title</span> <span class="cm-operator">==</span> <span class="cm-variable-2">title</span>;});
+  }
+  <span class="cm-keyword">for</span> (<span class="cm-keyword">var</span> <span class="cm-def">i</span> <span class="cm-operator">=</span> <span class="cm-variable">changes</span>.<span class="cm-property">length</span> <span class="cm-operator">-</span> <span class="cm-number">1</span>; <span class="cm-variable-2">i</span> <span class="cm-operator">&gt;=</span> <span class="cm-number">0</span>; <span class="cm-variable-2">i</span><span class="cm-operator">--</span>) {
+    <span class="cm-keyword">var</span> <span class="cm-def">change</span> <span class="cm-operator">=</span> <span class="cm-variable">changes</span>[<span class="cm-variable-2">i</span>];
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">change</span>.<span class="cm-property">time</span> <span class="cm-operator">&lt;=</span> <span class="cm-variable-2">since</span>)
+      <span class="cm-keyword">break</span>;
+    <span class="cm-keyword">else</span> <span class="cm-keyword">if</span> (<span class="cm-variable-2">alreadySeen</span>(<span class="cm-variable-2">change</span>.<span class="cm-property">title</span>))
+      <span class="cm-keyword">continue</span>;
+    <span class="cm-keyword">else</span> <span class="cm-keyword">if</span> (<span class="cm-variable-2">change</span>.<span class="cm-property">title</span> <span class="cm-keyword">in</span> <span class="cm-variable">talks</span>)
+      <span class="cm-variable-2">found</span>.<span class="cm-property">push</span>(<span class="cm-variable">talks</span>[<span class="cm-variable-2">change</span>.<span class="cm-property">title</span>]);
+    <span class="cm-keyword">else</span>
+      <span class="cm-variable-2">found</span>.<span class="cm-property">push</span>({<span class="cm-property">title</span>: <span class="cm-variable-2">change</span>.<span class="cm-property">title</span>, <span class="cm-property">deleted</span>: <span class="cm-atom">true</span>});
+  }
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">found</span>;
+}</pre>
+<p><a class="p_ident" id="p_3rLxFmwzJp" href="./21_skillsharing.html#p_3rLxFmwzJp"></a>С това приключва кода на сървъра. С изпълнението на програмата дефинирана до сега ще се получи сървър работещ на порт 8000, който сервира под-директория на файлове от <code>public</code> заедно с управляващ интерфейс на темите в <code>/talks</code> URL.</p>
+<h2><a class="h_ident" id="h_+jMNtbJ4U3" href="./21_skillsharing.html#h_+jMNtbJ4U3"></a>Клиентът</h2>
+<p><a class="p_ident" id="p_wVvjBUA/vN" href="./21_skillsharing.html#p_wVvjBUA/vN"></a>Страната на клиентската част на Интернет страницата на управлението на темите се състои от три файла: HTML страница, списък със стилове и файлове на JavaScript.</p>
+<h3><a class="h_ident" id="h_n3OM6EV/KR" href="./21_skillsharing.html#h_n3OM6EV/KR"></a>HTML</h3>
+<p><a class="p_ident" id="p_jNP5xbaXQN" href="./21_skillsharing.html#p_jNP5xbaXQN"></a>Той е широко използвана конвенция за уеб сървъри, като за опити служи файл с име <code>index.html</code>, когато искането е поставено директно в пътя, който съответства на директорията. Модулът за файлов сървър, който използваме <code>ecstatic</code> поддържа тази конвенция. Когато е отправено искане към пътя <code>/</code>, сървърът търси файл на <code>./public/index.html</code> (<code>./public</code> е основата която даваме) и връща този файл ако е намерен.</p>
+<p><a class="p_ident" id="p_17VtIBLbQE" href="./21_skillsharing.html#p_17VtIBLbQE"></a>По този начин ако искаме една страница да се появи, когато браузърът е настроен към нашия сървър, ние трябва да я сложим в <code>public/index.html</code>. Ето как започва нашия <em>index</em> файл.</p>
+<pre data-language="text/html" class="snippet cm-s-default"><a class="c_ident" id="c_Z2P6hR+wGL" href="./21_skillsharing.html#c_Z2P6hR+wGL"></a><span class="cm-meta">&lt;!doctype html&gt;</span>
+
+<span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">title</span><span class="cm-tag cm-bracket">&gt;</span>Skill Sharing<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">title</span><span class="cm-tag cm-bracket">&gt;</span>
+<span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">link</span> <span class="cm-attribute">rel</span>=<span class="cm-string">"stylesheet"</span> <span class="cm-attribute">href</span>=<span class="cm-string">"skillsharing.css"</span><span class="cm-tag cm-bracket">&gt;</span>
+
+<span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">h1</span><span class="cm-tag cm-bracket">&gt;</span>Skill sharing<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">h1</span><span class="cm-tag cm-bracket">&gt;</span>
+
+<span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">p</span><span class="cm-tag cm-bracket">&gt;</span>Your name: <span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">input</span> <span class="cm-attribute">type</span>=<span class="cm-string">"text"</span> <span class="cm-attribute">id</span>=<span class="cm-string">"name"</span><span class="cm-tag cm-bracket">&gt;&lt;/</span><span class="cm-tag">p</span><span class="cm-tag cm-bracket">&gt;</span>
+
+<span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">div</span> <span class="cm-attribute">id</span>=<span class="cm-string">"talks"</span><span class="cm-tag cm-bracket">&gt;&lt;/</span><span class="cm-tag">div</span><span class="cm-tag cm-bracket">&gt;</span></pre>
+<p><a class="p_ident" id="p_CbpqVP4HI4" href="./21_skillsharing.html#p_CbpqVP4HI4"></a>Той дефинира заглавието на документа и включва списък със стилове, който определя някои стилове наред с други неща, както и добавяне на граница около темите. След това, добавя заглавие и поле за име. От потребителя се очаква да постави името си в последното, така че да може да бъде прикрепено към темите и коментарите, когато се представят.</p>
+<p><a class="p_ident" id="p_AyaILfiByw" href="./21_skillsharing.html#p_AyaILfiByw"></a><code>&lt;div&gt;</code> елемента с ID <code>"talks"</code> ще съдържа актуалния списък с темите. Скрипта запълва списъка, когато получава теми от сървъра.</p>
+<p><a class="p_ident" id="p_Y7s6DwG+9R" href="./21_skillsharing.html#p_Y7s6DwG+9R"></a>След това идва под-формата, която се използва за създаване на нова тема.</p>
+<pre data-language="text/html" class="snippet cm-s-default"><a class="c_ident" id="c_qBYkPxBdWl" href="./21_skillsharing.html#c_qBYkPxBdWl"></a><span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">form</span> <span class="cm-attribute">id</span>=<span class="cm-string">"newtalk"</span><span class="cm-tag cm-bracket">&gt;</span>
+  <span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">h3</span><span class="cm-tag cm-bracket">&gt;</span>Submit a talk<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">h3</span><span class="cm-tag cm-bracket">&gt;</span>
+  Title: <span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">input</span> <span class="cm-attribute">type</span>=<span class="cm-string">"text"</span> <span class="cm-attribute">style</span>=<span class="cm-string">"width: 40em"</span> <span class="cm-attribute">name</span>=<span class="cm-string">"title"</span><span class="cm-tag cm-bracket">&gt;</span>
+  <span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">br</span><span class="cm-tag cm-bracket">&gt;</span>
+  Summary: <span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">input</span> <span class="cm-attribute">type</span>=<span class="cm-string">"text"</span> <span class="cm-attribute">style</span>=<span class="cm-string">"width: 40em"</span> <span class="cm-attribute">name</span>=<span class="cm-string">"summary"</span><span class="cm-tag cm-bracket">&gt;</span>
+  <span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">button</span> <span class="cm-attribute">type</span>=<span class="cm-string">"submit"</span><span class="cm-tag cm-bracket">&gt;</span>Send<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">button</span><span class="cm-tag cm-bracket">&gt;</span>
+<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">form</span><span class="cm-tag cm-bracket">&gt;</span></pre>
+<p><a class="p_ident" id="p_SY0ZWXkS+z" href="./21_skillsharing.html#p_SY0ZWXkS+z"></a>Скрипта добавя манипулатор за <code>"submit"</code> събитие към тази форма, с което може да се направи заявка към HTTP сървъра, която му казва за тази тема.</p>
+<p><a class="p_ident" id="p_01rGKtjDzP" href="./21_skillsharing.html#p_01rGKtjDzP"></a>После идва доста загадъчен блок, който има <code>display</code> стил настроен на <code>none</code>, което всъщност не му позволява да се показва на страницата. Можете ли да познаете защо?</p>
+<pre data-language="text/html" class="snippet cm-s-default"><a class="c_ident" id="c_88Blr//GMS" href="./21_skillsharing.html#c_88Blr//GMS"></a><span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">div</span> <span class="cm-attribute">id</span>=<span class="cm-string">"template"</span> <span class="cm-attribute">style</span>=<span class="cm-string">"display: none"</span><span class="cm-tag cm-bracket">&gt;</span>
+  <span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">div</span> <span class="cm-attribute">class</span>=<span class="cm-string">"talk"</span><span class="cm-tag cm-bracket">&gt;</span>
+    <span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">h2</span><span class="cm-tag cm-bracket">&gt;</span>{{title}}<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">h2</span><span class="cm-tag cm-bracket">&gt;</span>
+    <span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">div</span><span class="cm-tag cm-bracket">&gt;</span>by <span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">span</span> <span class="cm-attribute">class</span>=<span class="cm-string">"name"</span><span class="cm-tag cm-bracket">&gt;</span>{{presenter}}<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">span</span><span class="cm-tag cm-bracket">&gt;&lt;/</span><span class="cm-tag">div</span><span class="cm-tag cm-bracket">&gt;</span>
+    <span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">p</span><span class="cm-tag cm-bracket">&gt;</span>{{summary}}<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">p</span><span class="cm-tag cm-bracket">&gt;</span>
+    <span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">div</span> <span class="cm-attribute">class</span>=<span class="cm-string">"comments"</span><span class="cm-tag cm-bracket">&gt;&lt;/</span><span class="cm-tag">div</span><span class="cm-tag cm-bracket">&gt;</span>
+    <span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">form</span><span class="cm-tag cm-bracket">&gt;</span>
+      <span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">input</span> <span class="cm-attribute">type</span>=<span class="cm-string">"text"</span> <span class="cm-attribute">name</span>=<span class="cm-string">"comment"</span><span class="cm-tag cm-bracket">&gt;</span>
+      <span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">button</span> <span class="cm-attribute">type</span>=<span class="cm-string">"submit"</span><span class="cm-tag cm-bracket">&gt;</span>Add comment<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">button</span><span class="cm-tag cm-bracket">&gt;</span>
+      <span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">button</span> <span class="cm-attribute">type</span>=<span class="cm-string">"button"</span> <span class="cm-attribute">class</span>=<span class="cm-string">"del"</span><span class="cm-tag cm-bracket">&gt;</span>Delete talk<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">button</span><span class="cm-tag cm-bracket">&gt;</span>
+    <span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">form</span><span class="cm-tag cm-bracket">&gt;</span>
+  <span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">div</span><span class="cm-tag cm-bracket">&gt;</span>
+  <span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">div</span> <span class="cm-attribute">class</span>=<span class="cm-string">"comment"</span><span class="cm-tag cm-bracket">&gt;</span>
+    <span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">span</span> <span class="cm-attribute">class</span>=<span class="cm-string">"name"</span><span class="cm-tag cm-bracket">&gt;</span>{{author}}<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">span</span><span class="cm-tag cm-bracket">&gt;</span>: {{message}}
+  <span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">div</span><span class="cm-tag cm-bracket">&gt;</span>
+<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">div</span><span class="cm-tag cm-bracket">&gt;</span></pre>
+<p><a class="p_ident" id="p_nUrh268UuK" href="./21_skillsharing.html#p_nUrh268UuK"></a>Създаване на сложни DOM структури с JavaScript код, произвежда грозен код. Можем да направим кода малко по-добър чрез въвеждане на помощни функции, като <code>elt</code> функцията от <a href="./13_dom.html#elt">Глава 13</a>, но резултата ще продължи да бъде зле изглеждащ HTML, който може да се мисли за домейн-специфичен език за изразяване на DOM структури.</p>
+<p><a class="p_ident" id="p_+UxIQCbmjS" href="./21_skillsharing.html#p_+UxIQCbmjS"></a>За да създадем DOM структури за темите в нашата програма ще дефинираме една проста система <em>templating</em> (темплейт), която използва скрити структури  на DOM, включени в документа към инстанциите на новите DOM структури, заменяйки стойностите на запазеното място между двойните къдрави скоби със стойностите на специфичните теми.</p>
+<p><a class="p_ident" id="p_sC79xfZRJT" href="./21_skillsharing.html#p_sC79xfZRJT"></a>Накрая, HTML документа включва скрипт файл, който съдържа кода на страната на клиента.</p>
+<pre data-language="text/html" class="snippet cm-s-default"><a class="c_ident" id="c_6VMvK0ztJb" href="./21_skillsharing.html#c_6VMvK0ztJb"></a><span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">script</span> <span class="cm-attribute">src</span>=<span class="cm-string">"skillsharing_client.js"</span><span class="cm-tag cm-bracket">&gt;</span><span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span></pre>
+<h3><a class="h_ident" id="h_mboAXnxq/u" href="./21_skillsharing.html#h_mboAXnxq/u"></a>Стартиране</h3>
+<p><a class="p_ident" id="p_ZvRC5GfFJX" href="./21_skillsharing.html#p_ZvRC5GfFJX"></a>Първото нещо, което клиента трябва да направи, когато страницата е заредена е да поиска от сървъра текущия набор от теми. Тъй като ще се правят много HTTP заявки, ние ще дефинираме малка обвивка около <code>XMLHttpRequest</code>, която приема един обект, за да конфигурира искането, както и обратното извикване, когато искането завърши.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_Lq4u7sBZCv" href="./21_skillsharing.html#c_Lq4u7sBZCv"></a><span class="cm-keyword">function</span> <span class="cm-variable">request</span>(<span class="cm-def">options</span>, <span class="cm-def">callback</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">req</span> <span class="cm-operator">=</span> <span class="cm-keyword">new</span> <span class="cm-variable">XMLHttpRequest</span>();
+  <span class="cm-variable-2">req</span>.<span class="cm-property">open</span>(<span class="cm-variable-2">options</span>.<span class="cm-property">method</span> <span class="cm-operator">||</span> <span class="cm-string">"GET"</span>, <span class="cm-variable-2">options</span>.<span class="cm-property">pathname</span>, <span class="cm-atom">true</span>);
+  <span class="cm-variable-2">req</span>.<span class="cm-property">addEventListener</span>(<span class="cm-string">"load"</span>, <span class="cm-keyword">function</span>() {
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">req</span>.<span class="cm-property">status</span> <span class="cm-operator">&lt;</span> <span class="cm-number">400</span>)
+      <span class="cm-variable-2">callback</span>(<span class="cm-atom">null</span>, <span class="cm-variable-2">req</span>.<span class="cm-property">responseText</span>);
+    <span class="cm-keyword">else</span>
+      <span class="cm-variable-2">callback</span>(<span class="cm-keyword">new</span> <span class="cm-variable">Error</span>(<span class="cm-string">"Request failed: "</span> <span class="cm-operator">+</span> <span class="cm-variable-2">req</span>.<span class="cm-property">statusText</span>));
+  });
+  <span class="cm-variable-2">req</span>.<span class="cm-property">addEventListener</span>(<span class="cm-string">"error"</span>, <span class="cm-keyword">function</span>() {
+    <span class="cm-variable-2">callback</span>(<span class="cm-keyword">new</span> <span class="cm-variable">Error</span>(<span class="cm-string">"Network error"</span>));
+  });
+  <span class="cm-variable-2">req</span>.<span class="cm-property">send</span>(<span class="cm-variable-2">options</span>.<span class="cm-property">body</span> <span class="cm-operator">||</span> <span class="cm-atom">null</span>);
+}</pre>
+<p><a class="p_ident" id="p_+tZz/acy91" href="./21_skillsharing.html#p_+tZz/acy91"></a>Първоначално искането показва темите, които получава на екрана и започва процеса на дългото съгласуване, като извика <code>waitForChanges</code>.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_tyqN7H6Gk5" href="./21_skillsharing.html#c_tyqN7H6Gk5"></a><span class="cm-keyword">var</span> <span class="cm-variable">lastServerTime</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>;
+
+<span class="cm-variable">request</span>({<span class="cm-property">pathname</span>: <span class="cm-string">"talks"</span>}, <span class="cm-keyword">function</span>(<span class="cm-def">error</span>, <span class="cm-def">response</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">error</span>) {
+    <span class="cm-variable">reportError</span>(<span class="cm-variable-2">error</span>);
+  } <span class="cm-keyword">else</span> {
+    <span class="cm-variable-2">response</span> <span class="cm-operator">=</span> <span class="cm-variable">JSON</span>.<span class="cm-property">parse</span>(<span class="cm-variable-2">response</span>);
+    <span class="cm-variable">displayTalks</span>(<span class="cm-variable-2">response</span>.<span class="cm-property">talks</span>);
+    <span class="cm-variable">lastServerTime</span> <span class="cm-operator">=</span> <span class="cm-variable-2">response</span>.<span class="cm-property">serverTime</span>;
+    <span class="cm-variable">waitForChanges</span>();
+  }
+});</pre>
+<p><a class="p_ident" id="p_x9cXc2plZU" href="./21_skillsharing.html#p_x9cXc2plZU"></a>Променливата <code>lastServerTime</code> се използва за проследяване на времето на последната актуализация, която е получена от сървъра. След първоначалното искане, изгледът на клиента за темите съответства на изгледа, който сървъра има, когато отговаря на това искане. По този начин, свойството <code>serverTime</code> включено в отговора предвижда подходяща първоначална стойност за <code>lastServerTime</code>.</p>
+<p><a class="p_ident" id="p_gwDxefJOAx" href="./21_skillsharing.html#p_gwDxefJOAx"></a>Когато искането не успее, ние не искаме нашата страница просто да стои там и да не прави нищо без обяснение. Така че дефинираме проста функция, наречена <code>reportError</code>, която показва на потребителя диалогов прозорец, който казва, че нещо се е объркало.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_W0nNbmzqMN" href="./21_skillsharing.html#c_W0nNbmzqMN"></a><span class="cm-keyword">function</span> <span class="cm-variable">reportError</span>(<span class="cm-def">error</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">error</span>)
+    <span class="cm-variable">alert</span>(<span class="cm-variable-2">error</span>.<span class="cm-property">toString</span>());
+}</pre>
+<p><a class="p_ident" id="p_CAD2u101IA" href="./21_skillsharing.html#p_CAD2u101IA"></a>Функцията проверява дали има действително грешка и предупреждава само, когато има такава. По този начин можем директно да подадем тази функция на искането за <code>request</code> (заявки), където можем да игнорираме отговора. Това гарантира, че ако искането не успее, грешката се съобщава на потребителя.</p>
+<h3><a class="h_ident" id="h_KV4ik1gcBy" href="./21_skillsharing.html#h_KV4ik1gcBy"></a>Показване  на  теми</h3>
+<p><a class="p_ident" id="p_ABlg+B4JoH" href="./21_skillsharing.html#p_ABlg+B4JoH"></a>За да бъде в състояние да актуализира изгледа на темите, когато промените дойдат, клиента трябва да следи темите, които в момента се показват. По този начин, когато дойде нова версия на тема, която вече е на екрана, тя може да бъде заменена (на място) с актуалната си форма. По същия начин, когато информацията идва в тази тема тя се заличава и правилният DOM елемент може да бъде премахнат от документа.</p>
+<p><a class="p_ident" id="p_HX4fJQ/YuG" href="./21_skillsharing.html#p_HX4fJQ/YuG"></a>Функцията <code>displayTalks</code> се използва, както за изграждане на първоначалния дисплей така и за актуализирането му, когато се промени нещо. Тя ще използва обекта <code>shownTalks</code>, който е асоцииран с заглавието на темата в DOM разклоненията и помни темите, които в момента са на екрана.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_DSPPbB1GXB" href="./21_skillsharing.html#c_DSPPbB1GXB"></a><span class="cm-keyword">var</span> <span class="cm-variable">talkDiv</span> <span class="cm-operator">=</span> <span class="cm-variable">document</span>.<span class="cm-property">querySelector</span>(<span class="cm-string">"#talks"</span>);
+<span class="cm-keyword">var</span> <span class="cm-variable">shownTalks</span> <span class="cm-operator">=</span> <span class="cm-variable">Object</span>.<span class="cm-property">create</span>(<span class="cm-atom">null</span>);
+
+<span class="cm-keyword">function</span> <span class="cm-variable">displayTalks</span>(<span class="cm-def">talks</span>) {
+  <span class="cm-variable-2">talks</span>.<span class="cm-property">forEach</span>(<span class="cm-keyword">function</span>(<span class="cm-def">talk</span>) {
+    <span class="cm-keyword">var</span> <span class="cm-def">shown</span> <span class="cm-operator">=</span> <span class="cm-variable">shownTalks</span>[<span class="cm-variable-2">talk</span>.<span class="cm-property">title</span>];
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">talk</span>.<span class="cm-property">deleted</span>) {
+      <span class="cm-keyword">if</span> (<span class="cm-variable-2">shown</span>) {
+        <span class="cm-variable">talkDiv</span>.<span class="cm-property">removeChild</span>(<span class="cm-variable-2">shown</span>);
+        <span class="cm-keyword">delete</span> <span class="cm-variable">shownTalks</span>[<span class="cm-variable-2">talk</span>.<span class="cm-property">title</span>];
+      }
+    } <span class="cm-keyword">else</span> {
+      <span class="cm-keyword">var</span> <span class="cm-def">node</span> <span class="cm-operator">=</span> <span class="cm-variable">drawTalk</span>(<span class="cm-variable-2">talk</span>);
+      <span class="cm-keyword">if</span> (<span class="cm-variable-2">shown</span>)
+        <span class="cm-variable">talkDiv</span>.<span class="cm-property">replaceChild</span>(<span class="cm-variable-2">node</span>, <span class="cm-variable-2">shown</span>);
+      <span class="cm-keyword">else</span>
+        <span class="cm-variable">talkDiv</span>.<span class="cm-property">appendChild</span>(<span class="cm-variable-2">node</span>);
+      <span class="cm-variable">shownTalks</span>[<span class="cm-variable-2">talk</span>.<span class="cm-property">title</span>] <span class="cm-operator">=</span> <span class="cm-variable-2">node</span>;
+    }
+  });
+}</pre>
+<p><a class="p_ident" id="p_eNjQj7FZqE" href="./21_skillsharing.html#p_eNjQj7FZqE"></a>Изграждането на структурата на DOM за темите се извършва с помощта на шаблони, които са включени в HTML документа. Първо, трябва да се дефинира <code>instantiateTemplate</code>, който търси и попълва шаблони.</p>
+<p><a class="p_ident" id="p_QzVkBI26S7" href="./21_skillsharing.html#p_QzVkBI26S7"></a>Параметъра <code>name</code> е името на шаблона. За да намерим елемента шаблон, ние търсим елемент чиито име на клас съвпада с името на шаблона, който е дете на елемента с ID <code>"template"</code>. Използвайки  метода <code>querySelector</code> прави това намиране лесно. Имаме шаблони наречени <code>"talk"</code> и <code>"comment"</code> в HTML страницата.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_Vecz/HgG8g" href="./21_skillsharing.html#c_Vecz/HgG8g"></a><span class="cm-keyword">function</span> <span class="cm-variable">instantiateTemplate</span>(<span class="cm-def">name</span>, <span class="cm-def">values</span>) {
+  <span class="cm-keyword">function</span> <span class="cm-def">instantiateText</span>(<span class="cm-def">text</span>) {
+    <span class="cm-keyword">return</span> <span class="cm-variable-2">text</span>.<span class="cm-property">replace</span>(<span class="cm-string-2">/\{\{(\w+)\}\}/g</span>, <span class="cm-keyword">function</span>(<span class="cm-def">_</span>, <span class="cm-def">name</span>) {
+      <span class="cm-keyword">return</span> <span class="cm-variable-2">values</span>[<span class="cm-variable-2">name</span>];
+    });
+  }
+  <span class="cm-keyword">function</span> <span class="cm-def">instantiate</span>(<span class="cm-def">node</span>) {
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">node</span>.<span class="cm-property">nodeType</span> <span class="cm-operator">==</span> <span class="cm-variable">document</span>.<span class="cm-property">ELEMENT_NODE</span>) {
+      <span class="cm-keyword">var</span> <span class="cm-def">copy</span> <span class="cm-operator">=</span> <span class="cm-variable-2">node</span>.<span class="cm-property">cloneNode</span>();
+      <span class="cm-keyword">for</span> (<span class="cm-keyword">var</span> <span class="cm-def">i</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>; <span class="cm-variable-2">i</span> <span class="cm-operator">&lt;</span> <span class="cm-variable-2">node</span>.<span class="cm-property">childNodes</span>.<span class="cm-property">length</span>; <span class="cm-variable-2">i</span><span class="cm-operator">++</span>)
+        <span class="cm-variable-2">copy</span>.<span class="cm-property">appendChild</span>(<span class="cm-variable-2">instantiate</span>(<span class="cm-variable-2">node</span>.<span class="cm-property">childNodes</span>[<span class="cm-variable-2">i</span>]));
+      <span class="cm-keyword">return</span> <span class="cm-variable-2">copy</span>;
+    } <span class="cm-keyword">else</span> <span class="cm-keyword">if</span> (<span class="cm-variable-2">node</span>.<span class="cm-property">nodeType</span> <span class="cm-operator">==</span> <span class="cm-variable">document</span>.<span class="cm-property">TEXT_NODE</span>) {
+      <span class="cm-keyword">return</span> <span class="cm-variable">document</span>.<span class="cm-property">createTextNode</span>(
+               <span class="cm-variable-2">instantiateText</span>(<span class="cm-variable-2">node</span>.<span class="cm-property">nodeValue</span>));
+    } <span class="cm-keyword">else</span> {
+      <span class="cm-keyword">return</span> <span class="cm-variable-2">node</span>;
+    }
+  }
+
+  <span class="cm-keyword">var</span> <span class="cm-def">template</span> <span class="cm-operator">=</span> <span class="cm-variable">document</span>.<span class="cm-property">querySelector</span>(<span class="cm-string">"#template ."</span> <span class="cm-operator">+</span> <span class="cm-variable-2">name</span>);
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">instantiate</span>(<span class="cm-variable-2">template</span>);
+}</pre>
+<p><a class="p_ident" id="p_/nQdGhe85J" href="./21_skillsharing.html#p_/nQdGhe85J"></a>Метода <code>cloneNode</code>, който всички DOM разклонения имат, създава копие на едно разклонение. Той няма да копира децата разклонения на разклонението, освен ако не му е подаден <code>true</code>, като първи аргумент. Функцията <code>instantiate</code> рекурсивно изгражда копие на шаблона и попълва вътре шаблона докато преминава.</p>
+<p><a class="p_ident" id="p_DrLRp8KMhs" href="./21_skillsharing.html#p_DrLRp8KMhs"></a>Вторият аргумент на <code>instantiateTemplate</code> трябва да бъде обект, чийто свойства съдържат <em>strings</em>, с които трябва да се запълни шаблона. Контейнер, като <code>{{title}}</code> ще бъде заменен със стойността на <code>values</code> на свойството <code>title</code>.</p>
+<p><a class="p_ident" id="p_QeRff45qDA" href="./21_skillsharing.html#p_QeRff45qDA"></a>Това е необработен подход за шаблони, но е достатъчен за да се приложи <code>drawTalk</code>.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_T1GqphrHzC" href="./21_skillsharing.html#c_T1GqphrHzC"></a><span class="cm-keyword">function</span> <span class="cm-variable">drawTalk</span>(<span class="cm-def">talk</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">node</span> <span class="cm-operator">=</span> <span class="cm-variable">instantiateTemplate</span>(<span class="cm-string">"talk"</span>, <span class="cm-variable-2">talk</span>);
+  <span class="cm-keyword">var</span> <span class="cm-def">comments</span> <span class="cm-operator">=</span> <span class="cm-variable-2">node</span>.<span class="cm-property">querySelector</span>(<span class="cm-string">".comments"</span>);
+  <span class="cm-variable-2">talk</span>.<span class="cm-property">comments</span>.<span class="cm-property">forEach</span>(<span class="cm-keyword">function</span>(<span class="cm-def">comment</span>) {
+    <span class="cm-variable-2">comments</span>.<span class="cm-property">appendChild</span>(
+      <span class="cm-variable">instantiateTemplate</span>(<span class="cm-string">"comment"</span>, <span class="cm-variable-2">comment</span>));
+  });
+
+  <span class="cm-variable-2">node</span>.<span class="cm-property">querySelector</span>(<span class="cm-string">"button.del"</span>).<span class="cm-property">addEventListener</span>(
+    <span class="cm-string">"click"</span>, <span class="cm-variable">deleteTalk</span>.<span class="cm-property">bind</span>(<span class="cm-atom">null</span>, <span class="cm-variable-2">talk</span>.<span class="cm-property">title</span>));
+
+  <span class="cm-keyword">var</span> <span class="cm-def">form</span> <span class="cm-operator">=</span> <span class="cm-variable-2">node</span>.<span class="cm-property">querySelector</span>(<span class="cm-string">"form"</span>);
+  <span class="cm-variable-2">form</span>.<span class="cm-property">addEventListener</span>(<span class="cm-string">"submit"</span>, <span class="cm-keyword">function</span>(<span class="cm-def">event</span>) {
+    <span class="cm-variable-2">event</span>.<span class="cm-property">preventDefault</span>();
+    <span class="cm-variable">addComment</span>(<span class="cm-variable-2">talk</span>.<span class="cm-property">title</span>, <span class="cm-variable-2">form</span>.<span class="cm-property">elements</span>.<span class="cm-property">comment</span>.<span class="cm-property">value</span>);
+    <span class="cm-variable-2">form</span>.<span class="cm-property">reset</span>();
+  });
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">node</span>;
+}</pre>
+<p><a class="p_ident" id="p_wkegcUE+fb" href="./21_skillsharing.html#p_wkegcUE+fb"></a>След инстанцирането на <code>"talk"</code> шаблоните, има различни неща, които трябва да се закърпят. Първо, коментарите трябва да се запълнят от многократно инстанцирания шаблон за <code>"comment"</code> и прилагането на резултата към разклонението с клас <code>"comments"</code>. На следващо място, манипулатора за събития трябва да се прикрепи към бутона, който изтрива задачата и формата, която прибавя нов коментар.</p>
+<h3><a class="h_ident" id="h_Fxf3YQJcAP" href="./21_skillsharing.html#h_Fxf3YQJcAP"></a>Актуализиране  на  сървъра</h3>
+<p><a class="p_ident" id="p_+djWXXL4a7" href="./21_skillsharing.html#p_+djWXXL4a7"></a>Манипулаторите за събития регистрирани от <code>drawTalk</code> извикват функциите <code>deleteTalk</code> и <code>addComment</code>, за извършване на реални действия, като изтриване на дадена тема или добавяне на коментар. Те трябва да изградят URL адреси, които се отнасят за теми с дадено заглавие, за което сме дефинирали помощната функция <code>talkURL</code>.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_WLsWF+fVeR" href="./21_skillsharing.html#c_WLsWF+fVeR"></a><span class="cm-keyword">function</span> <span class="cm-variable">talkURL</span>(<span class="cm-def">title</span>) {
+  <span class="cm-keyword">return</span> <span class="cm-string">"talks/"</span> <span class="cm-operator">+</span> <span class="cm-variable">encodeURIComponent</span>(<span class="cm-variable-2">title</span>);
+}</pre>
+<p><a class="p_ident" id="p_2F7+HjPRJf" href="./21_skillsharing.html#p_2F7+HjPRJf"></a>Функцията <code>deleteTalk</code> изстрелва <code>DELETE</code> заявка и отчита грешка, когато това се провали.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_2KfleKDwSk" href="./21_skillsharing.html#c_2KfleKDwSk"></a><span class="cm-keyword">function</span> <span class="cm-variable">deleteTalk</span>(<span class="cm-def">title</span>) {
+  <span class="cm-variable">request</span>({<span class="cm-property">pathname</span>: <span class="cm-variable">talkURL</span>(<span class="cm-variable-2">title</span>), <span class="cm-property">method</span>: <span class="cm-string">"DELETE"</span>},
+          <span class="cm-variable">reportError</span>);
+}</pre>
+<p><a class="p_ident" id="p_lPxu6YmNuw" href="./21_skillsharing.html#p_lPxu6YmNuw"></a>Добавянето на коментари изисква изграждане на JSON представяне на коментара и подаване, като част от <code>POST</code> заявка.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_M7QiAhwiFp" href="./21_skillsharing.html#c_M7QiAhwiFp"></a><span class="cm-keyword">function</span> <span class="cm-variable">addComment</span>(<span class="cm-def">title</span>, <span class="cm-def">comment</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">comment</span> <span class="cm-operator">=</span> {<span class="cm-property">author</span>: <span class="cm-variable">nameField</span>.<span class="cm-property">value</span>, <span class="cm-property">message</span>: <span class="cm-variable-2">comment</span>};
+  <span class="cm-variable">request</span>({<span class="cm-property">pathname</span>: <span class="cm-variable">talkURL</span>(<span class="cm-variable-2">title</span>) <span class="cm-operator">+</span> <span class="cm-string">"/comments"</span>,
+           <span class="cm-property">body</span>: <span class="cm-variable">JSON</span>.<span class="cm-property">stringify</span>(<span class="cm-variable-2">comment</span>),
+           <span class="cm-property">method</span>: <span class="cm-string">"POST"</span>},
+          <span class="cm-variable">reportError</span>);
+}</pre>
+<p><a class="p_ident" id="p_0lktU89vVm" href="./21_skillsharing.html#p_0lktU89vVm"></a>Променливата <code>nameField</code> използва за задаване на коментара <code>author</code> свойство, което е препратка към <code>&lt;input&gt;</code> полето в горната част на страницата, което позволява на потребителя да определи своето име. Ние също свързваме това поле с <code>localStorage</code>, така че да не трябва всеки път, когато страницата се презарежда да се попълва отново.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_NTJPodOcVP" href="./21_skillsharing.html#c_NTJPodOcVP"></a><span class="cm-keyword">var</span> <span class="cm-variable">nameField</span> <span class="cm-operator">=</span> <span class="cm-variable">document</span>.<span class="cm-property">querySelector</span>(<span class="cm-string">"#name"</span>);
+
+<span class="cm-variable">nameField</span>.<span class="cm-property">value</span> <span class="cm-operator">=</span> <span class="cm-variable">localStorage</span>.<span class="cm-property">getItem</span>(<span class="cm-string">"name"</span>) <span class="cm-operator">||</span> <span class="cm-string">""</span>;
+
+<span class="cm-variable">nameField</span>.<span class="cm-property">addEventListener</span>(<span class="cm-string">"change"</span>, <span class="cm-keyword">function</span>() {
+  <span class="cm-variable">localStorage</span>.<span class="cm-property">setItem</span>(<span class="cm-string">"name"</span>, <span class="cm-variable">nameField</span>.<span class="cm-property">value</span>);
+});</pre>
+<p><a class="p_ident" id="p_UkPG5Nhwu/" href="./21_skillsharing.html#p_UkPG5Nhwu/"></a>Формата в долната част на страницата за предлагане на нова тема, получава манипулатор за събитие <code>"submit"</code>. Този манипулатор предотвратява ефект по подразбиране на събитието (което би довело до презареждане на страницата), изчиства страницата и изстрелва <code>PUT</code> заявка за създаване на тема.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_dyGT4khGTb" href="./21_skillsharing.html#c_dyGT4khGTb"></a><span class="cm-keyword">var</span> <span class="cm-variable">talkForm</span> <span class="cm-operator">=</span> <span class="cm-variable">document</span>.<span class="cm-property">querySelector</span>(<span class="cm-string">"#newtalk"</span>);
+
+<span class="cm-variable">talkForm</span>.<span class="cm-property">addEventListener</span>(<span class="cm-string">"submit"</span>, <span class="cm-keyword">function</span>(<span class="cm-def">event</span>) {
+  <span class="cm-variable-2">event</span>.<span class="cm-property">preventDefault</span>();
+  <span class="cm-variable">request</span>({<span class="cm-property">pathname</span>: <span class="cm-variable">talkURL</span>(<span class="cm-variable">talkForm</span>.<span class="cm-property">elements</span>.<span class="cm-property">title</span>.<span class="cm-property">value</span>),
+           <span class="cm-property">method</span>: <span class="cm-string">"PUT"</span>,
+           <span class="cm-property">body</span>: <span class="cm-variable">JSON</span>.<span class="cm-property">stringify</span>({
+             <span class="cm-property">presenter</span>: <span class="cm-variable">nameField</span>.<span class="cm-property">value</span>,
+             <span class="cm-property">summary</span>: <span class="cm-variable">talkForm</span>.<span class="cm-property">elements</span>.<span class="cm-property">summary</span>.<span class="cm-property">value</span>
+           })}, <span class="cm-variable">reportError</span>);
+  <span class="cm-variable">talkForm</span>.<span class="cm-property">reset</span>();
+});</pre>
+<h3><a class="h_ident" id="h_2EFD142D/X" href="./21_skillsharing.html#h_2EFD142D/X"></a>Забелязване  на  промени</h3>
+<p><a class="p_ident" id="p_iWkpEvrdoJ" href="./21_skillsharing.html#p_iWkpEvrdoJ"></a>Трябва да отбележа, че различните функции, които променят състоянието на приложението, чрез създаване или изтриване на теми или добавяне на коментари, не правят абсолютно нищо за да гарантират, че извършените промени са видими на екрана. Те просто казват на сървъра и разчитат на механизма на дългото съгласуване да задейства съответните актуализации на страницата.</p>
+<p><a class="p_ident" id="p_xdAPc8BwNG" href="./21_skillsharing.html#p_xdAPc8BwNG"></a>Като се има в предвид, че механизмът се изпълнява в нашия сървър и начина, по който е дефиниран <code>displayTalks</code> за справяне с актуализациите на темите, които вече са на страницата, действителното дълго съгласуване е учудващо просто.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_aGn7X8h/7m" href="./21_skillsharing.html#c_aGn7X8h/7m"></a><span class="cm-keyword">function</span> <span class="cm-variable">waitForChanges</span>() {
+  <span class="cm-variable">request</span>({<span class="cm-property">pathname</span>: <span class="cm-string">"talks?changesSince="</span> <span class="cm-operator">+</span> <span class="cm-variable">lastServerTime</span>},
+          <span class="cm-keyword">function</span>(<span class="cm-def">error</span>, <span class="cm-def">response</span>) {
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">error</span>) {
+      <span class="cm-variable">setTimeout</span>(<span class="cm-variable">waitForChanges</span>, <span class="cm-number">2500</span>);
+      <span class="cm-variable">console</span>.<span class="cm-property">error</span>(<span class="cm-variable-2">error</span>.<span class="cm-property">stack</span>);
+    } <span class="cm-keyword">else</span> {
+      <span class="cm-variable-2">response</span> <span class="cm-operator">=</span> <span class="cm-variable">JSON</span>.<span class="cm-property">parse</span>(<span class="cm-variable-2">response</span>);
+      <span class="cm-variable">displayTalks</span>(<span class="cm-variable-2">response</span>.<span class="cm-property">talks</span>);
+      <span class="cm-variable">lastServerTime</span> <span class="cm-operator">=</span> <span class="cm-variable-2">response</span>.<span class="cm-property">serverTime</span>;
+      <span class="cm-variable">waitForChanges</span>();
+    }
+  });
+}</pre>
+<p><a class="p_ident" id="p_pB96H5tQ0A" href="./21_skillsharing.html#p_pB96H5tQ0A"></a>Тази функция се извиква веднъж, когато програмата се стартира и след това продължава да се само-извиква за да гарантира, че искането на дългото съгласуване е винаги активно. Когато искането не успее, ние не извикваме <code>reportError</code>, тъй като ще се появява диалогов прозорец всеки път, когато не успеем да се свържем със сървъра и ще ни безпокои постоянно, когато сървъра е паднал. Вместо това, грешката се изписва на конзолата (за дебъгване), а следващият опит се прави 2,5 секунди по-късно.</p>
+<p><a class="p_ident" id="p_QNpe4g2kOS" href="./21_skillsharing.html#p_QNpe4g2kOS"></a>Когато искането е успешно, новите данни се поставят върху екрана и <code>lastServerTime</code> се актуализира за да отрази факта, че ние сме получили информация отговаряща на този нов момент във времето. Искането незабавно се рестартира, за да изчака следващата актуализация.</p>
+<p><a class="p_ident" id="p_zfJgnDyZM2" href="./21_skillsharing.html#p_zfJgnDyZM2"></a>Ако стартирате сървъра и отворите два прозореца на браузъра за <a href="http://localhost:8000/"><em>localhost:8000/</em></a> един до друг, можете са видите, че действията, които изпълнявате на единия прозорец са незабавно видими на другия.</p>
+<h2><a class="h_ident" id="h_TcUD2vzyMe" href="./21_skillsharing.html#h_TcUD2vzyMe"></a>Упражнения</h2>
+<p><a class="p_ident" id="p_RTbqFFPYXr" href="./21_skillsharing.html#p_RTbqFFPYXr"></a>Следните упражнения ще включват изменение на системата дефинирана в тази глава. За да работите върху тях не забравяйте да изтеглите първо кода (<a href="./code/skillsharing.zip"><em>eloquentjavascript.net/code/skillsharing.zip</em></a>) и да инсталирате (<a href="http://nodejs.org/"><em>nodejs.org</em></a>).</p>
+<h3><a class="h_ident" id="h_QcUCZfnLE+" href="./21_skillsharing.html#h_QcUCZfnLE+"></a>Disk стабилност</h3>
+<p><a class="p_ident" id="p_wtP8pzYaoa" href="./21_skillsharing.html#p_wtP8pzYaoa"></a>Skill-sharing сървъра пази своите данни единствено в паметта. Това означава, че когато забие или се рестартира по някаква причина, всички теми и коментари ще се загубят.</p>
+<p><a class="p_ident" id="p_3H2K0biSmc" href="./21_skillsharing.html#p_3H2K0biSmc"></a>Разширете сървъра така, че да съхранява данните за темите на диска и автоматично да презарежда данните, когато се рестартира. Не се притеснявайте за ефективността, направете най-простото нещо, което работи.</p>
+<div class="solution"><div class="solution-text">
+<p><a class="p_ident" id="p_VyCgv1RQvk" href="./21_skillsharing.html#p_VyCgv1RQvk"></a>Най-простото решение, с което може да излезете е да се кодира обекта на <code>talks</code>, като JSON и да ги складирате във <code>fs.writeFile</code>. Вече има функция (<code>registerChange</code>), която се извиква всеки път, когато на сървъра данните се променят. Тя може да бъде удължена за да запише новите данни на диска.</p>
+<p><a class="p_ident" id="p_Pko5rJ5s3N" href="./21_skillsharing.html#p_Pko5rJ5s3N"></a>Изберете името на файла, например, <code>./talks.json</code>. Когато сървърт се стартира, той може да се опита да прочете този файл с <code>fs.readFile</code> и ако успее, сървърт може да използва съдържанието на файла, като негови изходни данни.</p>
+<p><a class="p_ident" id="p_3SFJ9KCIjw" href="./21_skillsharing.html#p_3SFJ9KCIjw"></a>Пазете се все пак. Обекта <code>talks</code> започва, като малък обект прототип, така че <code>in</code> оператора може да използва нормално <code>JSON.parse</code> и ще върне редовни обекти с <code>Object.prototype</code>, като техен прототип. Ако използвате JSON, като файлов формат, ще трябва да се копират свойствата на обекта върнат от <code>JSON.parse</code> в нов малък обект прототип.</p>
+</div></div>
+<h3><a class="h_ident" id="h_oMIXw3b5pk" href="./21_skillsharing.html#h_oMIXw3b5pk"></a>Нулиране на полето на коментарите</h3>
+<p><a class="p_ident" id="p_ZLgsWCWv6a" href="./21_skillsharing.html#p_ZLgsWCWv6a"></a>Безразборното преначертаване на темите работи доста добре, защото обикновено не можем да направим разлика между едно DOM разклонение и идентичното ми заменяне. Но има изключения. Ако започнем да въвеждаме нещо в полето за коментари на темата в единия прозорец на браузъра и след това в другия прозорец добавим коментар към тази тема, полето в първия прозорец ще бъде преначертано, премахвайки съдържанието и неговия фокус.</p>
+<p><a class="p_ident" id="p_y5nWDjEiiD" href="./21_skillsharing.html#p_y5nWDjEiiD"></a>В разгорещена дискусия, в която много хора добавят коментари към една тема, това ще бъде досадно. Можете ли да излезете с начин за избягване на това?</p>
+<div class="solution"><div class="solution-text">
+<p><a class="p_ident" id="p_tGqAe5WTfL" href="./21_skillsharing.html#p_tGqAe5WTfL"></a><em>Ad  hoc</em> подхода е просто да съхранявате състоянието на полето на коментарите на темата (съдържанието и дали е фокусирано) преди преначертаването на темата и след нулирането да възстановите полето със старото му състояние.</p>
+<p><a class="p_ident" id="p_67foZJA/0m" href="./21_skillsharing.html#p_67foZJA/0m"></a>Друго решение би било да не се заменя просто старата DOM структура с нова, а рекурсивно да ги сравни разклонение по разклонение и актуализира само частите, които действително са се променили. Това е много по-трудно за изпълнение, но е по-обхващащо и продължава да работи дори ако добавим още едно текстово поле.</p>
+</div></div>
+<h3><a class="h_ident" id="h_mAO3w3FVBR" href="./21_skillsharing.html#h_mAO3w3FVBR"></a>По-добри  шаблони</h3>
+<p><a class="p_ident" id="p_/QOXJknIo1" href="./21_skillsharing.html#p_/QOXJknIo1"></a>Повечето системи за темплейти правят повече от това просто да попълват някой <em>string</em>. Най-малко, те позволяват условно включване на части от шаблона, аналогично на <code>if</code> изявления и повтаряне на части от шаблона подобно на цикъл.</p>
+<p><a class="p_ident" id="p_zIsRVUDVAg" href="./21_skillsharing.html#p_zIsRVUDVAg"></a>Ако бяхме в състояние да повторим едно парче шаблон за всеки елемент в масив, нямаше да има нужда от втори шаблон (<code>"comment"</code>). По-скоро бихме могли да определим <code>"talk"</code> шаблон , който с цикъл над масива да държи свойството на коментарите в темата и направи разклоненията, като изгражда своя коментар за всеки елемент в масива.</p>
+<p><a class="p_ident" id="p_2qPMlaQA9i" href="./21_skillsharing.html#p_2qPMlaQA9i"></a>Това може да изглежда така:</p>
+<pre data-language="text/html" class="snippet cm-s-default"><a class="c_ident" id="c_WyFXapmwcz" href="./21_skillsharing.html#c_WyFXapmwcz"></a><span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">div</span> <span class="cm-attribute">class</span>=<span class="cm-string">"comments"</span><span class="cm-tag cm-bracket">&gt;</span>
+  <span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">div</span> <span class="cm-attribute">class</span>=<span class="cm-string">"comment"</span> <span class="cm-attribute">template-repeat</span>=<span class="cm-string">"comments"</span><span class="cm-tag cm-bracket">&gt;</span>
+    <span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">span</span> <span class="cm-attribute">class</span>=<span class="cm-string">"name"</span><span class="cm-tag cm-bracket">&gt;</span>{{author}}<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">span</span><span class="cm-tag cm-bracket">&gt;</span>: {{message}}
+  <span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">div</span><span class="cm-tag cm-bracket">&gt;</span>
+<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">div</span><span class="cm-tag cm-bracket">&gt;</span></pre>
+<p><a class="p_ident" id="p_BMAO7dW/5p" href="./21_skillsharing.html#p_BMAO7dW/5p"></a>Идеята е, че всеки път, когато едно разклонение с атрибут <code>template-repeat</code> шаблон-повторение се намира в инстанцията на шаблона, то инстанцира кода с цикъл над масива държейки свойството с името на този атрибут. За всеки елемент в масива, той добавя инстанция на разклонение. В контекста на шаблона (стойностите <code>values</code> на променливата в <code>instantiateTemplate</code>), по време на цикъла, би показал точката на текущия елемент на масива, така че <code>{{author}}</code> да бъде търсен в <em>comment</em> обекта, а не в оригиналния контекст на темата.</p>
+<p><a class="p_ident" id="p_8WQZs9CwPa" href="./21_skillsharing.html#p_8WQZs9CwPa"></a>Пренапишете <code>instantiateTemplate</code> за прилагане на настоящото и след това променете шаблоните за да използвате тази особеност и премахнете изричното предоставяне на коментари от <code>drawTalk</code> функцията.</p>
+<p><a class="p_ident" id="p_0HE7T7eefT" href="./21_skillsharing.html#p_0HE7T7eefT"></a>Как бихме добавили условие в инстанцията на разклоненията, което прави възможно пропускането на части от шаблона, когато дадена стойност е вярна или невярна?</p>
+<div class="solution"><div class="solution-text">
+<p><a class="p_ident" id="p_J1655eJu2y" href="./21_skillsharing.html#p_J1655eJu2y"></a>Вие можете да промените <code>instantiateTemplate</code>, така че вътрешната му функция да взема не само разклонение, но и настоящия контекст, като аргумент. Тогава можете с цикъл над децата-разклонения на разклонението да  проверите дали те имат <code>template-repeat</code> атрибут. Ако е така, не ги инстанцирате наведнъж, а с цикъл върху масива, обозначен със стойноста на атрибута,  инстанцирате всеки елемент в масива, преминавайки над текущия елемент в масива, като контекст.</p>
+<p><a class="p_ident" id="p_cjA8nyLLNh" href="./21_skillsharing.html#p_cjA8nyLLNh"></a>Зависещите от това, могат да се прилагат по подобен начин с качества, наречени  <code>template-when</code> и <code>template-unless</code>, които карат дадено разклонение да бъде инстанция само, когато дадено свойство е <em>true</em> (или <em>false</em>).</p>
+</div></div>
+<h3><a class="h_ident" id="h_V+TcFyuz/v" href="./21_skillsharing.html#h_V+TcFyuz/v"></a>Uncriptables</h3>
+<p><a class="p_ident" id="p_pTLwmwvGb9" href="./21_skillsharing.html#p_pTLwmwvGb9"></a>Когато някой посети нашия сайт с браузър, който няма разрешен JavaScript  или  просто неспособен да изобразява JavaScript, ще получи напълно счупена, не работеща страница. Това не е хубаво</p>
+<p><a class="p_ident" id="p_17cAgFKUum" href="./21_skillsharing.html#p_17cAgFKUum"></a>Някои видове уеб приложения наистина не могат да бъдат направени без JavaScript. Други, просто не разполагат с бюджет и търпение за да се притесняват за клиенти, които не могат да изпълняват скриптове. Но за страници с по-широка аудитория е политика да поддържат <em>scriptless</em> потребители. </p>
+<p><a class="p_ident" id="p_dFmv2TkNrB" href="./21_skillsharing.html#p_dFmv2TkNrB"></a>Опитайте се да измислите начин уеб-сайта <em>skill-sharing</em> да може да запази основната функционалност, когато се пуска без JavaScript. Автоматичните актуализации трябва да изчезнат и хората ще трябва да актуализират своята страница по остарелия начин. Но ще бъде в състояние да вижда съществуващите теми и да създава нови такива, както и добавяне на коментари, което би било хубаво.</p>
+<p><a class="p_ident" id="p_d0wQ5C75Bk" href="./21_skillsharing.html#p_d0wQ5C75Bk"></a>Не се чувствайте длъжни да прилагате това в действителност. Очертаване на решението би било достатъчно. Дали ревизирания подход ви се стори малко или много елегантен, от колкото това, което направихме в началото?</p>
+<div class="solution"><div class="solution-text">
+<p><a class="p_ident" id="p_UXxEXIwRSy" href="./21_skillsharing.html#p_UXxEXIwRSy"></a>Двата централни аспекта на подхода, приети от тази глава- чист HTTP интерфейс и клиентски шаблон за редактиране, не работят без JavaScript. Нормални HTML формати могат да изпращатат <code>GET</code> и <code>POST</code> заявки, но не и <code>PUT</code> или <code>DELETE</code> искания и могат да изпращат своите данни до определени URL.</p>
+<p><a class="p_ident" id="p_4JCtv9/G+Q" href="./21_skillsharing.html#p_4JCtv9/G+Q"></a>По този начин, сървърът ще трябва да бъде преразгледан, за да приеме коментари, нови и изтрити теми, чрез <code>POST</code> заявки, чиито тела не са JSON форма, а по-скоро се използва URL- кодиран формат, който HTML формите използват (виж 
+<a href="./18_forms.html#forms">Глава 17</a>). Тези искания ще трябва да върнат изцяло нова страница, така че потребителите да виждат новото състояние на сайта, след извършените промени. Това не би било твърде трудно да се конструира и приложи едновременно с "чистия" HTML интерфейс.</p>
+<p><a class="p_ident" id="p_BpHJYWubwA" href="./21_skillsharing.html#p_BpHJYWubwA"></a>Кодът за рендериране на разговорите ще трябва да бъде дублиран на сървъра. <code>index.html</code> файла, а не статичен файл, трябва да се генерира динамично, чрез добавяне на манипулатор към рутера. По този начин той вече включва текущите разговори и коментари, когато вземе сервирането.</p>
+</div></div>
+
+<nav>
+  <a href="./20_node.html" title="previous chapter">◀</a>
+  <a href="./index.html" title="cover">◆</a>
+</nav>
+</article>
+<p>Относно превода.</p>
+<p>Надявам се, тази книга да ви помогне за вашето обучение и утвърждаване, като JavaScript програмисти. Но както знаете, всяко обучение изисква усилия и труд. Същото е и с превода на тази книга, ако искате да стимулирате и други подобни преводи, моля направете дарение по PayPal на to6esko69@gmail.com или на Bitcoin адрес: 13S3EkkNDzAtKCDs8SsdXKcrBQrdyfabBc</p>
+<p>Успех.</p>
+</body></html>

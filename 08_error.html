@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<!-- saved from url=(0043)./08_error.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <title>Bugs and Error Handling :: Eloquent JavaScript</title>
+  <link rel="stylesheet" href="./media/codemirror.css">
+  <script src="./media/acorn_codemirror.js"></script>
+  <link rel="stylesheet" href="./media/ejs.css">
+  <script src="./media/sandbox.js"></script>
+  <script src="./media/ejs.js"></script>
+  <script>var chapNum = 8;var sandboxLoadFiles = ["code/chapter/08_error.js"];</script>
+</head>
+
+<body><article>
+<nav>
+  <a href="./07_elife.html" title="previous chapter">◀</a>
+  <a href="./index.html" title="cover">◆</a>
+  <a href="./09_regexp.html" title="next chapter">▶</a>
+</nav>
+
+<h1><div class="chap_num">Глава 8</div>Обработка на Bugs и Error</h1>
+<blockquote>
+<p><a class="p_ident" id="p_tsWlII94Rs" href="./08_error.html#p_tsWlII94Rs"></a>Debugging е два пъти по-силно, от колкото самото писане на код. Ето защо ако напишете код, колкото и хитър да е по дефиниция, той не е достатъчно умен за да може сам да си отстранява грешките.”</p>
+ <footer>Brian Kernighan and P.J. Plauger, <cite>The Elements of Programming Style</cite></footer>
+</blockquote>
+<blockquote>
+<p><a class="p_ident" id="p_KRfkqUrtHi" href="./08_error.html#p_KRfkqUrtHi"></a>Ян-ма написал малка програма, в която използвал много глобални променливи и калпави комбинации. Четейки я, един студент попитал: „Ти ни предупреди за тези техники, но аз ги намирам във вашата програма. Как е възможно това?” А майсторът казал:”Не е нужно да се носи вода, когато къщата не гори.””</p>
+ <footer>Master Yuan-Ma, <cite>Книгата на програмиране</cite></footer>
+</blockquote>
+<p><a class="p_ident" id="p_yOWLCBc/o3" href="./08_error.html#p_yOWLCBc/o3"></a>Програмата кристализира мисълта. Понякога тези мисли са объркани. Друг път се правят грешки при конвертирането на мисълта в код. Така или иначе, резултата е грешна програма.</p>
+<p><a class="p_ident" id="p_+XOm2skE5P" href="./08_error.html#p_+XOm2skE5P"></a>Пропуски в програмата обикновено се наричат бъгове. Bugs може да бъде програмна грешка или проблеми в други системи, с които програмата си взаимодейства. Някои грешки са очевидни, а други едва доловими и може да останат скрити в една система в продължение на години.</p>
+<p><a class="p_ident" id="p_S3De4NHpy4" href="./08_error.html#p_S3De4NHpy4"></a>Често проблемите на повърхността са само, когато една програма се сблъска със ситуация, за която програмиста първоначално не е помислил. Понякога такива ситуации са неизбежни. Например, когато потребителя иска да въведе възраст и пол - портокал, това поставя програмата в трудна позиция. Ситуацията трябва да се третира по някакъв начин.</p>
+<h2><a class="h_ident" id="h_0dUgeA9t6O" href="./08_error.html#h_0dUgeA9t6O"></a>Програмни  грешки</h2>
+<p><a class="p_ident" id="p_4nGvSb/+db" href="./08_error.html#p_4nGvSb/+db"></a>Когато става дума за програмни грешки, нашата цел е ясна. Ние искаме да ги намерим и поправим. Такива грешки могат да варират от прости правописни грешки, които са причина компютъра да се оплаче веднага, до невидими за очите фини грешки, при които програмата работи, създавайки неправилни резултати само в определени случаи. <em>Bugs</em> от втория вид може да отнеме седмици, за да се диагностицира. </p>
+<p><a class="p_ident" id="p_uZJEWof1D2" href="./08_error.html#p_uZJEWof1D2"></a>Степента, с която езиците ви помагат да намерите подобни грешки варира. Не е изненадващо, че JavaScript - “помага за всичко” е в края на тази скала. Някои езици искат да знаят типовете на всичките си променливи и изрази преди още да използвате програмата и ще ви каже веднага, ако даден вид се използва по грешен начин. JavaScript отчита видове при действителното изпълнение на програмата, а дори и тогава позволява да се правят някои очевидно безсмислени неща без да се оплаква, като <code>x = true * "monkey"</code>.</p>
+<p><a class="p_ident" id="p_o9bRfOflvH" href="./08_error.html#p_o9bRfOflvH"></a>Има някои неща, от които JavaScript се оплаква, все пак. Писане на програма, която не е синтактично валидна, веднага предизвиква грешка. Друго нещо е, като извикате нещо, което не е функция или разглежда свойство на неопределена стойност, ще предизвика грешка без да докладва, но когато се изпълнява програмата се натъкваме на безсмислени действия.</p>
+<p><a class="p_ident" id="p_M/fMASXkeH" href="./08_error.html#p_M/fMASXkeH"></a>Често, безсмислените изчисления, ще произведат просто <code>NaN</code> (не число) или неопределена стойност. И програмата щастливо продължава, убедена че прави нещо смислено. Грешката се появява едва по-късно, след като фалшивата стойност е минала през няколко функции. Тя не може да предизвика грешка на всички, но безшумно определя изхода на програмата да бъде грешен. Намирането на източника на тези проблеми може да бъде много трудно.</p>
+<p><a class="p_ident" id="p_D4KIEMyl44" href="./08_error.html#p_D4KIEMyl44"></a>Процесът на намиране на грешки - бъгове в програмите се нарича <em>debugging</em> (дебъгване).</p>
+<h2><a class="h_ident" id="h_u1jlTq3i42" href="./08_error.html#h_u1jlTq3i42"></a>Strict mode</h2>
+<p><a class="p_ident" id="p_NMLSAIO3JD" href="./08_error.html#p_NMLSAIO3JD"></a>JavaScript може да се направи малко по-стриктен, като се използва <em>strict mode</em>. Това се прави чрез поставяне на string <code>"use strict"</code> в горната част на файла или тялото на функцията. Ето един пример:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><div class="sandboxhint">edit &amp; run code by clicking it</div><a class="c_ident" id="c_7TmM5Y4/79" href="./08_error.html#c_7TmM5Y4/79"></a><span class="cm-keyword">function</span> <span class="cm-variable">canYouSpotTheProblem</span>() {
+  <span class="cm-string">"use strict"</span>;
+  <span class="cm-keyword">for</span> (<span class="cm-variable">counter</span> <span class="cm-operator">=</span> <span class="cm-number">0</span>; <span class="cm-variable">counter</span> <span class="cm-operator">&lt;</span> <span class="cm-number">10</span>; <span class="cm-variable">counter</span><span class="cm-operator">++</span>)
+    <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"Happy happy"</span>);
+}
+
+<span class="cm-variable">canYouSpotTheProblem</span>();
+<span class="cm-comment">// → ReferenceError: counter is not defined</span></pre>
+<p><a class="p_ident" id="p_4X4yfdyK1S" href="./08_error.html#p_4X4yfdyK1S"></a>Обикновено, когато сте пропуснали да поставите <code>var</code> пред вашата променлива, както примера с <code>counter</code>, JavaScirpt тихо създава глобална променлива и я използва. В стриктен режим обаче, грешката се съобщава. Това е много полезно. Трябва да се отбележи обаче, че това не работи, когато въпросната променлива вече съществува като глобална променлива и само когато се определя ще я създаде.</p>
+<p><a class="p_ident" id="p_mPx7xB5UKb" href="./08_error.html#p_mPx7xB5UKb"></a>Друга промяна в стриктен режим е, че <code>this</code> съдържа стойността <code>undefined</code> във функции, които не са извикани, като методи. Когато се прави такова извикване извън стриктен режим, <code>this</code> се отнася до глобалния обхват на обекта. Така че, ако случайно се извика метод или конструктор неправилно при стриктен режим, JavaScript  ще съобщи за грешка, веднага след като се опита да прочете нещото <code>this</code>, а не радостно да работи с глобалния обект, да създава и чете глобални променливи.</p>
+<p><a class="p_ident" id="p_eZSU5aTSD4" href="./08_error.html#p_eZSU5aTSD4"></a>Например, нека разгледаме следния код, който призовава конструктор без ключовата дума <code>new</code>, така че <code>this</code> няма да се отнася до ново-изградения обект.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_nwYSC8mqrC" href="./08_error.html#c_nwYSC8mqrC"></a><span class="cm-keyword">function</span> <span class="cm-variable">Person</span>(<span class="cm-def">name</span>) { <span class="cm-keyword">this</span>.<span class="cm-property">name</span> <span class="cm-operator">=</span> <span class="cm-variable-2">name</span>; }
+<span class="cm-keyword">var</span> <span class="cm-variable">ferdinand</span> <span class="cm-operator">=</span> <span class="cm-variable">Person</span>(<span class="cm-string">"Ferdinand"</span>); <span class="cm-comment">// oops</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">name</span>);
+<span class="cm-comment">// → Ferdinand</span></pre>
+<p><a class="p_ident" id="p_NNFpkpZKdP" href="./08_error.html#p_NNFpkpZKdP"></a>Така фалшивото извикване на <code>Person</code> успя, но се връща недефинирана стойност и се създава глобалната променлива <code>name</code>. В стриктен режим, резултата ще е по-различен</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_PbQ5fvPb6m" href="./08_error.html#c_PbQ5fvPb6m"></a><span class="cm-string">"use strict"</span>;
+<span class="cm-keyword">function</span> <span class="cm-variable">Person</span>(<span class="cm-def">name</span>) { <span class="cm-keyword">this</span>.<span class="cm-property">name</span> <span class="cm-operator">=</span> <span class="cm-variable-2">name</span>; }
+<span class="cm-comment">// Oops, forgot 'new'</span>
+<span class="cm-keyword">var</span> <span class="cm-variable">ferdinand</span> <span class="cm-operator">=</span> <span class="cm-variable">Person</span>(<span class="cm-string">"Ferdinand"</span>);
+<span class="cm-comment">// → TypeError: Cannot set property 'name' of undefined</span></pre>
+<p><a class="p_ident" id="p_0eYPyoGi1l" href="./08_error.html#p_0eYPyoGi1l"></a>Тука веднага каза, че нещо не е наред. Това е от полза.</p>
+<p><a class="p_ident" id="p_qlYTT6nRD4" href="./08_error.html#p_qlYTT6nRD4"></a>Strict mode does a few more things. It disallows giving a function multiple parameters with the same name and removes certain problematic language features entirely (such as the <code>with</code> което е толкова заблудено, че не се разглежда в тази книга).</p>
+<p><a class="p_ident" id="p_kIUErMqROW" href="./08_error.html#p_kIUErMqROW"></a>С една дума, поставянето на <code>"use strict"</code> в горната част на вашата програма рядко боли и може да ви помогне да забележите някакъв проблем.</p>
+<h2><a class="h_ident" id="h_CCCzKyBrc1" href="./08_error.html#h_CCCzKyBrc1"></a>Тестване</h2>
+<p><a class="p_ident" id="p_cfHj2WfM1O" href="./08_error.html#p_cfHj2WfM1O"></a>Ако езикът не може да направи много, за да ви помогне в откриването на грешки, ще трябва да ги търсите по трудния начин: чрез стартиране на програмата и гледане дали тя прави правилното нещо.</p>
+<p><a class="p_ident" id="p_21E0ZgauWA" href="./08_error.html#p_21E0ZgauWA"></a>Правейки това на ръка, отново и отново, е сигурен начин да ви докара до лудост. За щастие, често е възможно да се напише програма, която автоматизира повторното тестване на програмата.</p>
+<p><a class="p_ident" id="p_rx8TfcyB0X" href="./08_error.html#p_rx8TfcyB0X"></a>Като пример, отново ще използваме типа <code>Vector</code>.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_mciWzOsKpc" href="./08_error.html#c_mciWzOsKpc"></a><span class="cm-keyword">function</span> <span class="cm-variable">Vector</span>(<span class="cm-def">x</span>, <span class="cm-def">y</span>) {
+  <span class="cm-keyword">this</span>.<span class="cm-property">x</span> <span class="cm-operator">=</span> <span class="cm-variable-2">x</span>;
+  <span class="cm-keyword">this</span>.<span class="cm-property">y</span> <span class="cm-operator">=</span> <span class="cm-variable-2">y</span>;
+}
+<span class="cm-variable">Vector</span>.<span class="cm-property">prototype</span>.<span class="cm-property">plus</span> <span class="cm-operator">=</span> <span class="cm-keyword">function</span>(<span class="cm-def">other</span>) {
+  <span class="cm-keyword">return</span> <span class="cm-keyword">new</span> <span class="cm-variable">Vector</span>(<span class="cm-keyword">this</span>.<span class="cm-property">x</span> <span class="cm-operator">+</span> <span class="cm-variable-2">other</span>.<span class="cm-property">x</span>, <span class="cm-keyword">this</span>.<span class="cm-property">y</span> <span class="cm-operator">+</span> <span class="cm-variable-2">other</span>.<span class="cm-property">y</span>);
+};</pre>
+<p><a class="p_ident" id="p_HDs3GnqA5b" href="./08_error.html#p_HDs3GnqA5b"></a>Ще напишем програма, която да провери нашето изпълнение на <code>Vector</code>, дали работи по предназначение. След това, всеки път, когато се промени изпълнението, ще използваме програмата за тестване, така че да бъдем сигурни, че не сме счупили нещо. Когато добавяме допълнителна функционалност (например нов метод) към типа <code>Vector</code>, ние също така ще добавим и тестове за новата функция.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_vkn23Pa06p" href="./08_error.html#c_vkn23Pa06p"></a><span class="cm-keyword">function</span> <span class="cm-variable">testVector</span>() {
+  <span class="cm-keyword">var</span> <span class="cm-def">p1</span> <span class="cm-operator">=</span> <span class="cm-keyword">new</span> <span class="cm-variable">Vector</span>(<span class="cm-number">10</span>, <span class="cm-number">20</span>);
+  <span class="cm-keyword">var</span> <span class="cm-def">p2</span> <span class="cm-operator">=</span> <span class="cm-keyword">new</span> <span class="cm-variable">Vector</span>(<span class="cm-operator">-</span><span class="cm-number">10</span>, <span class="cm-number">5</span>);
+  <span class="cm-keyword">var</span> <span class="cm-def">p3</span> <span class="cm-operator">=</span> <span class="cm-variable-2">p1</span>.<span class="cm-property">plus</span>(<span class="cm-variable-2">p2</span>);
+
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">p1</span>.<span class="cm-property">x</span> <span class="cm-operator">!==</span> <span class="cm-number">10</span>) <span class="cm-keyword">return</span> <span class="cm-string">"fail: x property"</span>;
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">p1</span>.<span class="cm-property">y</span> <span class="cm-operator">!==</span> <span class="cm-number">20</span>) <span class="cm-keyword">return</span> <span class="cm-string">"fail: y property"</span>;
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">p2</span>.<span class="cm-property">x</span> <span class="cm-operator">!==</span> <span class="cm-operator">-</span><span class="cm-number">10</span>) <span class="cm-keyword">return</span> <span class="cm-string">"fail: negative x property"</span>;
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">p3</span>.<span class="cm-property">x</span> <span class="cm-operator">!==</span> <span class="cm-number">0</span>) <span class="cm-keyword">return</span> <span class="cm-string">"fail: x from plus"</span>;
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">p3</span>.<span class="cm-property">y</span> <span class="cm-operator">!==</span> <span class="cm-number">25</span>) <span class="cm-keyword">return</span> <span class="cm-string">"fail: y from plus"</span>;
+  <span class="cm-keyword">return</span> <span class="cm-string">"everything ok"</span>;
+}
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">testVector</span>());
+<span class="cm-comment">// → everything ok</span></pre>
+<p><a class="p_ident" id="p_ugbmGkfrN+" href="./08_error.html#p_ugbmGkfrN+"></a>Писането на тестове, като този, имат тенденцията да правят по-скоро неудобен повтарящ се код. За щастие съществува софтуер, който да ни помогне да изградим и пуснем колекции от тестове (тестов комплект), чрез предоставяне на език (под формата на функции и методи) подходящ за изразяване на тестове и чрез извеждане на информация, когато теста се провали. Те се наричат <em>testing frameworks</em> (тестови рамки).</p>
+<h2><a class="h_ident" id="h_iVsnyIAWUT" href="./08_error.html#h_iVsnyIAWUT"></a>Debugging  (дебъгване)</h2>
+<p><a class="p_ident" id="p_5mME8LB07m" href="./08_error.html#p_5mME8LB07m"></a>След като забележите, че нещо не е наред с вашата програма, защото тя не е с нормално поведение или произвежда грешки, следващата стъпка е да разберете какъв е проблемът.</p>
+<p><a class="p_ident" id="p_CJKevweHV6" href="./08_error.html#p_CJKevweHV6"></a>Понякога е очевидно. Съобщаването на грешка посочва конкретна линия на вашата програма и ако се вгледате в описанието на тази линия от кода, често може да видите проблема.</p>
+<p><a class="p_ident" id="p_U2MGlMiUv1" href="./08_error.html#p_U2MGlMiUv1"></a>Но не винаги. Понякога линията, която е задействала проблема е просто първото място, където фалшивата стойност произведена другаде ще проработи по неправилен начин. Понякога не е съобщение за грешка, а просто невалиден резултат. Ако сте решавали упражненията в предните глави, вероятно вече сте имали такива ситуации.</p>
+<p><a class="p_ident" id="p_rsq5hJyXKX" href="./08_error.html#p_rsq5hJyXKX"></a>В следният пример, програмата се опитва да превърне цяло число в <em>string</em> на някаква база (десетична, двоична и т.н.), като на няколко пъти взема последната цифра и след това я разделя на броя за да се отърве от тази цифра. Но на изхода произвежда някакъв ненормален резултат и се предполага, че това е грешка.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_HEq/v/nQeW" href="./08_error.html#c_HEq/v/nQeW"></a><span class="cm-keyword">function</span> <span class="cm-variable">numberToString</span>(<span class="cm-def">n</span>, <span class="cm-def">base</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">result</span> <span class="cm-operator">=</span> <span class="cm-string">""</span>, <span class="cm-def">sign</span> <span class="cm-operator">=</span> <span class="cm-string">""</span>;
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">n</span> <span class="cm-operator">&lt;</span> <span class="cm-number">0</span>) {
+    <span class="cm-variable-2">sign</span> <span class="cm-operator">=</span> <span class="cm-string">"-"</span>;
+    <span class="cm-variable-2">n</span> <span class="cm-operator">=</span> <span class="cm-operator">-</span><span class="cm-variable-2">n</span>;
+  }
+  <span class="cm-keyword">do</span> {
+    <span class="cm-variable-2">result</span> <span class="cm-operator">=</span> <span class="cm-variable">String</span>(<span class="cm-variable-2">n</span> <span class="cm-operator">%</span> <span class="cm-variable-2">base</span>) <span class="cm-operator">+</span> <span class="cm-variable-2">result</span>;
+    <span class="cm-variable-2">n</span> <span class="cm-operator">/=</span> <span class="cm-variable-2">base</span>;
+  } <span class="cm-keyword">while</span> (<span class="cm-variable-2">n</span> <span class="cm-operator">&gt;</span> <span class="cm-number">0</span>);
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">sign</span> <span class="cm-operator">+</span> <span class="cm-variable-2">result</span>;
+}
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">numberToString</span>(<span class="cm-number">13</span>, <span class="cm-number">10</span>));
+<span class="cm-comment">// → 1.5e-3231.3e-3221.3e-3211.3e-3201.3e-3191.3e-3181.3…</span></pre>
+<p><a class="p_ident" id="p_RAeAoBjrC7" href="./08_error.html#p_RAeAoBjrC7"></a>Дори и да виждате проблема, се престорете за момент, че не го виждате. Ние знаем, че нашата програма е неизправна и искаме да разберем защо.</p>
+<p><a class="p_ident" id="p_2OJsjnmKOW" href="./08_error.html#p_2OJsjnmKOW"></a>Това е мястото, където трябва да устоим на изкушението да започнем да правим произволни промени в кода. Вместо това, мислете. Анализирайте случващото се и излезте с една теория, защо това се случва. След това направете допълнителни наблюдения, за да тествате тази теория или ако още не разполагате с теория, направете допълнителни наблюдения, които да ви помогнат да излезете с една.</p>
+<p><a class="p_ident" id="p_HuAniqpAd5" href="./08_error.html#p_HuAniqpAd5"></a>Поставянето на няколко стратегически <code>console.log</code> извиквания в програмата е добър начин да получите допълнителна информация относно това, което програмата прави. В този случай ние искаме <code>n</code> да вземе стойностите <code>13</code>, <code>1</code>, а след това <code>0</code>. Нека напишем стойността в началото на цикъла.</p>
+<pre>13
+1.3
+0.13
+0.013
+…
+1.5e-323</pre>
+<p><a class="p_ident" id="p_I+PNN6aJ0e" href="./08_error.html#p_I+PNN6aJ0e"></a><em>Правилно</em>. Разделянето на 13 от 10 не произвежда цяло число. Вместо <code>n /= base</code>, всъщност искаме <code>n = Math.floor(n / base)</code>, така че числото да бъде правилно променено от дясно.</p>
+<p><a class="p_ident" id="p_E0PMYRZC2c" href="./08_error.html#p_E0PMYRZC2c"></a>Една алтернатива на използването на <code>console.log</code> е да се използва <em>debugger</em> на вашия браузър. Модерните браузъри разполагат с  възможност за прекъсване на определена линия на вашия код. Това ще доведе до изпълнението на вашата програма на пауза всеки път, когато се достигне линията с точка за спиране <em>breakpoint</em> и ще ви позволи да инспектирате стойностите на променливите в този момент. Аз няма да влизам в подробности тука, тъй като дебъгерите се различават в различните браузъри, но ги разгледайте в инструменти за разработчици на браузъра си  и  потърсете в Интернет повече информация. Друг начин да се определи точка на прекъсване е да включите ключовата думата <code>debugger</code> във вашата програма. Ако заявлението за разработчици на браузъра е активно, програмата ще направи пауза, когато стигне това изявление и ще бъдете в състояние да инспектирате съдържанието.</p>
+<h2><a class="h_ident" id="h_iwwPbaBjJD" href="./08_error.html#h_iwwPbaBjJD"></a>Разпространяване  на  грешки</h2>
+<p><a class="p_ident" id="p_KL47zNa+D/" href="./08_error.html#p_KL47zNa+D/"></a>Не всички проблеми могат да бъдат предотвратени от програмиста, за съжаление. Ако вашата програма комуникира с външния свят по някакъв начин, има шанс данните на входа, които получава да са невалидни или други системи с които се опитва да се свърже, да бъдат объркани или недостъпни.</p>
+<p><a class="p_ident" id="p_OUzzwpY/Dj" href="./08_error.html#p_OUzzwpY/Dj"></a>Прости програми или програми, които работят само под вашето ръководство, могат да си позволят просто да се откажат, когато възникне такъв проблем. Ще погледнем проблема и ще опитаме отново. Реалните приложения, от друга страна, не се очаква просто да се сринат. Понякога правилното нещо, което може да направите, е да вземете грешното въвеждане и да продължите работа. В други случаи е по-добре да се докладва на потребителя, какво се е объркало и след това да се откажете. Но и в двете ситуации, програмата може да направи нещо активно в отговор на проблема.</p>
+<p><a class="p_ident" id="p_ZrDi3JVFsJ" href="./08_error.html#p_ZrDi3JVFsJ"></a>Да речем, че функцията <code>promptInteger</code> пита потребителя за цяло число и го връща. Какво трябва да върне, ако потребителя въведе на входа “портокал”?</p>
+<p><a class="p_ident" id="p_tL4eC00B0P" href="./08_error.html#p_tL4eC00B0P"></a>Единият вариант е да се върне, като специална стойност. Избора за тази стойност е <code>null</code> или <code>undefined</code>.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_bwVY9M+AHx" href="./08_error.html#c_bwVY9M+AHx"></a><span class="cm-keyword">function</span> <span class="cm-variable">promptNumber</span>(<span class="cm-def">question</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">result</span> <span class="cm-operator">=</span> <span class="cm-variable">Number</span>(<span class="cm-variable">prompt</span>(<span class="cm-variable-2">question</span>, <span class="cm-string">""</span>));
+  <span class="cm-keyword">if</span> (<span class="cm-variable">isNaN</span>(<span class="cm-variable-2">result</span>)) <span class="cm-keyword">return</span> <span class="cm-atom">null</span>;
+  <span class="cm-keyword">else</span> <span class="cm-keyword">return</span> <span class="cm-variable-2">result</span>;
+}
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">promptNumber</span>(<span class="cm-string">"How many trees do you see?"</span>));</pre>
+<p><a class="p_ident" id="p_kf1B4tj0HJ" href="./08_error.html#p_kf1B4tj0HJ"></a>Това е ефективна стратегия. Сега всеки код, който извиква <code>promptNumber</code> трябва да провери дали действително чете число, (недостатък, който трябваше да се оправи ) и ако не, може да попита отново или да попълни стандартна стойност по подразбиране. Или да върне специална стойност към повикващия за да покаже, че той не е направил това, което е бил помолен.</p>
+<p><a class="p_ident" id="p_0FyKlwlFr6" href="./08_error.html#p_0FyKlwlFr6"></a>В много ситуации, най-вече, когато грешките са често срещани и на повикващия трябва изрично да се каже да ги вземе под внимание, връщайки специална стойност е перфектен начин да се покаже грешката. Той обаче има своите недостатъци. Първо, какво ще стане ако функцията е готова да върне всяка възможна стойност? За такава функция е трудно да се намери специална стойност, която може да бъде разграничена от валиден резултат.</p>
+<p><a class="p_ident" id="p_+E9fllIVBt" href="./08_error.html#p_+E9fllIVBt"></a>Вторият проблем с връщането на специални стойности е, че те могат да доведат до някой много разбъркан код. Ако част от кода извиква <code>promptNumber</code> 10 пъти, трябва да се провери 10 пъти дали <code>null</code> e върнатата стойност. И ако отговора за намирането на <code>null</code> е просто да върне себе си на повикващия, той от своя страна трябва да провери за него си и т.н.</p>
+<h2><a class="h_ident" id="h_zT3755/aOp" href="./08_error.html#h_zT3755/aOp"></a>Изключения (Exceptions)</h2>
+<p><a class="p_ident" id="p_ZBsTKhGA4i" href="./08_error.html#p_ZBsTKhGA4i"></a>Когато дадена функция не може да продължи нормално, това което бихме искали да направи е просто да спре и веднага да скочи обратно към място, за което знае как да се справи с проблема. Това се нарича обработка на изключения.</p>
+<p><a class="p_ident" id="p_kjXcPy8jGf" href="./08_error.html#p_kjXcPy8jGf"></a>Изключенията са механизъм, който позволява на кода при проблем да хвърли грешка, което е само една стойност. Хвърлянето на грешка донякъде прилича на супер - връщане от функция: то изкача не само от текущата функция, но и от нейните извикващи, чак до първото извикване, с което започва текущото изпълнение. Това се нарича размотаване на стека. Може би си спомняте за стека за извикване на функции в <a href="./03_functions.html#stack">Глава 3</a>. Изключенията влизат надолу в този стек, изхвърляйки всички контексти на операциите, с които се сблъсква.</p>
+<p><a class="p_ident" id="p_nQYTvbifx9" href="./08_error.html#p_nQYTvbifx9"></a>Ако изключенията винаги стигат чак до дъното на стека, те не биха били от голяма полза. Те могат да предоставят нов начин да взривите вашата програма. Тяхната сила се крие във факта, че можете да зададете “препятствия” по протежение на стека, за да направят изключение, ако влезе по на долу. След това може да направите нещо с него, на мястото където програмата продължава да работи , където е направила изключение.</p>
+<p><a class="p_ident" id="p_8dgVjcjpX6" href="./08_error.html#p_8dgVjcjpX6"></a>Ето един пример:</p>
+<pre id="look" data-language="javascript" class="snippet cm-s-default"><span class="cm-keyword">function</span> <span class="cm-variable">promptDirection</span>(<span class="cm-def">question</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">result</span> <span class="cm-operator">=</span> <span class="cm-variable">prompt</span>(<span class="cm-variable-2">question</span>, <span class="cm-string">""</span>);
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">result</span>.<span class="cm-property">toLowerCase</span>() <span class="cm-operator">==</span> <span class="cm-string">"left"</span>) <span class="cm-keyword">return</span> <span class="cm-string">"L"</span>;
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">result</span>.<span class="cm-property">toLowerCase</span>() <span class="cm-operator">==</span> <span class="cm-string">"right"</span>) <span class="cm-keyword">return</span> <span class="cm-string">"R"</span>;
+  <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">Error</span>(<span class="cm-string">"Invalid direction: "</span> <span class="cm-operator">+</span> <span class="cm-variable-2">result</span>);
+}
+
+<span class="cm-keyword">function</span> <span class="cm-variable">look</span>() {
+  <span class="cm-keyword">if</span> (<span class="cm-variable">promptDirection</span>(<span class="cm-string">"Which way?"</span>) <span class="cm-operator">==</span> <span class="cm-string">"L"</span>)
+    <span class="cm-keyword">return</span> <span class="cm-string">"a house"</span>;
+  <span class="cm-keyword">else</span>
+    <span class="cm-keyword">return</span> <span class="cm-string">"two angry bears"</span>;
+}
+
+<span class="cm-keyword">try</span> {
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"You see"</span>, <span class="cm-variable">look</span>());
+} <span class="cm-keyword">catch</span> (<span class="cm-def">error</span>) {
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"Something went wrong: "</span> <span class="cm-operator">+</span> <span class="cm-variable-2">error</span>);
+}</pre>
+<p><a class="p_ident" id="p_3fhf6E/ppr" href="./08_error.html#p_3fhf6E/ppr"></a>Ключовата дума <code>throw</code> се използва за повдигане на изключение. Улавянето се извършва чрез обвиване на парче код в <code>try</code> блока, следвано от ключовата дума <code>catch</code>. Когато кодът <code>try</code> предизвика изключение <code>catch</code> блока го прихваща и оценява. Името на променливата (в скобите) след <code>catch</code> ще бъде свързана със стойността на изключението. След като <code>catch</code> блока приключи или ако <code>try</code> блока премине без проблем, контрола продължава след <code>try/catch</code> изявлението.</p>
+<p><a class="p_ident" id="p_0m/weWGs2g" href="./08_error.html#p_0m/weWGs2g"></a>В такъв случай използваме <code>Error</code> конструктора за създаване на нашата стойност за изключение. Той е стандартен JavaScript конструктор, който създава обект със свойство <code>message</code>. В съвременните условия на JavaScript, инстанции на този конструктор също събират информация за стека на извикване, когато изключението се е създало, така наречената стек следа. Тази информация се съхранява в <code>stack</code> свойство и може да бъде полезно, когато се опитваме да определим един проблем: то ни казва точната функция, където е възникнал проблема и кои други функции са довели до създаването на провала.</p>
+<p><a class="p_ident" id="p_BYCPINQ0h5" href="./08_error.html#p_BYCPINQ0h5"></a>Имайте в предвид, че функцията <code>look</code> напълно пренебрегва възможността <code>promptDirection</code> да се обърка. Това е най-голямото предимство на кода за обработка на изключения - грешки, за който е необходима само точката, където се появява грешката и точката, където се обработва. Функциите между тях могат да забравят за нея.</p>
+<p><a class="p_ident" id="p_deFX/IC34y" href="./08_error.html#p_deFX/IC34y"></a>Е, почти.....</p>
+<h2><a class="h_ident" id="h_cgoP7o2fe9" href="./08_error.html#h_cgoP7o2fe9"></a>Почистване  след  изключения</h2>
+<p><a class="p_ident" id="p_qnJkou8oDN" href="./08_error.html#p_qnJkou8oDN"></a>Нека разгледаме следната ситуация: функцията <code>withContext</code> иска да се увери, че по време на изпълнението и, променливата на най-високо ниво <code>context</code> притежава специфична контекст стойност. След като приключи, възстановява на тази променлива старата и стойност.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_FkbwqXEJ6U" href="./08_error.html#c_FkbwqXEJ6U"></a><span class="cm-keyword">var</span> <span class="cm-variable">context</span> <span class="cm-operator">=</span> <span class="cm-atom">null</span>;
+
+<span class="cm-keyword">function</span> <span class="cm-variable">withContext</span>(<span class="cm-def">newContext</span>, <span class="cm-def">body</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">oldContext</span> <span class="cm-operator">=</span> <span class="cm-variable">context</span>;
+  <span class="cm-variable">context</span> <span class="cm-operator">=</span> <span class="cm-variable-2">newContext</span>;
+  <span class="cm-keyword">var</span> <span class="cm-def">result</span> <span class="cm-operator">=</span> <span class="cm-variable-2">body</span>();
+  <span class="cm-variable">context</span> <span class="cm-operator">=</span> <span class="cm-variable-2">oldContext</span>;
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">result</span>;
+}</pre>
+<p><a class="p_ident" id="p_695isCQEpS" href="./08_error.html#p_695isCQEpS"></a>Какво ще стане ако <code>body</code> предизвика изключение? В този случай извикването на <code>withContext</code> ще бъде изхвърлено от стека заедно с изключението и <code>context</code> никога няма да се върне към старата си стойност.</p>
+<p><a class="p_ident" id="p_tSD0hfdZ/H" href="./08_error.html#p_tSD0hfdZ/H"></a>Има още една особеност, която <code>try</code> трябва да отчете. Той може да бъде последван от <code>finally</code> блок, който да блокира в допълнение към <code>catch</code> блока. <code>Finally</code> блока казва ”Няма значение какво ще се случи, изпълни този код, след като мине през <code>try</code> блока”. Ако една функция трябва да почисти нещо, кода за почистване обикновено се поставя в <code>finally</code> блока.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_1Nrg8ROQ4a" href="./08_error.html#c_1Nrg8ROQ4a"></a><span class="cm-keyword">function</span> <span class="cm-variable">withContext</span>(<span class="cm-def">newContext</span>, <span class="cm-def">body</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">oldContext</span> <span class="cm-operator">=</span> <span class="cm-variable">context</span>;
+  <span class="cm-variable">context</span> <span class="cm-operator">=</span> <span class="cm-variable-2">newContext</span>;
+  <span class="cm-keyword">try</span> {
+    <span class="cm-keyword">return</span> <span class="cm-variable-2">body</span>();
+  } <span class="cm-keyword">finally</span> {
+    <span class="cm-variable">context</span> <span class="cm-operator">=</span> <span class="cm-variable-2">oldContext</span>;
+  }
+}</pre>
+<p><a class="p_ident" id="p_exXm7BGc3g" href="./08_error.html#p_exXm7BGc3g"></a>Имайте в предвид, че вече не се налага да съхраняваме резултата на <code>body</code> (който искаме да се върне) в променлива. Дори да се върне директно от <code>try</code> блока, <code>finally</code> блока пак ще се изпълни. Сега можем да направим това и да бъде запазено.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_qwC+WbODdS" href="./08_error.html#c_qwC+WbODdS"></a><span class="cm-keyword">try</span> {
+  <span class="cm-variable">withContext</span>(<span class="cm-number">5</span>, <span class="cm-keyword">function</span>() {
+    <span class="cm-keyword">if</span> (<span class="cm-variable">context</span> <span class="cm-operator">&lt;</span> <span class="cm-number">10</span>)
+      <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">Error</span>(<span class="cm-string">"Not enough context!"</span>);
+  });
+} <span class="cm-keyword">catch</span> (<span class="cm-def">e</span>) {
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"Ignoring: "</span> <span class="cm-operator">+</span> <span class="cm-variable-2">e</span>);
+}
+<span class="cm-comment">// → Ignoring: Error: Not enough context!</span>
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">context</span>);
+<span class="cm-comment">// → null</span></pre>
+<p><a class="p_ident" id="p_Ri/W5NdtT2" href="./08_error.html#p_Ri/W5NdtT2"></a>Въпреки, че функцията извикана от <code>withContext</code> гръмна, самата <code>withContext</code> правилно пречисти <code>context</code> променливата.</p>
+<h2><a class="h_ident" id="h_vfoJqEDazI" href="./08_error.html#h_vfoJqEDazI"></a>Подбиращо  прихващане</h2>
+<p><a class="p_ident" id="p_cXjPLkgsqi" href="./08_error.html#p_cXjPLkgsqi"></a>Когато едно изключение премине през целия път до дъното на стека, без да е хванато, то се обработва от околната среда. Това което се има в предвид, се различава между средите. В браузъри описанието за грешка обикновено се получава писмено на конзолата на JavaScript (достъпна чрез Tools на браузъра или меню Developer).</p>
+<p><a class="p_ident" id="p_9JOlpepKZE" href="./08_error.html#p_9JOlpepKZE"></a>За програмист грешки или проблеми, които програмата не може да обработи, само разрешава на грешката да премине и често е наред. Едно необработено изключение е един разумен начин да се сигнализира за счупена програма и конзолата на JavaScript в браузъра предоставя някаква информация за извикванията на функцията в стека, когато е възникнал проблема.</p>
+<p><a class="p_ident" id="p_6cLdy7IIUS" href="./08_error.html#p_6cLdy7IIUS"></a>За проблеми, които се очаква да се случат по време на рутинна употреба, счупване с необработено изключение не е много приятелски отговор.</p>
+<p><a class="p_ident" id="p_SFNa748bl0" href="./08_error.html#p_SFNa748bl0"></a>Невалидна употреба на езика, като се позовава на несъществуваща променлива, разглеждане на свойство <code>null</code> или се извика нещо, което не е функция, също ще доведе до изключение. Такива изключения могат да бъдат прихванати, точно като вашите собствени изключения.</p>
+<p><a class="p_ident" id="p_hqHJot1Va+" href="./08_error.html#p_hqHJot1Va+"></a>Когато е вписано в <code>catch</code> тялото, всичко което знаем е, че  нещо в <code>try</code> тялото ще причини изключение. Но ние незнаем, какво или кое изключение го е причинило.</p>
+<p><a class="p_ident" id="p_4Cpd4Xhmxf" href="./08_error.html#p_4Cpd4Xhmxf"></a>JavaScript (има един доста фрапантен пропуск) не предоставя пряка подкрепа за избирателно прихващане на изключения: да го хване или да не го хване. Това прави много лесно предположението, че изключението, което получавате е това, за което се мисли, когато е написано в <code>catch</code> блока.</p>
+<p><a class="p_ident" id="p_O9bj9nd33p" href="./08_error.html#p_O9bj9nd33p"></a>Но може и да не бъде. Някое друго предположение може да бъде нарушено или може да сте въвели бъг някъде и това да е причина за изключение. Ето един пример, който се опитва да запази извикването към <code>promptDirection</code>, докато стане валиден отговор:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_W3CuGyc2mc" href="./08_error.html#c_W3CuGyc2mc"></a><span class="cm-keyword">for</span> (;;) {
+  <span class="cm-keyword">try</span> {
+    <span class="cm-keyword">var</span> <span class="cm-variable">dir</span> <span class="cm-operator">=</span> <span class="cm-variable">promtDirection</span>(<span class="cm-string">"Where?"</span>); <span class="cm-comment">// ← typo!</span>
+    <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"You chose "</span>, <span class="cm-variable">dir</span>);
+    <span class="cm-keyword">break</span>;
+  } <span class="cm-keyword">catch</span> (<span class="cm-def">e</span>) {
+    <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"Not a valid direction. Try again."</span>);
+  }
+}</pre>
+<p><a class="p_ident" id="p_UMh66pw2z8" href="./08_error.html#p_UMh66pw2z8"></a>Конструкцията <code>for (;;)</code> е начин за умишлено създаване на цикъл, който не спира да работи. Можем да се измъкнем от цикъла, когато дадем валидна посока. Но и името на променливата написано, като <code>promptDirection</code> е грешно, което ще доведе до грешка “undefined variable” (неидентифицирана променлива). Тъй като 
+<code>catch</code> блока напълно пренебрегва своето изключение (стойността - <code>(e)</code>) и ако приемем, че не знае какъв е проблема, той неправилно третира грешката, като посочва грешно въвеждане. Не само, че този казус е един безкраен цикъл, но и също така “погребва” полезното съобщение за грешка за неправилно изписана променлива.</p>
+<p><a class="p_ident" id="p_hk/lwBIhah" href="./08_error.html#p_hk/lwBIhah"></a>Генерално правило е, да не правим изключения за прихващане на изключения, освен ако нямаме намерение да ги пращаме някъде, например, през мрежата за да кажем на друга система, че програмата ни е счупена. И дори тогава помислете внимателно, как може да скриете информация.</p>
+<p><a class="p_ident" id="p_FVrgLfvNOk" href="./08_error.html#p_FVrgLfvNOk"></a>Така че, ние искаме да прихванем специфичен вид изключение. Можем да направим това чрез проверка в <code>catch</code> блока дали изключението, което получаваме е това, което ни интересува и го прехвърляме в друго. Но как да разпознаем това изключение?</p>
+<p><a class="p_ident" id="p_eWVtoGEmaf" href="./08_error.html#p_eWVtoGEmaf"></a>Разбира се, бихме могли да съчетаем неговото свойство <code>message</code> със съобщението за грешката, която инспектираме. Но това е по-нестабилен начин за писане на код - така се лишаваме от използването на информацията предназначена за усвояване от човека (съобщението), за да направим програмно решение. Веднага, след като се промени (или се преведе) съобщението, кодът ще спре да работи.</p>
+<p><a class="p_ident" id="p_6OoqTlWc8i" href="./08_error.html#p_6OoqTlWc8i"></a>По- скоро, нека да дефинираме нов тип грешка и да използваме <code>instanceof</code> да го идентифицира.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_ZtibWk6KwK" href="./08_error.html#c_ZtibWk6KwK"></a><span class="cm-keyword">function</span> <span class="cm-variable">InputError</span>(<span class="cm-def">message</span>) {
+  <span class="cm-keyword">this</span>.<span class="cm-property">message</span> <span class="cm-operator">=</span> <span class="cm-variable-2">message</span>;
+  <span class="cm-keyword">this</span>.<span class="cm-property">stack</span> <span class="cm-operator">=</span> (<span class="cm-keyword">new</span> <span class="cm-variable">Error</span>()).<span class="cm-property">stack</span>;
+}
+<span class="cm-variable">InputError</span>.<span class="cm-property">prototype</span> <span class="cm-operator">=</span> <span class="cm-variable">Object</span>.<span class="cm-property">create</span>(<span class="cm-variable">Error</span>.<span class="cm-property">prototype</span>);
+<span class="cm-variable">InputError</span>.<span class="cm-property">prototype</span>.<span class="cm-property">name</span> <span class="cm-operator">=</span> <span class="cm-string">"InputError"</span>;</pre>
+<p><a class="p_ident" id="p_ckH3IH2NQq" href="./08_error.html#p_ckH3IH2NQq"></a>Прототипът е направен да извлича от <code>Error.prototype</code>, така че <code>instanceof Error</code> също да връща  <em>true</em> за <code>InputError</code> обекти. Той също дава свойството <code>name</code>, тъй като стандартните видове грешки <code>Error</code>, <code>SyntaxError</code>, <code>ReferenceError</code> и т.н.) също имат това свойство.</p>
+<p><a class="p_ident" id="p_BO+BABkFZf" href="./08_error.html#p_BO+BABkFZf"></a>Възлагането на свойството <code>stack</code> се опитва да даде на този обект малко по-полезна следа в стека, за платформите, които го поддържат чрез създаване на редовен обект за грешка и след това използва този обект на свойство на стека, като свой собствен.</p>
+<p><a class="p_ident" id="p_3NvX0v0g0n" href="./08_error.html#p_3NvX0v0g0n"></a>Сега <code>promptDirection</code> може да хвърли такава грешка.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_sIDbifSyff" href="./08_error.html#c_sIDbifSyff"></a><span class="cm-keyword">function</span> <span class="cm-variable">promptDirection</span>(<span class="cm-def">question</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">result</span> <span class="cm-operator">=</span> <span class="cm-variable">prompt</span>(<span class="cm-variable-2">question</span>, <span class="cm-string">""</span>);
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">result</span>.<span class="cm-property">toLowerCase</span>() <span class="cm-operator">==</span> <span class="cm-string">"left"</span>) <span class="cm-keyword">return</span> <span class="cm-string">"L"</span>;
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">result</span>.<span class="cm-property">toLowerCase</span>() <span class="cm-operator">==</span> <span class="cm-string">"right"</span>) <span class="cm-keyword">return</span> <span class="cm-string">"R"</span>;
+  <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">InputError</span>(<span class="cm-string">"Invalid direction: "</span> <span class="cm-operator">+</span> <span class="cm-variable-2">result</span>);
+}</pre>
+<p><a class="p_ident" id="p_dtouAk0YL3" href="./08_error.html#p_dtouAk0YL3"></a>И цикълът може да я прихване по-прецизно:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_tTVsZNAA73" href="./08_error.html#c_tTVsZNAA73"></a><span class="cm-keyword">for</span> (;;) {
+  <span class="cm-keyword">try</span> {
+    <span class="cm-keyword">var</span> <span class="cm-variable">dir</span> <span class="cm-operator">=</span> <span class="cm-variable">promptDirection</span>(<span class="cm-string">"Where?"</span>);
+    <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"You chose "</span>, <span class="cm-variable">dir</span>);
+    <span class="cm-keyword">break</span>;
+  } <span class="cm-keyword">catch</span> (<span class="cm-def">e</span>) {
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">e</span> <span class="cm-keyword">instanceof</span> <span class="cm-variable">InputError</span>)
+      <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"Not a valid direction. Try again."</span>);
+    <span class="cm-keyword">else</span>
+      <span class="cm-keyword">throw</span> <span class="cm-variable-2">e</span>;
+  }
+}</pre>
+<p><a class="p_ident" id="p_N4ExnmZrQ/" href="./08_error.html#p_N4ExnmZrQ/"></a>Това ще хване само случаи на <code>InputError</code> и несвързани изключения. Ако се въведе отново печатна грешка или неопределена променлива, грешката ще бъде надлежно съобщена.</p>
+<h2><a class="h_ident" id="h_Sb9V3BEus1" href="./08_error.html#h_Sb9V3BEus1"></a>Твърдения</h2>
+<p><a class="p_ident" id="p_CLUBrkFgp7" href="./08_error.html#p_CLUBrkFgp7"></a>Твърденията са средство с основни разсъждения да направи проверка за грешки на програмист. Помислете как помага функцията <code>assert</code>:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_EMQnc6zgG7" href="./08_error.html#c_EMQnc6zgG7"></a><span class="cm-keyword">function</span> <span class="cm-variable">AssertionFailed</span>(<span class="cm-def">message</span>) {
+  <span class="cm-keyword">this</span>.<span class="cm-property">message</span> <span class="cm-operator">=</span> <span class="cm-variable-2">message</span>;
+}
+<span class="cm-variable">AssertionFailed</span>.<span class="cm-property">prototype</span> <span class="cm-operator">=</span> <span class="cm-variable">Object</span>.<span class="cm-property">create</span>(<span class="cm-variable">Error</span>.<span class="cm-property">prototype</span>);
+
+<span class="cm-keyword">function</span> <span class="cm-variable">assert</span>(<span class="cm-def">test</span>, <span class="cm-def">message</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-operator">!</span><span class="cm-variable-2">test</span>)
+    <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">AssertionFailed</span>(<span class="cm-variable-2">message</span>);
+}
+
+<span class="cm-keyword">function</span> <span class="cm-variable">lastElement</span>(<span class="cm-def">array</span>) {
+  <span class="cm-variable">assert</span>(<span class="cm-variable-2">array</span>.<span class="cm-property">length</span> <span class="cm-operator">&gt;</span> <span class="cm-number">0</span>, <span class="cm-string">"empty array in lastElement"</span>);
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">array</span>[<span class="cm-variable-2">array</span>.<span class="cm-property">length</span> <span class="cm-operator">-</span> <span class="cm-number">1</span>];
+}</pre>
+<p><a class="p_ident" id="p_j1ruFSflzn" href="./08_error.html#p_j1ruFSflzn"></a>Това осигурява компактен начин да се наложат очакванията -услужливо гръмване на програмата, ако посоченото условие не изпълнено. Например, функцията <code>lastElement</code>, която извлича  последния елемент от празен масив, ще върне <code>undefined</code> ако твърдението е пропуснато.  Извличането на последния елемент от празен масив няма много смисъл, така почти е сигурно, че грешката е на програмиста.</p>
+<p><a class="p_ident" id="p_wmVVstENIA" href="./08_error.html#p_wmVVstENIA"></a>Твърденията са начин да се уверите, че грешки причиняват повреди на мястото на грешката, а не мълчаливо произвеждащи глупости, които могат да продължат да предизвикват проблеми в нямаща нищо общо част на системата.</p>
+<h2><a class="h_ident" id="h_ErccPg/l98" href="./08_error.html#h_ErccPg/l98"></a>Резюме</h2>
+<p><a class="p_ident" id="p_rD8/ab0/w4" href="./08_error.html#p_rD8/ab0/w4"></a>Грешки и лош вход са факти от живота. Бъговете в програмите трябва да бъдат намерени и фиксирани. Те могат станат по-лесно забележими от наличието на автоматизирани тестове и добавяне на твърдения във вашите програми.</p>
+<p><a class="p_ident" id="p_6/bb/yZogT" href="./08_error.html#p_6/bb/yZogT"></a>Проблеми причинени от фактори, които са извън контрола на програмата обикновено следва да се обработват грациозно. По някога, когато проблемът е на местно ниво, специалните стойности за връщане са един нормален начин да го проследят. В противен случай, изключенията са за предпочитане.</p>
+<p><a class="p_ident" id="p_ZJkq9NFh8W" href="./08_error.html#p_ZJkq9NFh8W"></a>Хвърляне на изключение създава призив към стека да се развие до следващия обхващащ <code>try/catch</code> блок или до дъното на стека. Стойността на изключението, ще бъде дадено на <code>catch</code> блока, който го прихваща и се уверява, че това всъщност е очаквания вид изключение, а след това прави нещо с него. За да се справят с непредвидим контрол причинен от изключения, блоковете на <code>finally</code> могат да бъдат използвани  за да се гарантира,  че част от кода винаги ще се стартира.</p>
+<h2><a class="h_ident" id="h_TcUD2vzyMe" href="./08_error.html#h_TcUD2vzyMe"></a>Упражнения</h2>
+<h3><a class="h_ident" id="h_n1zYouiAfX" href="./08_error.html#h_n1zYouiAfX"></a>Опитайте отново</h3>
+<p><a class="p_ident" id="p_oAuWXajIJA" href="./08_error.html#p_oAuWXajIJA"></a>Да речем, че функцията <code>primitiveMultiply</code> в 50% от случаите, умножава  две числа, а в останалите 50%, извиква изключение от типа <code>MultiplicatorUnitFailure</code>. Напишете функция, която завършва тази неудобна функция и продължава да опитва докато операцията стане успешна, след което връща резултата.</p>
+<p><a class="p_ident" id="p_FfNd4pOv0L" href="./08_error.html#p_FfNd4pOv0L"></a>Уверете се, че сте разгледали само изключенията, които се опитват да се справят.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_bmw/1BwsAf" href="./08_error.html#c_bmw/1BwsAf"></a><span class="cm-keyword">function</span> <span class="cm-variable">MultiplicatorUnitFailure</span>() {}
+
+<span class="cm-keyword">function</span> <span class="cm-variable">primitiveMultiply</span>(<span class="cm-def">a</span>, <span class="cm-def">b</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-variable">Math</span>.<span class="cm-property">random</span>() <span class="cm-operator">&lt;</span> <span class="cm-number">0.5</span>)
+    <span class="cm-keyword">return</span> <span class="cm-variable-2">a</span> <span class="cm-operator">*</span> <span class="cm-variable-2">b</span>;
+  <span class="cm-keyword">else</span>
+    <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">MultiplicatorUnitFailure</span>();
+}
+
+<span class="cm-keyword">function</span> <span class="cm-variable">reliableMultiply</span>(<span class="cm-def">a</span>, <span class="cm-def">b</span>) {
+  <span class="cm-comment">// Your code here.</span>
+}
+
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">reliableMultiply</span>(<span class="cm-number">8</span>, <span class="cm-number">8</span>));
+<span class="cm-comment">// → 64</span></pre>
+<div class="solution"><div class="solution-text">
+<p><a class="p_ident" id="p_ChowJFeR1F" href="./08_error.html#p_ChowJFeR1F"></a>Извикването на <code>primitiveMultiply</code> очевидно трябва да се случи в <code>try</code> за да го блокира. Съответният <code>catch</code> блок трябва да <em>rethrow</em> изключение, когато това не е инстанция на <code>MultiplicatorUnitFailure</code> и повикването се повтори, когато това е гарантирано.</p>
+<p><a class="p_ident" id="p_c2MPH2Cr0C" href="./08_error.html#p_c2MPH2Cr0C"></a>За да направите повторен опит, може да използвате един цикъл, който breaks само, когато повикването е успяло - както в примера <a href="./08_error.html#look">по-рано</a> в тази глава - или използвате рекурсия и надявам се да не получите поредица от неуспехи, толкова дълго, че да препълните стека (което е доста безопасен залог).</p>
+</div></div>
+<h3><a class="h_ident" id="h_iGlwnUbkRs" href="./08_error.html#h_iGlwnUbkRs"></a>Заключената кутия</h3>
+<p><a class="p_ident" id="p_uGznOGuYh8" href="./08_error.html#p_uGznOGuYh8"></a>Да разгледаме следния (по скоро измислен) обект:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_T6SjLRzJPl" href="./08_error.html#c_T6SjLRzJPl"></a><span class="cm-keyword">var</span> <span class="cm-variable">box</span> <span class="cm-operator">=</span> {
+  <span class="cm-property">locked</span>: <span class="cm-atom">true</span>,
+  <span class="cm-property">unlock</span>: <span class="cm-keyword">function</span>() { <span class="cm-keyword">this</span>.<span class="cm-property">locked</span> <span class="cm-operator">=</span> <span class="cm-atom">false</span>; },
+  <span class="cm-property">lock</span>: <span class="cm-keyword">function</span>() { <span class="cm-keyword">this</span>.<span class="cm-property">locked</span> <span class="cm-operator">=</span> <span class="cm-atom">true</span>;  },
+  <span class="cm-property">_content</span>: [],
+  <span class="cm-property">get</span> <span class="cm-property">content</span>() {
+    <span class="cm-keyword">if</span> (<span class="cm-keyword">this</span>.<span class="cm-property">locked</span>) <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">Error</span>(<span class="cm-string">"Locked!"</span>);
+    <span class="cm-keyword">return</span> <span class="cm-keyword">this</span>.<span class="cm-property">_content</span>;
+  }
+};</pre>
+<p><a class="p_ident" id="p_26mfxczF32" href="./08_error.html#p_26mfxczF32"></a>Това е кутия с ключалка. Вътре има масив, който може да получите само, когато кутията е отключена. Директен достъп до свойството <code>_content</code> не е позволен.</p>
+<p><a class="p_ident" id="p_KI+tJ+amDX" href="./08_error.html#p_KI+tJ+amDX"></a>Напишете функция, наречена <code>withBoxUnlocked</code>, която взема стойността на функцията, като аргумент, отключва кутията, стартира функцията и след това гарантира, че кутията отново е заключена преди да се върне, независимо от това дали функцията аргумент се е върнала нормално или хвърля изключение.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_i/512CgQyd" href="./08_error.html#c_i/512CgQyd"></a><span class="cm-keyword">function</span> <span class="cm-variable">withBoxUnlocked</span>(<span class="cm-def">body</span>) {
+  <span class="cm-comment">// Your code here.</span>
+}
+
+<span class="cm-variable">withBoxUnlocked</span>(<span class="cm-keyword">function</span>() {
+  <span class="cm-variable">box</span>.<span class="cm-property">content</span>.<span class="cm-property">push</span>(<span class="cm-string">"gold piece"</span>);
+});
+
+<span class="cm-keyword">try</span> {
+  <span class="cm-variable">withBoxUnlocked</span>(<span class="cm-keyword">function</span>() {
+    <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">Error</span>(<span class="cm-string">"Pirates on the horizon! Abort!"</span>);
+  });
+} <span class="cm-keyword">catch</span> (<span class="cm-def">e</span>) {
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"Error raised:"</span>, <span class="cm-variable-2">e</span>);
+}
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">box</span>.<span class="cm-property">locked</span>);
+<span class="cm-comment">// → true</span></pre>
+<p><a class="p_ident" id="p_X5dxXtnN4l" href="./08_error.html#p_X5dxXtnN4l"></a>За допълнителни точки, се уверете, че ако извикате <code>withBoxUnlocked</code>, когато кутията е вече отключена тя остава отключена.</p>
+<div class="solution"><div class="solution-text">
+<p><a class="p_ident" id="p_4MxgD1VcbV" href="./08_error.html#p_4MxgD1VcbV"></a>Това упражнение извиква <code>finally</code> за да блокира, както може би сте предположили. Вашата функция трябва първо да отключи кутията и след това да извика функцията с аргумент за вътрешноста на <code>try</code> тялото. Накрая <code>finally</code> блока трябва да заключи кутията отново.</p>
+<p><a class="p_ident" id="p_PvZL0oQnMG" href="./08_error.html#p_PvZL0oQnMG"></a>За да сме сигурни, че не заключваме кутията, когато тя вече е била заключена, проверете заключването в началото на функцията и отключете и заключете, само когато е започнала заключена.</p>
+</div></div>
+<nav>
+  <a href="./07_elife.html" title="previous chapter">◀</a>
+  <a href="./index.html" title="cover">◆</a>
+  <a href="./09_regexp.html" title="next chapter">▶</a>
+</nav>
+</article>
+</body></html>

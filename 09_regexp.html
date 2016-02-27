@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<!-- saved from url=(0044)./09_regexp.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <title>Regular Expressions :: Eloquent JavaScript</title>
+  <link rel="stylesheet" href="./media/codemirror.css">
+  <script src="./media/acorn_codemirror.js"></script>
+  <link rel="stylesheet" href="./media/ejs.css">
+  <script src="./media/sandbox.js"></script>
+  <script src="./media/ejs.js"></script>
+  <script>var chapNum = 9;</script>
+</head>
+
+<body><article>
+<nav>
+  <a href="./08_error.html" title="previous chapter">◀</a>
+  <a href="./index.html" title="cover">◆</a>
+  <a href="./10_modules.html" title="next chapter">▶</a>
+</nav>
+
+<h1><div class="chap_num">Глава 9</div>Регулярни изрази</h1>
+<blockquote>
+<p><a class="p_ident" id="p_MWUwIAb0uO" href="./09_regexp.html#p_MWUwIAb0uO"></a>Някои хора, когато се сблъскат с проблем, си мислят „Аз знам, че трябва да използвам регулярни изрази.” Сега те имат два проблема.”</p>
+ <footer>Jamie Zawinski</footer>
+</blockquote>
+<blockquote>
+<p><a class="p_ident" id="p_icxlw7+18l" href="./09_regexp.html#p_icxlw7+18l"></a>Ян-ма казал: „Когато влизате в противоречие  с едно дърво, е необходима много сила. Когато се изправяте срещу проблем, е необходим много код.””</p>
+ <footer>Master Yuan-Ma, <cite>Книга за програмиране</cite></footer>
+</blockquote>
+<p><a class="p_ident" id="p_81b6macd9j" href="./09_regexp.html#p_81b6macd9j"></a>Програмните инструменти и техники, оцелявайки и разпространявайки се в една хаотична среда, са извървели еволюционен път. Те не винаги са красиви и блестящи, като онези които функционират достатъчно добре в рамките на правилната ниша - например, като се интегрира още една успешна част от технология.</p>
+<p><a class="p_ident" id="p_2ySNBCvXNS" href="./09_regexp.html#p_2ySNBCvXNS"></a>В тази глава ще разгледаме още един такъв инструмент, <em>regular expressions</em> (регулярни изрази). Регулярните изрази са начин да се пишат модели за <em>string</em> данни. Те образуват един малък, отделен език, който е част от JavaScript и от много други езици и инструменти.</p>
+<p><a class="p_ident" id="p_cxbejyPUGl" href="./09_regexp.html#p_cxbejyPUGl"></a>Регулярните изрази са едновременно ужасно неудобни и изключително полезни. Техният синтаксис е загадъчен и програмният интерфейс на JavaScript, предвиден за тях е тромав. Но са мощен инструмент за проверка и обработка на <em>strings</em>. Правилното разбиране на регулярните изрази може да направи един програмист по-ефективен.</p>
+<h2><a class="h_ident" id="h_5w4yGFJRYl" href="./09_regexp.html#h_5w4yGFJRYl"></a>Създаване  на  регулярен  израз</h2>
+<p><a class="p_ident" id="p_u/9SKAI2Yi" href="./09_regexp.html#p_u/9SKAI2Yi"></a>Регулярният израз е тип обект. Той може или да бъде конструиран с <code>RegExp</code> конструктора или  написан, като буквална стойност чрез затваряне на схемата със знака за наклонена черта (<code>/</code>).</p>
+<pre data-language="javascript" class="snippet cm-s-default"><div class="sandboxhint">edit &amp; run code by clicking it</div><a class="c_ident" id="c_XBSA9s2btm" href="./09_regexp.html#c_XBSA9s2btm"></a><span class="cm-keyword">var</span> <span class="cm-variable">re1</span> <span class="cm-operator">=</span> <span class="cm-keyword">new</span> <span class="cm-variable">RegExp</span>(<span class="cm-string">"abc"</span>);
+<span class="cm-keyword">var</span> <span class="cm-variable">re2</span> <span class="cm-operator">=</span> <span class="cm-string-2">/abc/</span>;</pre>
+<p><a class="p_ident" id="p_uNMQxzr01n" href="./09_regexp.html#p_uNMQxzr01n"></a>И двата са редовни експресионни обекти представляващи един и същ модел: един символ <em>a</em> последван от <em>b</em> последван от <em>c</em>.</p>
+<p><a class="p_ident" id="p_qv8UWLVrTv" href="./09_regexp.html#p_qv8UWLVrTv"></a>При използване на конструктора <code>RegExp</code>, моделът е написан, като нормален <em>string</em>, така че се прилагат обичайните правила за обратно наклонените черти.</p>
+<p><a class="p_ident" id="p_xB91PDBGKz" href="./09_regexp.html#p_xB91PDBGKz"></a>Втората нотация, където моделът се поставя между наклонени черти, третира  обратно наклонените черти по малко по-различен начин. На първо място, тъй като с наклонена черта завършва модела, трябва да поставим наклонена черта преди всяка наклонена черта, ако искаме да бъде част от модела. Освен това, обратно наклонените черти, които не са част от специалните символи на кода (като <code>\n</code>) ще бъдат запазени, но няма да им се обърне внимание, тъй като са в <em>strings</em> и променят смисъла на модела. Някои знаци, като въпросителна и плюс, имат специално значение в регулярните изрази и трябва да бъдат предшествани от обратна наклонена черта, ако са предназначени да представляват самия характер.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_GMbBpgLwwd" href="./09_regexp.html#c_GMbBpgLwwd"></a><span class="cm-keyword">var</span> <span class="cm-variable">eighteenPlus</span> <span class="cm-operator">=</span> <span class="cm-string-2">/eighteen\+/</span>;</pre>
+<p><a class="p_ident" id="p_GYUjU5Z/Gb" href="./09_regexp.html#p_GYUjU5Z/Gb"></a>Знаейки, какво точно прави характера на обратната наклонена черта - <em>escape</em> (бягство) при писане на регулярни изрази се изисква от вас да знаете всеки характер със специално предназначение. За момента, това не може да бъде реалистично, така че, когато се съмнявате, просто сложете обратно наклонена черта пред всеки символ, който не е буква, цифра или празно пространство.</p>
+<h2><a class="h_ident" id="h_vPyyYjMEtz" href="./09_regexp.html#h_vPyyYjMEtz"></a>Тест  за  съвпадение</h2>
+<p><a class="p_ident" id="p_0vbMMWCatE" href="./09_regexp.html#p_0vbMMWCatE"></a>Регулярните експресионни обекти имат редица методи. Най-простият от тях е <code>test</code>. Ако го подадете на <em>string</em>, той ще върне булева стойност, която ви казва дали този <em>string</em> съдържа  съвпадение с модела на израза.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_O53a6v4BM0" href="./09_regexp.html#c_O53a6v4BM0"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">/abc/</span>.<span class="cm-property">test</span>(<span class="cm-string">"abcde"</span>));
+<span class="cm-comment">// → true</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">/abc/</span>.<span class="cm-property">test</span>(<span class="cm-string">"abxde"</span>));
+<span class="cm-comment">// → false</span></pre>
+<p><a class="p_ident" id="p_WFokgkkjHh" href="./09_regexp.html#p_WFokgkkjHh"></a>Регулярния израз, съставен само от <em>nonspecial</em> характери просто означава поредица от знаци. Ние тестваме съвпадението не само в началото и <code>test</code> ще върне <code>true</code>, ако abc е на всякъде в <em>string</em>.</p>
+<h2><a class="h_ident" id="h_z4ZvUsIpEG" href="./09_regexp.html#h_z4ZvUsIpEG"></a>Съвпадение на набор от символи</h2>
+<p><a class="p_ident" id="p_DtXmb/uhsO" href="./09_regexp.html#p_DtXmb/uhsO"></a>Намирането дали <em>string</em> съдържа <em>abc</em>, може да се направи също толкова добре с извикване на <code>indexOf</code>. Регулярните изрази ни позволяват да отидем отвъд това и да изразят по-сложни модели</p>
+<p><a class="p_ident" id="p_i/99SEfu9y" href="./09_regexp.html#p_i/99SEfu9y"></a>Кажете, че искате съвпадение с произволно число. В регулярен израз поставяне на набор от знаци между квадратни скоби, прави тази част от израза да съответства на всеки от символите между скобите.</p>
+<p><a class="p_ident" id="p_sC+2E08KnL" href="./09_regexp.html#p_sC+2E08KnL"></a>И двата от следните изрази съответстват на всички <em>strings</em>, които съдържат цифри:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_lup2c3o+xm" href="./09_regexp.html#c_lup2c3o+xm"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">/[0123456789]/</span>.<span class="cm-property">test</span>(<span class="cm-string">"in 1992"</span>));
+<span class="cm-comment">// → true</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">/[0-9]/</span>.<span class="cm-property">test</span>(<span class="cm-string">"in 1992"</span>));
+<span class="cm-comment">// → true</span></pre>
+<p><a class="p_ident" id="p_i0WYLVUede" href="./09_regexp.html#p_i0WYLVUede"></a>В квадратните скоби тирето (<code>-</code>) между два знака, може да се използва за обозначаване на набор от символи, където редът се определя от Unicode таблицата за характера. Характери от 0 до 9 стоят в непосредствена близост един до друг в тази таблица (кодове от 48 до 57), така че <code>[0-9]</code> обхваща всички тях и съвпаденията с всяка цифра.</p>
+<p><a class="p_ident" id="p_+w4wbahJfo" href="./09_regexp.html#p_+w4wbahJfo"></a>Има редица общи групи от символи, които имат свои собствени вградени команди за бърз достъп. Цифрите са една от тях: <code>\d</code> означава същото, <code>[0-9]</code>.</p>
+<table>
+<tbody><tr>
+<td><code>\d</code></td>
+<td>Всеки характер цифра</td>
+</tr>
+<tr>
+<td><code>\w</code></td>
+<td>Всеки буквено-цифров символ (‘дума характер’)</td>
+</tr>
+<tr>
+<td><code>\s</code></td>
+<td>Всеки символ за празно пространство (space, tab, newline и similar)</td>
+</tr>
+<tr>
+<td><code>\D</code></td>
+<td>Всеки характер, който не е цифра</td>
+</tr>
+<tr>
+<td><code>\W</code></td>
+<td>A Всеки не буквено-цифров символ</td>
+</tr>
+<tr>
+<td><code>\S</code></td>
+<td>Всеки символ, който не е за празно пространство</td>
+</tr>
+<tr>
+<td><code>.</code></td>
+<td>Всеки символ, освен новите редове</td>
+</tr>
+</tbody></table>
+<p><a class="p_ident" id="p_yXMUKEYpwG" href="./09_regexp.html#p_yXMUKEYpwG"></a>Така може да откриете съвпаденията за формата на дата и час, като 30-01-2003 15:20, със следния израз:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_vXh+CdcvKs" href="./09_regexp.html#c_vXh+CdcvKs"></a><span class="cm-keyword">var</span> <span class="cm-variable">dateTime</span> <span class="cm-operator">=</span> <span class="cm-string-2">/\d\d-\d\d-\d\d\d\d \d\d:\d\d/</span>;
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">dateTime</span>.<span class="cm-property">test</span>(<span class="cm-string">"30-01-2003 15:20"</span>));
+<span class="cm-comment">// → true</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">dateTime</span>.<span class="cm-property">test</span>(<span class="cm-string">"30-jan-2003 15:20"</span>));
+<span class="cm-comment">// → false</span></pre>
+<p><a class="p_ident" id="p_NjgwK/FZRp" href="./09_regexp.html#p_NjgwK/FZRp"></a>Това изглежда ужасно, не е ли? Има прекалено много обратни наклонени черти, които правят фонов шум, което го прави трудно място за действителния модел на изрази. Ще видим леко подобрена версия на този израз <a href="./09_regexp.html#date_regexp_counted">по-късно</a>.</p>
+<p><a class="p_ident" id="p_P0qAMYu0C/" href="./09_regexp.html#p_P0qAMYu0C/"></a>Тези кодове с обратна наклонена черта могат да бъдат използвани в квадратни скоби. Например <code>[\d.]</code> означава всяка цифра или период от характери. Но имайте в предвид, че самия период, когато се използва в квадратни скоби, губи своето значение. Същото важи и за други специални знаци, като например плюс <code>+</code>.</p>
+<p><a class="p_ident" id="p_HqQEZsitdl" href="./09_regexp.html#p_HqQEZsitdl"></a>За да обърнете набор от символи, тоест искате да съвпадат с всеки символ с изключение на зададените, можете да напишете ксор ^ характер след отварящата скоба.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_ExU1Fm09+X" href="./09_regexp.html#c_ExU1Fm09+X"></a><span class="cm-keyword">var</span> <span class="cm-variable">notBinary</span> <span class="cm-operator">=</span> <span class="cm-string-2">/[^01]/</span>;
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">notBinary</span>.<span class="cm-property">test</span>(<span class="cm-string">"1100100010100110"</span>));
+<span class="cm-comment">// → false</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">notBinary</span>.<span class="cm-property">test</span>(<span class="cm-string">"1100100010200110"</span>));
+<span class="cm-comment">// → true</span></pre>
+<h2><a class="h_ident" id="h_iFI1qvUwY9" href="./09_regexp.html#h_iFI1qvUwY9"></a>Повтаряне  частите  на  модел</h2>
+<p><a class="p_ident" id="p_crYiu/oAUM" href="./09_regexp.html#p_crYiu/oAUM"></a>Вече знаем как да съвпада една цифра. Какво става, ако искаме да съвпада цяла последователност от  една или повече цифри?</p>
+<p><a class="p_ident" id="p_B4wupHzbR+" href="./09_regexp.html#p_B4wupHzbR+"></a>Когато поставите знака  плюс (<code>+</code>) след нещо в регулярен израз, това означава, че елемента може да се повтори повече от веднъж. По този начин, <code>/\d+/</code> съвпада с един или повече цифрови знаци.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_gPOZZi5uor" href="./09_regexp.html#c_gPOZZi5uor"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">/'\d+'/</span>.<span class="cm-property">test</span>(<span class="cm-string">"'123'"</span>));
+<span class="cm-comment">// → true</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">/'\d+'/</span>.<span class="cm-property">test</span>(<span class="cm-string">"''"</span>));
+<span class="cm-comment">// → false</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">/'\d*'/</span>.<span class="cm-property">test</span>(<span class="cm-string">"'123'"</span>));
+<span class="cm-comment">// → true</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">/'\d*'/</span>.<span class="cm-property">test</span>(<span class="cm-string">"''"</span>));
+<span class="cm-comment">// → true</span></pre>
+<p><a class="p_ident" id="p_/oNBIVm41F" href="./09_regexp.html#p_/oNBIVm41F"></a>Звездата (<code>*</code>) има подобно значение, но също така позволява моделът да съвпада нула пъти. Нещо със звезда след него, никога не предпазва модела от съвпадение - той ще съвпада нула пъти ако не може да намери подходящ текст за съвпадение.</p>
+<p><a class="p_ident" id="p_rtXbvQjQpG" href="./09_regexp.html#p_rtXbvQjQpG"></a>Въпросителният знак прави част от един модел “по избор”, което означава, че може да стане нула или едно едновременно. В следващия пример, <em>u</em> характера пропуска случващото се , но също така съответства на модела, когато липсва.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_Jvdrjd3WXF" href="./09_regexp.html#c_Jvdrjd3WXF"></a><span class="cm-keyword">var</span> <span class="cm-variable">neighbor</span> <span class="cm-operator">=</span> <span class="cm-string-2">/neighbou?r/</span>;
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">neighbor</span>.<span class="cm-property">test</span>(<span class="cm-string">"neighbour"</span>));
+<span class="cm-comment">// → true</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">neighbor</span>.<span class="cm-property">test</span>(<span class="cm-string">"neighbor"</span>));
+<span class="cm-comment">// → true</span></pre>
+<p><a class="p_ident" id="p_B4ikd8xN8i" href="./09_regexp.html#p_B4ikd8xN8i"></a>За да покажете, че един модел трябва да се случва точно брой пъти, използвайте фигурни скоби. Поставянето на <code>{4}</code> след елемент, изисква да се случи точно четири пъти. Възможно е също така да се определи диапазон, по този начин: <code>{2,4}</code>, което означава, че елемента трябва да се случи най-малко два и най-много четири пъти.</p>
+<p id="date_regexp_counted"><a class="p_ident" id="p_awR6bPYROd" href="./09_regexp.html#p_awR6bPYROd"></a>Тука е една версия на модела за дата и час, който позволява и двата - единични и двуцифрени дни, месеци и часове. Също така е по- разбираем.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_mwpr5hmR0y" href="./09_regexp.html#c_mwpr5hmR0y"></a><span class="cm-keyword">var</span> <span class="cm-variable">dateTime</span> <span class="cm-operator">=</span> <span class="cm-string-2">/\d{1,2}-\d{1,2}-\d{4} \d{1,2}:\d{2}/</span>;
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">dateTime</span>.<span class="cm-property">test</span>(<span class="cm-string">"30-1-2003 8:45"</span>));
+<span class="cm-comment">// → true</span></pre>
+<p><a class="p_ident" id="p_eVBFhX2vD9" href="./09_regexp.html#p_eVBFhX2vD9"></a>Можете също да определите и отворени граници при използване на фигурни скоби, като не зададете номер от двете страни на запетаята. Така <code>{,5}</code> означава от нула до пет и <code>{5,}</code> означава пет или повече пъти.</p>
+<h2><a class="h_ident" id="h_uICSDspz1I" href="./09_regexp.html#h_uICSDspz1I"></a>Групиране  на  под-изрази</h2>
+<p><a class="p_ident" id="p_pKTOYUDGIr" href="./09_regexp.html#p_pKTOYUDGIr"></a>За да използвате оператор, като <code>*</code> или <code>+</code> на повече от един елемент в даден момент, може да използвате скоби. Една част от регулярен израз, който е заграден в скоби се брои за един елемент.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_mLfHSPalKV" href="./09_regexp.html#c_mLfHSPalKV"></a><span class="cm-keyword">var</span> <span class="cm-variable">cartoonCrying</span> <span class="cm-operator">=</span> <span class="cm-string-2">/boo+(hoo+)+/i</span>;
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">cartoonCrying</span>.<span class="cm-property">test</span>(<span class="cm-string">"Boohoooohoohooo"</span>));
+<span class="cm-comment">// → true</span></pre>
+<p><a class="p_ident" id="p_S5jkv2dMC+" href="./09_regexp.html#p_S5jkv2dMC+"></a>Първият и вторият <code>+</code> се прилагат само за второто <em>o</em> в <em>boo</em> и <em>hoo</em>съответно. Третият <code>+</code> се отнася за цялата група <code>(hoo+)</code> в съчетание с една или повече поредици, като тази.</p>
+<p><a class="p_ident" id="p_tFxtn8Pxg1" href="./09_regexp.html#p_tFxtn8Pxg1"></a><code>i</code> в края на израза прави този регулярен израз да се влияе от случая, което позволява да намери съответствия на главни букви <em>B</em> във входящия <em>string</em>, въпреки, че моделът е само за малки букви. </p>
+<h2><a class="h_ident" id="h_CV5XL/TADP" href="./09_regexp.html#h_CV5XL/TADP"></a>Съвпадения и групи</h2>
+<p><a class="p_ident" id="p_K4AlKPLvyA" href="./09_regexp.html#p_K4AlKPLvyA"></a>Метода <code>test</code> е абсолютно най-простия начин за съответствия на регулярен израз. Той ни казва само дали съвпада и нищо друго. Регулярните изрази имат също и <code>exec</code> метод (изпълни), който ще върне <code>null</code> ако не е открито съвпадение или ще върне обект с информация за съвпадението в противен случай.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_YvQYsEnL/O" href="./09_regexp.html#c_YvQYsEnL/O"></a><span class="cm-keyword">var</span> <span class="cm-variable">match</span> <span class="cm-operator">=</span> <span class="cm-string-2">/\d+/</span>.<span class="cm-property">exec</span>(<span class="cm-string">"one two 100"</span>);
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">match</span>);
+<span class="cm-comment">// → ["100"]</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">match</span>.<span class="cm-property">index</span>);
+<span class="cm-comment">// → 8</span></pre>
+<p><a class="p_ident" id="p_fJSwbQyG6w" href="./09_regexp.html#p_fJSwbQyG6w"></a>Обекта който се върна от <code>exec</code> има свойството <code>index</code>, което ни казва, къде в string започва съвпадението. Обекта изглежда, като масив от <em>strings</em>, чиито първи елемент е поредицата, която съответства в предишния пример, тази последователност от цифри, която тръсехме.</p>
+<p><a class="p_ident" id="p_VT4fpht7D7" href="./09_regexp.html#p_VT4fpht7D7"></a><em>String</em> стойностите имат <code>match</code> метод, който се държи по подобен начин.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_yvsDvKWBej" href="./09_regexp.html#c_yvsDvKWBej"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"one two 100"</span>.<span class="cm-property">match</span>(<span class="cm-string-2">/\d+/</span>));
+<span class="cm-comment">// → ["100"]</span></pre>
+<p><a class="p_ident" id="p_fFGmBROT0i" href="./09_regexp.html#p_fFGmBROT0i"></a>Когато регулярният израз съдържа групи под-изрази в скоби, текстът, който съответства на тези групи също ще се появи в масива. Цялото съвпадение винаги е първият елемент. Следващият елемент е част съпътствана от първата група (тази, чийто отговор е на първо място в скобите), а след това втората група  и т.н.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_HNCJk6hb0+" href="./09_regexp.html#c_HNCJk6hb0+"></a><span class="cm-keyword">var</span> <span class="cm-variable">quotedText</span> <span class="cm-operator">=</span> <span class="cm-string-2">/'([^']*)'/</span>;
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">quotedText</span>.<span class="cm-property">exec</span>(<span class="cm-string">"she said 'hello'"</span>));
+<span class="cm-comment">// → ["'hello'", "hello"]</span></pre>
+<p><a class="p_ident" id="p_f4bciMASJ1" href="./09_regexp.html#p_f4bciMASJ1"></a>Когато групата свърши без съвпадение изобщо(например, когато е последвана от въпросителен знак), позицията и в изходящия масив ще бъде <code>undefined</code>. По същия начин, когато една група е съчетана няколко пъти, само последното съвпадение ще се отзове в масива.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_z3tMpYKOai" href="./09_regexp.html#c_z3tMpYKOai"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">/bad(ly)?/</span>.<span class="cm-property">exec</span>(<span class="cm-string">"bad"</span>));
+<span class="cm-comment">// → ["bad", undefined]</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">/(\d)+/</span>.<span class="cm-property">exec</span>(<span class="cm-string">"123"</span>));
+<span class="cm-comment">// → ["123", "3"]</span></pre>
+<p><a class="p_ident" id="p_zGhL5UaDaO" href="./09_regexp.html#p_zGhL5UaDaO"></a>Групите могат да бъдат полезни за извличане на части от <em>string</em>. Ако искаме да проверим дали <em>string</em> съдържа дата, но я извлечем и конструираме обект, където да я поставим, можем да увием в скоби цифрите на модела и направо да вземем датата от резултата на <code>exec</code>.</p>
+<p><a class="p_ident" id="p_B9SEqDbr+Y" href="./09_regexp.html#p_B9SEqDbr+Y"></a>Но първо, малко отклонение, в което ще обсъдим предпочитан начин за съхранение на дата и час в JavaScript.</p>
+<h2><a class="h_ident" id="h_+jaxcLjxpL" href="./09_regexp.html#h_+jaxcLjxpL"></a>Типът  Дата</h2>
+<p><a class="p_ident" id="p_2NeTRvucQq" href="./09_regexp.html#p_2NeTRvucQq"></a>JavaScript има стандартен тип обект за представянето на дати или по-скоро, моменти от време. Той се нарича <code>Date</code>. Ако просто създадем обект дата чрез new <code>new</code>, ще получим текущата дата и час.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_GCz2vhG9tO" href="./09_regexp.html#c_GCz2vhG9tO"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-keyword">new</span> <span class="cm-variable">Date</span>());
+<span class="cm-comment">// → Wed Dec 04 2013 14:24:57 GMT+0100 (CET)</span></pre>
+<p><a class="p_ident" id="p_IcV7kv3B1y" href="./09_regexp.html#p_IcV7kv3B1y"></a>Можете също така да създадете обект за определен период от време.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_SlUeqLFk0N" href="./09_regexp.html#c_SlUeqLFk0N"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-keyword">new</span> <span class="cm-variable">Date</span>(<span class="cm-number">2009</span>, <span class="cm-number">11</span>, <span class="cm-number">9</span>));
+<span class="cm-comment">// → Wed Dec 09 2009 00:00:00 GMT+0100 (CET)</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-keyword">new</span> <span class="cm-variable">Date</span>(<span class="cm-number">2009</span>, <span class="cm-number">11</span>, <span class="cm-number">9</span>, <span class="cm-number">12</span>, <span class="cm-number">59</span>, <span class="cm-number">59</span>, <span class="cm-number">999</span>));
+<span class="cm-comment">// → Wed Dec 09 2009 12:59:59 GMT+0100 (CET)</span></pre>
+<p><a class="p_ident" id="p_3P1Nh5Y+3T" href="./09_regexp.html#p_3P1Nh5Y+3T"></a>JavaScript използва конвенция, където номера на месеца започва от нула (така, че м.декември е 11), но номерата на дните започват от едно. Това е объркващо и глупаво. Бъдете внимателни.</p>
+<p><a class="p_ident" id="p_gVdQSb0Lv9" href="./09_regexp.html#p_gVdQSb0Lv9"></a>Последните четири аргумента( часове, минути, секунди и милисекунди) не са задължителни и се отчитат като нулеви, когато не се зададат.</p>
+<p><a class="p_ident" id="p_1mIMU5T5MA" href="./09_regexp.html#p_1mIMU5T5MA"></a>Времеви отрязъци се съхраняват, като брой от милисекунди от началото на 1970г., и с помощта на отрицателни числа за времето преди 1970г.(след конвенция определена от “Unix time”, която е изработена по това време). Метода <code>getTime</code> на обекта дата връща този номер. Той е голям, както можете да си представите.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_eWYgxNiBDF" href="./09_regexp.html#c_eWYgxNiBDF"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-keyword">new</span> <span class="cm-variable">Date</span>(<span class="cm-number">2013</span>, <span class="cm-number">11</span>, <span class="cm-number">19</span>).<span class="cm-property">getTime</span>());
+<span class="cm-comment">// → 1387407600000</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-keyword">new</span> <span class="cm-variable">Date</span>(<span class="cm-number">1387407600000</span>));
+<span class="cm-comment">// → Thu Dec 19 2013 00:00:00 GMT+0100 (CET)</span></pre>
+<p><a class="p_ident" id="p_bU5mnU7KSw" href="./09_regexp.html#p_bU5mnU7KSw"></a>Ако дадете на <code>Date</code>конструктора един единствен аргумент, той ще бъде третиран , като такъв брой милисекунди. Можете да получите текущия брой милисекунди, чрез създаване на нов <code>Date</code> обект и извикате <code>getTime</code> върху него, но след като извикате <code>Date.now</code> функцията.</p>
+<p><a class="p_ident" id="p_OMuHPQoSyh" href="./09_regexp.html#p_OMuHPQoSyh"></a>Дата обекта предоставя методи, като <code>getFullYear</code>, <code>getMonth</code>, <code>getDate</code>, <code>getHours</code>, <code>getMinutes</code> и <code>getSeconds</code> за извличане на техните компоненти. Има също така и <code>getYear</code>, който ви дава безполезна двуцифрена годишна стойност (като <code>93</code> или <code>14</code>).</p>
+<p><a class="p_ident" id="p_/RCtQyD3w/" href="./09_regexp.html#p_/RCtQyD3w/"></a>Поставянето на скоби около частите на израза, показва че се интересуваме от това и сега може лесно да се създаде дата само със string.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_bHOf+E4R9h" href="./09_regexp.html#c_bHOf+E4R9h"></a><span class="cm-keyword">function</span> <span class="cm-variable">findDate</span>(<span class="cm-def">string</span>) {
+  <span class="cm-keyword">var</span> <span class="cm-def">dateTime</span> <span class="cm-operator">=</span> <span class="cm-string-2">/(\d{1,2})-(\d{1,2})-(\d{4})/</span>;
+  <span class="cm-keyword">var</span> <span class="cm-def">match</span> <span class="cm-operator">=</span> <span class="cm-variable-2">dateTime</span>.<span class="cm-property">exec</span>(<span class="cm-variable-2">string</span>);
+  <span class="cm-keyword">return</span> <span class="cm-keyword">new</span> <span class="cm-variable">Date</span>(<span class="cm-variable">Number</span>(<span class="cm-variable-2">match</span>[<span class="cm-number">3</span>]),
+                  <span class="cm-variable">Number</span>(<span class="cm-variable-2">match</span>[<span class="cm-number">2</span>]) <span class="cm-operator">-</span> <span class="cm-number">1</span>,
+                  <span class="cm-variable">Number</span>(<span class="cm-variable-2">match</span>[<span class="cm-number">1</span>]));
+}
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">findDate</span>(<span class="cm-string">"30-1-2003"</span>));
+<span class="cm-comment">// → Thu Jan 30 2003 00:00:00 GMT+0100 (CET)</span></pre>
+<h2><a class="h_ident" id="h_26ixny78VY" href="./09_regexp.html#h_26ixny78VY"></a>Думи и string граници</h2>
+<p><a class="p_ident" id="p_xmknsh+RBC" href="./09_regexp.html#p_xmknsh+RBC"></a>За съжаление, <code>findDate</code> също ще извлече безсмислена дата 00-1-3000 от <code>string “100-1-30000”</code>. Съвпадението може да се случи навсякъде в string, така че в този случай просто ще започне с характера на секундата и ще свърши в последния характер на секундите.</p>
+<p><a class="p_ident" id="p_tKA0/BuA/v" href="./09_regexp.html#p_tKA0/BuA/v"></a>Ако искаме да наредим, че съвпадението трябва да обхване целия <em>string</em>, можем да добавим маркерите <code>^</code> и <code>$</code>. Ксор съвпада с началото на входния <em>string</em>, а знака за долар- съответствията до края. Така че, <code>/^\d+$/</code> съвпада с <em>string</em>, състоящ се изцяло от една или повече цифри, <code>/^!/</code> съвпада с всеки <em>string</em>, който започва с удивителен знак и <code>/x^/</code> не съответства на всеки <em>string</em>, който има <em>x</em> преди началото на <em>string</em>.</p>
+<p><a class="p_ident" id="p_dWIgppHuON" href="./09_regexp.html#p_dWIgppHuON"></a>Ако просто искаме да се уверим, че <em>string</em> започва с дата и завършва с дума, можем да използваме маркер <code>\b</code>. Думата може да бъде в началото, в края или всяка точка на string , който има характер дума в него, тогава можем да използваме <code>\w</code> за едната страна и <em>nonword</em> характер за другата.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_78q/iu+Tt7" href="./09_regexp.html#c_78q/iu+Tt7"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">/cat/</span>.<span class="cm-property">test</span>(<span class="cm-string">"concatenate"</span>));
+<span class="cm-comment">// → true</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">/\bcat\b/</span>.<span class="cm-property">test</span>(<span class="cm-string">"concatenate"</span>));
+<span class="cm-comment">// → false</span></pre>
+<p><a class="p_ident" id="p_btxd6luedx" href="./09_regexp.html#p_btxd6luedx"></a>Имайте в предвид, че маркера на границата, не представлява действителен характер. Той просто се прилага на регулярния израз за съвпадне само, когато дадено условие държи мястото, където той се появява в модела. </p>
+<h2><a class="h_ident" id="h_In3b+t6uOO" href="./09_regexp.html#h_In3b+t6uOO"></a>Модели на избор</h2>
+<p><a class="p_ident" id="p_G5RTt0AFku" href="./09_regexp.html#p_G5RTt0AFku"></a>Кажете, че искаме да знаем дали част от текста съдържа не само номера, а номера последвани от думи, като прасе, крава или пиле, или някоя от техните форми за множествено число.</p>
+<p><a class="p_ident" id="p_GcEbQJT+nS" href="./09_regexp.html#p_GcEbQJT+nS"></a>Бихме могли да напишем три регулярни израза и да ги тестваме по ред, но има и по-добър начин. Характера на <code>(|)</code> или, означава избор между лявата страна на модела и дясната страна на модела. Така, че можем да направим това: </p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_T1BADhqiD4" href="./09_regexp.html#c_T1BADhqiD4"></a><span class="cm-keyword">var</span> <span class="cm-variable">animalCount</span> <span class="cm-operator">=</span> <span class="cm-string-2">/\b\d+ (pig|cow|chicken)s?\b/</span>;
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">animalCount</span>.<span class="cm-property">test</span>(<span class="cm-string">"15 pigs"</span>));
+<span class="cm-comment">// → true</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">animalCount</span>.<span class="cm-property">test</span>(<span class="cm-string">"15 pigchickens"</span>));
+<span class="cm-comment">// → false</span></pre>
+<p><a class="p_ident" id="p_+vG2bBcznO" href="./09_regexp.html#p_+vG2bBcznO"></a>Скобите могат да бъдат използвани, за да се ограничи част от модела, когато операторът (или | ) се отнася до него, също може да сложите няколко такива оператора един до друг, за да направите своя избор между повече от два модела.</p>
+<h2><a class="h_ident" id="h_AzxCBCKdvY" href="./09_regexp.html#h_AzxCBCKdvY"></a>Механизми  за  съвпадение</h2>
+<p><a class="p_ident" id="p_fSpOFXMKY0" href="./09_regexp.html#p_fSpOFXMKY0"></a>Регулярните изрази могат да бъдат замислени, като технологични схеми. Това е схемата за изразяване на животновъдството в предишния пример:</p>
+<div class="image">
+  <img src="./media/re_pigchickens.svg" alt="Visualization of /\b\d+ (pig|cow|chicken)s?\b/">
+</div>
+<p><a class="p_ident" id="p_SNiUdMyezk" href="./09_regexp.html#p_SNiUdMyezk"></a>Нашият израз съвпада със <em>string</em>, ако можем да намерим пътя от лявата страна на диаграмата към дясната страна. Ние държим текущата позиция в <em>string</em> и всеки път, когато се движим през кутията, проверяваме за тази част от <em>string</em>, след като сегашната ни позиция съвпада с тази на кутията.</p>
+<p><a class="p_ident" id="p_MB99a8uIlE" href="./09_regexp.html#p_MB99a8uIlE"></a>Така че, ако се опитаме да сравним <code>"the 3 pigs"</code> с нашия регулярен израз, нашият напредък през диаграмата ще изглежда така:</p>
+<div class="ulist"><ul>
+<li>
+<p><a class="p_ident" id="p_uBRT2kCvr2" href="./09_regexp.html#p_uBRT2kCvr2"></a>
+  В 4-та позиция има дума - граница, така че ние преминаваме през  първата кутия.
+</p>
+</li>
+<li>
+<p><a class="p_ident" id="p_nO+Bi7hXkR" href="./09_regexp.html#p_nO+Bi7hXkR"></a>
+  На позиция 4, ние виждаме цифра, така че влизаме във втората кутия.
+</p>
+</li>
+<li>
+<p><a class="p_ident" id="p_fQdWHxKgCF" href="./09_regexp.html#p_fQdWHxKgCF"></a>
+  На 5-та позиция, един път се връщаме с цикъл към втората кутия (цифра), докато останалите продължават да се движат напред през полето, което има характер интервал (празно пространство). На това място няма цифра, така че вземаме втория път.
+</p>
+</li>
+<li>
+<p><a class="p_ident" id="p_KItk5iNp9m" href="./09_regexp.html#p_KItk5iNp9m"></a>
+  Сега сме в позиция 6 (“pigs”) и тройното разклонение на диаграмата. Тука виждаме  “крава” или “пиле”, но също и “прасе”, така че поемаме по това разклонение.
+</p>
+</li>
+<li>
+<p><a class="p_ident" id="p_SowlGZC6lM" href="./09_regexp.html#p_SowlGZC6lM"></a>
+  В позиция 9, след тройното разклонение, единият път прескача кутията за множествено число <em>s</em> и отива в крайната дума- граница, а другия път съвпада с нея. Налице е характер за множествено число, така че преминаваме през кутията  <em>s</em> box.
+</p>
+</li>
+<li>
+<p><a class="p_ident" id="p_jtkHSJd1Eg" href="./09_regexp.html#p_jtkHSJd1Eg"></a>
+  Вече сме в 10-та позиция(края на <em>string</em>) и можем да сравним само думата-граница. Края на <em>string</em> се брои, като гранична дума, така че ние преминаваме през последната кутия и успешно излизаме от <em>string</em>.
+</p>
+</li>
+</ul></div>
+<p><a class="p_ident" id="p_dfwI9Viw95" href="./09_regexp.html#p_dfwI9Viw95"></a>Концептуално, регулярният израз търси съвпадение в <em>string</em>, както следва: започва в началото на <em>string</em>, като търси съвпадение там. В този случай, там има дума-граница, така че първият символ на <em>string</em> ще премине през първата кутия, но няма цифра, така че ще се провали на втора кутия. След това ще вземе втория символ от <em>string</em>   и  ще се опита да започне ново съвпадение..... и т.н., докато не открие съвпадение или не достигне края на <em>string</em> и реши, че няма съвпадение.</p>
+<h2 id="backtracking"><a class="h_ident" id="h_NFMtGK0tD3" href="./09_regexp.html#h_NFMtGK0tD3"></a>Връщане  на  зад</h2>
+<p><a class="p_ident" id="p_tCd15MFAty" href="./09_regexp.html#p_tCd15MFAty"></a>Регулярния израз <code>/\b([01]+b|\d+|[\da-f]+h)\b/</code> търси съвпадение  за всяко бинарно число след <em>b</em>, обикновено десетично число без никаква наставка или шестнадестетично число (т.е. основа 16 с буквите от <em>a</em> до <em>f</em>, постоянно за цифрите от 10 до 15) следвано от час <em>h</em>. Това съответства на диаграмата:</p>
+<div class="image">
+  <img src="./media/re_number.svg" alt="Visualization of /\b([01]+b|\d+|[\da-f]+h)\b/">
+</div>
+<p><a class="p_ident" id="p_CkxEfo2iHH" href="./09_regexp.html#p_CkxEfo2iHH"></a>Съответствието на този израз се случва често, както в горното бинарно разклонение, въпреки, че входът всъщност не съдържа двоично число. Съвпадение на <code>string “103”</code>, например, има само в 3, където сме в грешното разклонение. Тоест  <em>string</em> съвпада с израза, само че просто не сме в настоящото разклонение.</p>
+<p><a class="p_ident" id="p_SjTCKE9hvf" href="./09_regexp.html#p_SjTCKE9hvf"></a>Това съответствие е <em>backtracks</em> (връщане на зад). При въвеждане на разклонение, то си спомня сегашната позиция (в този случай началото на string, съвсем близо до първото поле на границата в схемата) така че, да може да се върне и да пробва друг клон, ако сегашния не работи. За <code>string "103"</code> след, като среща характера 3, то се оглежда за сектор с цели десетични числа. Това съвпада, така че, даденото съвпадение е съобщено в края на краищата.</p>
+<p><a class="p_ident" id="p_+Hy4DF1l6V" href="./09_regexp.html#p_+Hy4DF1l6V"></a>Съпоставянето спира веднага след, като установи пълно съвпадение. Това означава, че много клонове потенциално могат да съответстват на <em>string</em>, но се използва само първия (от подредбата, по която клоните се появяват в регулярния израз). </p>
+<p><a class="p_ident" id="p_zEBIV8lYeb" href="./09_regexp.html#p_zEBIV8lYeb"></a>Връщането на зад също се случва с повторение за оператори, като + и <code>*</code>. Ако съвпада <code>/^.*x/</code> със <code>"abcxe"</code>, the <code>.*</code> ще се опита първо да консумира целия <em>string</em>. След което, ще осъзнае, че се нуждае от <code>х</code> да отговаря на типа. И тъй като няма <em>x</em> да отговаря на типа. И тъй като няма <code>х</code> на края на <em>string</em>, операторът  *  се опитва да съответства на един символ по-малко. Но съгласувателя пак не намира <code>х</code> след <code>abcx</code>, от който има нужда и отчита успешно съвпадение с позиции от 0 до 4.</p>
+<p><a class="p_ident" id="p_VxCrsg7UEp" href="./09_regexp.html#p_VxCrsg7UEp"></a>Възможно е да се напишат регулярни изрази, които ще направят много връщания на зад. Този проблем възниква, когато един модел може да се сравнява с парче от въвеждане по много различни начини. Например, ако искаме да бърка, докато пише двоичен номер на регулярен израз, ние можем да напишем нещо такова: <code>/([01]+)+b/</code>.</p>
+<div class="image">
+  <img src="./media/re_slow.svg" alt="Visualization of /([01]+)+b/">
+</div>
+<p><a class="p_ident" id="p_5cI0Ma3Wy8" href="./09_regexp.html#p_5cI0Ma3Wy8"></a>Ако това се опитва да съответства на някаква дълга поредица от нули и единици, без да следи <em>b</em> характера, съгласувателя първо ще премине през вътрешния цикъл, докато не прочете всички цифри. Тогава забелязва, че няма <em>b</em>, така че се връща една позиция на зад, минава през външния цикъл веднъж, изгубва отново, опитвайки се да излезе от вътрешния цикъл още веднъж. Той ще продължи да опитва всеки възможен маршрут през тези две вериги. Това означава, че обема на работа се удвоява с всеки допълнителен характер. Дори само на дузина характера, резултата за съвпадението ще отнеме много време - практически завинаги.</p>
+<h2><a class="h_ident" id="h_k0YuTOu54D" href="./09_regexp.html#h_k0YuTOu54D"></a>Метод  replace</h2>
+<p><a class="p_ident" id="p_HMQv5qrs78" href="./09_regexp.html#p_HMQv5qrs78"></a><em>String</em> стойностите имат метод <code>replace</code>, който се използва за замяна на част от <em>string</em> с друг <em>string</em>.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_k4SqDNUcsT" href="./09_regexp.html#c_k4SqDNUcsT"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"papa"</span>.<span class="cm-property">replace</span>(<span class="cm-string">"p"</span>, <span class="cm-string">"m"</span>));
+<span class="cm-comment">// → mapa</span></pre>
+<p><a class="p_ident" id="p_jjBKX9l81o" href="./09_regexp.html#p_jjBKX9l81o"></a>Първият аргумент може да бъде и регулярен израз, в който първият случай на съвпадение от регулярния израз се заменя. Когато опцията <code>g</code> (глобален) се добавя към регулярния израз, всички съвпадения в <em>string</em>  ще бъдат заменени, а не само първото.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_L+rdP1BZ/D" href="./09_regexp.html#c_L+rdP1BZ/D"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"Borobudur"</span>.<span class="cm-property">replace</span>(<span class="cm-string-2">/[ou]/</span>, <span class="cm-string">"a"</span>));
+<span class="cm-comment">// → Barobudur</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"Borobudur"</span>.<span class="cm-property">replace</span>(<span class="cm-string-2">/[ou]/g</span>, <span class="cm-string">"a"</span>));
+<span class="cm-comment">// → Barabadar</span></pre>
+<p><a class="p_ident" id="p_k90SO6OTUP" href="./09_regexp.html#p_k90SO6OTUP"></a>Би било разумно, ако изборът между заменяне на едно съвпадение или всички съвпадения, беше направен чрез допълнителен аргумент на <code>replace</code> или чрез предоставяне на различен метод <code>replaceAll</code>. Но за съжаление, по някаква причина изборът се основава на свойството на регулярния израз.</p>
+<p><a class="p_ident" id="p_/5YU/Qo2Np" href="./09_regexp.html#p_/5YU/Qo2Np"></a>Истинската сила на използване на регулярни изрази със <code>replace</code> идва от факта, че можем да връщаме обратно съвпадащи групи в подменения <em>string</em>. Например, да кажем че имаме голям <em>string</em> съдържащ имена на хора, по едно име на ред във формата <code>Lastname, Firstname</code>. Ако искаме да сменим тези имена и да премахнем запетаята, за да получим друг формат  <code>Firstname Lastname</code>, можем да използваме следния код:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_rkgG8o9tWE" href="./09_regexp.html#c_rkgG8o9tWE"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(
+  <span class="cm-string">"Hopper, Grace\nMcCarthy, John\nRitchie, Dennis"</span>
+    .<span class="cm-property">replace</span>(<span class="cm-string-2">/([\w ]+), ([\w ]+)/g</span>, <span class="cm-string">"$2 $1"</span>));
+<span class="cm-comment">// → Grace Hopper</span>
+<span class="cm-comment">//   John McCarthy</span>
+<span class="cm-comment">//   Dennis Ritchie</span></pre>
+<p><a class="p_ident" id="p_yMNsWvr4Lh" href="./09_regexp.html#p_yMNsWvr4Lh"></a> <code>$1</code> и <code>$2</code> в заменящия <em>string</em> се позовават на групите в скобите в модела. <code>$1</code> се заменя с текста, който сравнява първата група, а <code>$2</code> втората и т. н. до <code>$9</code>. Цялото съвпадение може да бъде посочено с <code>$&amp;</code>.</p>
+<p><a class="p_ident" id="p_vI+NtinnDZ" href="./09_regexp.html#p_vI+NtinnDZ"></a>Също така може да се използва и функция, а не <em>string</em>, като втори аргумент на <code>replace</code>. За всяка подмяна, функцията се извиква със съвпадащата група (или цялото съвпадение), като аргумент и нейната върната стойност ще бъде включена в новия <em>string</em>.</p>
+<p><a class="p_ident" id="p_3oXsRdfp6a" href="./09_regexp.html#p_3oXsRdfp6a"></a>Ето един прост пример: </p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_Br7Xx39ol0" href="./09_regexp.html#c_Br7Xx39ol0"></a><span class="cm-keyword">var</span> <span class="cm-variable">s</span> <span class="cm-operator">=</span> <span class="cm-string">"the cia and fbi"</span>;
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">s</span>.<span class="cm-property">replace</span>(<span class="cm-string-2">/\b(fbi|cia)\b/g</span>, <span class="cm-keyword">function</span>(<span class="cm-def">str</span>) {
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">str</span>.<span class="cm-property">toUpperCase</span>();
+}));
+<span class="cm-comment">// → the CIA and FBI</span></pre>
+<p><a class="p_ident" id="p_EbMXoAagyr" href="./09_regexp.html#p_EbMXoAagyr"></a>А тука още по-интересно:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_yP56zRm97Q" href="./09_regexp.html#c_yP56zRm97Q"></a><span class="cm-keyword">var</span> <span class="cm-variable">stock</span> <span class="cm-operator">=</span> <span class="cm-string">"1 lemon, 2 cabbages, and 101 eggs"</span>;
+<span class="cm-keyword">function</span> <span class="cm-variable">minusOne</span>(<span class="cm-def">match</span>, <span class="cm-def">amount</span>, <span class="cm-def">unit</span>) {
+  <span class="cm-variable-2">amount</span> <span class="cm-operator">=</span> <span class="cm-variable">Number</span>(<span class="cm-variable-2">amount</span>) <span class="cm-operator">-</span> <span class="cm-number">1</span>;
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">amount</span> <span class="cm-operator">==</span> <span class="cm-number">1</span>) <span class="cm-comment">// only one left, remove the 's'</span>
+    <span class="cm-variable-2">unit</span> <span class="cm-operator">=</span> <span class="cm-variable-2">unit</span>.<span class="cm-property">slice</span>(<span class="cm-number">0</span>, <span class="cm-variable-2">unit</span>.<span class="cm-property">length</span> <span class="cm-operator">-</span> <span class="cm-number">1</span>);
+  <span class="cm-keyword">else</span> <span class="cm-keyword">if</span> (<span class="cm-variable-2">amount</span> <span class="cm-operator">==</span> <span class="cm-number">0</span>)
+    <span class="cm-variable-2">amount</span> <span class="cm-operator">=</span> <span class="cm-string">"no"</span>;
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">amount</span> <span class="cm-operator">+</span> <span class="cm-string">" "</span> <span class="cm-operator">+</span> <span class="cm-variable-2">unit</span>;
+}
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">stock</span>.<span class="cm-property">replace</span>(<span class="cm-string-2">/(\d+) (\w+)/g</span>, <span class="cm-variable">minusOne</span>));
+<span class="cm-comment">// → no lemon, 1 cabbage, and 100 eggs</span></pre>
+<p><a class="p_ident" id="p_bv4e/DVilz" href="./09_regexp.html#p_bv4e/DVilz"></a>Това взема <em>string</em>, намира всички появявания на номер, следван от буквено-цифрова дума и връща <em>string</em>, където за всеки такъв случай се отнема по едно.</p>
+<p><a class="p_ident" id="p_pEPUrWK5UJ" href="./09_regexp.html#p_pEPUrWK5UJ"></a>Групата <code>(\d+)</code> се позовава, на аргумента на функцията <code>amount</code>, а групата <code>(\w+)</code>, която винаги работи, тъй като съвпада с <code>\d+</code> прави някои корекции в случай, че има само нули или единици от ляво.</p>
+<h2><a class="h_ident" id="h_kiECehz+i+" href="./09_regexp.html#h_kiECehz+i+"></a>Ненаситност</h2>
+<p><a class="p_ident" id="p_Q5tdrWs0Tm" href="./09_regexp.html#p_Q5tdrWs0Tm"></a>Не е трудно, когато се използва <code>replace</code> да се напише функция, която премахва  всички коментари в парче JavaScript код. Това е първи опит:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_zdj+sx4mis" href="./09_regexp.html#c_zdj+sx4mis"></a><span class="cm-keyword">function</span> <span class="cm-variable">stripComments</span>(<span class="cm-def">code</span>) {
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">code</span>.<span class="cm-property">replace</span>(<span class="cm-string-2">/\/\/.*|\/\*[^]*\*\//g</span>, <span class="cm-string">""</span>);
+}
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">stripComments</span>(<span class="cm-string">"1 + /* 2 */3"</span>));
+<span class="cm-comment">// → 1 + 3</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">stripComments</span>(<span class="cm-string">"x = 10;// ten!"</span>));
+<span class="cm-comment">// → x = 10;</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">stripComments</span>(<span class="cm-string">"1 /* a */+/* b */ 1"</span>));
+<span class="cm-comment">// → 1  1</span></pre>
+<p><a class="p_ident" id="p_6+ZTC2M5ci" href="./09_regexp.html#p_6+ZTC2M5ci"></a>Частта преди оператора или  |  просто търси съвпадение с две наклонени черти, последвани от всички знаци до края на реда. Частта за много-редовите коментари е по-ангажираща. Ние използваме <code>[^]</code> (за всеки символ, който не е в празен набор от символи), като начин да съответства на всеки символ. Не можем просто да използваме точка  тук, защото блоковите коментари могат да продължат на нов ред, а точките не съответстват на символ за нов ред.</p>
+<p><a class="p_ident" id="p_s9E9JYjAYp" href="./09_regexp.html#p_s9E9JYjAYp"></a>Но изходът на последния пример изглежда е грешен. Защо</p>
+<p><a class="p_ident" id="p_atS1ERkauC" href="./09_regexp.html#p_atS1ERkauC"></a>Частта от израза <code>[^]*</code>, както описах в раздела за връщане на зад, ще е първото съвпадение, толкова колкото може. И това е причината следващата част на модела да се провали, съгласувателя преминава напред един знак се опитва отново там. В примера, съгласувателя се опитва да съответства на цялата останала част от <em>string</em>  и след това се връща обратно там. Той ще открие появата на <code>*/</code> след връщане на зад четири знака за да съвпадне с този. Това не е онова, което искахме - намерението беше да съответства на един единствен коментар, за да не вървим по целия път до края на кода и да намерим края на последния коментар блок.</p>
+<p><a class="p_ident" id="p_eNtLSVH65f" href="./09_regexp.html#p_eNtLSVH65f"></a>Заради това поведение, ние казваме, че операторите за повторение (<code>+</code>, <code>*</code>,
+<code>?</code>, и <code>{}</code>) са <em>greedy</em> ненаситни, това означава, че те съвпадат толкова колкото могат и се връщат от там. Ако сложим въпросителен знак след тях (<code>+?</code>, <code>*?</code>, <code>??</code>, <code>{}?</code>), те стават <em>nongreed</em> (не-лакоми) и започват съвпадение на най-малко възможности - съвпадения само, когато оставащия модел не се вписва в по-малко съвпадение.</p>
+<p><a class="p_ident" id="p_0L47KZXZKa" href="./09_regexp.html#p_0L47KZXZKa"></a>И това е точно онова, което искаме в този случай. Докато * съвпада с най-малкия участък от символи, който ни води до <code>*/</code>, ние консумираме един блок с коментари и нищо повече.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_0e+jWcCHlB" href="./09_regexp.html#c_0e+jWcCHlB"></a><span class="cm-keyword">function</span> <span class="cm-variable">stripComments</span>(<span class="cm-def">code</span>) {
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">code</span>.<span class="cm-property">replace</span>(<span class="cm-string-2">/\/\/.*|\/\*[^]*?\*\//g</span>, <span class="cm-string">""</span>);
+}
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">stripComments</span>(<span class="cm-string">"1 /* a */+/* b */ 1"</span>));
+<span class="cm-comment">// → 1 + 1</span></pre>
+<p><a class="p_ident" id="p_DQjgIV+cP6" href="./09_regexp.html#p_DQjgIV+cP6"></a>Много грешки в регулярните изрази могат да бъдат проследени до непреднамерено използване на ненаситни оператори, където <em>nongreed</em> ще работи добре. При използване на оператор за повторение, помислете първо за <em>nongreed</em> вариант</p>
+<h2><a class="h_ident" id="h_Rhu25fogrG" href="./09_regexp.html#h_Rhu25fogrG"></a>Динамично  създаване  на  RegExp  обекти</h2>
+<p><a class="p_ident" id="p_2A78iOXDCO" href="./09_regexp.html#p_2A78iOXDCO"></a>Има случаи, когато може да не знаем точният модел, който ни трябва за съответствие, когато пишем кода си. Да речем, че търсим името на потребителя в част от текст и му приложим долна черта за да се откроява. Тъй като, вие ще разберете името само след, като програмата действително работи, не може да използвате нотация базирана на наклонена черта</p>
+<p><a class="p_ident" id="p_fuOCNTjCbk" href="./09_regexp.html#p_fuOCNTjCbk"></a>Но можем да изградим <em>string</em>, използвайки <code>RegExp</code> конструктора за това. Ето един пример:</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_Ev1eKzYhvk" href="./09_regexp.html#c_Ev1eKzYhvk"></a><span class="cm-keyword">var</span> <span class="cm-variable">name</span> <span class="cm-operator">=</span> <span class="cm-string">"harry"</span>;
+<span class="cm-keyword">var</span> <span class="cm-variable">text</span> <span class="cm-operator">=</span> <span class="cm-string">"Harry is a suspicious character."</span>;
+<span class="cm-keyword">var</span> <span class="cm-variable">regexp</span> <span class="cm-operator">=</span> <span class="cm-keyword">new</span> <span class="cm-variable">RegExp</span>(<span class="cm-string">"\\b("</span> <span class="cm-operator">+</span> <span class="cm-variable">name</span> <span class="cm-operator">+</span> <span class="cm-string">")\\b"</span>, <span class="cm-string">"gi"</span>);
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">text</span>.<span class="cm-property">replace</span>(<span class="cm-variable">regexp</span>, <span class="cm-string">"_$1_"</span>));
+<span class="cm-comment">// → _Harry_ is a suspicious character.</span></pre>
+<p><a class="p_ident" id="p_J6H1NBoQy/" href="./09_regexp.html#p_J6H1NBoQy/"></a>При създаване на граничните маркери <code>\b</code>, ние трябва да използваме две обратно наклонени черти, защото ги пишем в нормален <em>string</em>, нормално наклонената черта , затваря регулярния израз. Вторият аргумент на <code>RegExp</code> конструктора съдържа вариантите за регулярния израз - в този случай <code>"gi"</code> е за глобално и се влияе според случая.</p>
+<p><a class="p_ident" id="p_W/atxcKoEp" href="./09_regexp.html#p_W/atxcKoEp"></a>Но какво правим, ако името е <code>"dea+hl[]rd"</code>, защото нашият потребител е изперкал тинейджър? Това ще доведе до безсмислен регулярен израз, който всъщност няма да съвпада с името на потребителя.</p>
+<p><a class="p_ident" id="p_0Mx4Lf/w4/" href="./09_regexp.html#p_0Mx4Lf/w4/"></a>За да заобиколим този проблем, можем да добавим обратно наклонени черти пред всеки знак, в който се съмнявате. Добавянето на обратни наклонени черти, пред буквен знак е лоша идея, защото такива неща, като <code>\b</code> и <code>\n</code> имат специално значение. Но избягването на всичко, което не е буквено-цифрово или празно пространство е безопасно..</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_6gobfQUYsI" href="./09_regexp.html#c_6gobfQUYsI"></a><span class="cm-keyword">var</span> <span class="cm-variable">name</span> <span class="cm-operator">=</span> <span class="cm-string">"dea+hl[]rd"</span>;
+<span class="cm-keyword">var</span> <span class="cm-variable">text</span> <span class="cm-operator">=</span> <span class="cm-string">"This dea+hl[]rd guy is super annoying."</span>;
+<span class="cm-keyword">var</span> <span class="cm-variable">escaped</span> <span class="cm-operator">=</span> <span class="cm-variable">name</span>.<span class="cm-property">replace</span>(<span class="cm-string-2">/[^\w\s]/g</span>, <span class="cm-string">"\\$&amp;"</span>);
+<span class="cm-keyword">var</span> <span class="cm-variable">regexp</span> <span class="cm-operator">=</span> <span class="cm-keyword">new</span> <span class="cm-variable">RegExp</span>(<span class="cm-string">"\\b("</span> <span class="cm-operator">+</span> <span class="cm-variable">escaped</span> <span class="cm-operator">+</span> <span class="cm-string">")\\b"</span>, <span class="cm-string">"gi"</span>);
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">text</span>.<span class="cm-property">replace</span>(<span class="cm-variable">regexp</span>, <span class="cm-string">"_$1_"</span>));
+<span class="cm-comment">// → This _dea+hl[]rd_ guy is super annoying.</span></pre>
+<h2><a class="h_ident" id="h_Txg7z4j/ei" href="./09_regexp.html#h_Txg7z4j/ei"></a>Метод  за  търсене</h2>
+<p><a class="p_ident" id="p_7vPpkhqhrD" href="./09_regexp.html#p_7vPpkhqhrD"></a>Метода <code>indexOf</code> за <em>strings</em> не може да се нарече регулярен израз. Но има друг метод <code>search</code>, с който се очаква регулярен израз. Както <code>indexOf</code>, той връща първия индекс, в който установи експресията или -1, ако не е намерил.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_YWkmdsq1UJ" href="./09_regexp.html#c_YWkmdsq1UJ"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"  word"</span>.<span class="cm-property">search</span>(<span class="cm-string-2">/\S/</span>));
+<span class="cm-comment">// → 2</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"    "</span>.<span class="cm-property">search</span>(<span class="cm-string-2">/\S/</span>));
+<span class="cm-comment">// → -1</span></pre>
+<p><a class="p_ident" id="p_tqlyvUKoi5" href="./09_regexp.html#p_tqlyvUKoi5"></a>За съжаление, няма начин да се посочи, къде трябва да започне съвпадението - от даден индекс(както можем да направим с втория аргумент на <code>indexOf</code>), което често е полезно).</p>
+<h2><a class="h_ident" id="h_duFTd2hqd0" href="./09_regexp.html#h_duFTd2hqd0"></a>Свойството  lastIndex</h2>
+<p><a class="p_ident" id="p_heIQ0/XXEu" href="./09_regexp.html#p_heIQ0/XXEu"></a>Метода <code>exec</code> не предоставя удобен начин за започване на търсенето от дадена позиция в <em>string</em>. Но предоставя неудобен начин.</p>
+<p><a class="p_ident" id="p_F+JgzwxLtK" href="./09_regexp.html#p_F+JgzwxLtK"></a>Редовните експресивни обекти имат свойства. Едно такова свойство е <code>source</code>, което съдържа <em>string</em> създаден от израза. Друго свойство е <code>lastIndex</code>, което контролира в някои ограничени случаи, кога да започне следващото съвпадение.</p>
+<p><a class="p_ident" id="p_y8GS9OJXkh" href="./09_regexp.html#p_y8GS9OJXkh"></a>Това обстоятелство, че регулярния израз трябва да има глобална (<code>g</code>) опция е разрешено и съвпадението трябва да се случи през метода <code>exec</code>. Отново по-разумно решение би било, да се разреши допълнителен аргумент, който да бъде приет от <code>exec</code>, но здравият разум не е определяща характеристика за регулярните изрази в JavaScript.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_Wy75i+pob7" href="./09_regexp.html#c_Wy75i+pob7"></a><span class="cm-keyword">var</span> <span class="cm-variable">pattern</span> <span class="cm-operator">=</span> <span class="cm-string-2">/y/g</span>;
+<span class="cm-variable">pattern</span>.<span class="cm-property">lastIndex</span> <span class="cm-operator">=</span> <span class="cm-number">3</span>;
+<span class="cm-keyword">var</span> <span class="cm-variable">match</span> <span class="cm-operator">=</span> <span class="cm-variable">pattern</span>.<span class="cm-property">exec</span>(<span class="cm-string">"xyzzy"</span>);
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">match</span>.<span class="cm-property">index</span>);
+<span class="cm-comment">// → 4</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">pattern</span>.<span class="cm-property">lastIndex</span>);
+<span class="cm-comment">// → 5</span></pre>
+<p><a class="p_ident" id="p_hjLQ+57mDd" href="./09_regexp.html#p_hjLQ+57mDd"></a>Ако съвпадението е било успешно, извикването на <code>exec</code> автоматично актуализира свойството <code>lastIndex</code>, до точката след съвпадението. Ако не е открито съвпадение, <code>lastIndex</code> връща нула, което всъщност е стойността на новопостроения от регулярния израз обект.</p>
+<p><a class="p_ident" id="p_042bNmzNZK" href="./09_regexp.html#p_042bNmzNZK"></a>При използване на глобалната стойност g в регулярния израз, за няколко извиквания на <code>exec</code>, тези автоматични актуализации на свойството <code>lastIndex</code> може да предизвикат проблеми. Повторният  регулярен израз може случайно да започне от индекса, който е останал от предното извикване.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_ko4+8FBNOB" href="./09_regexp.html#c_ko4+8FBNOB"></a><span class="cm-keyword">var</span> <span class="cm-variable">digit</span> <span class="cm-operator">=</span> <span class="cm-string-2">/\d/g</span>;
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">digit</span>.<span class="cm-property">exec</span>(<span class="cm-string">"here it is: 1"</span>));
+<span class="cm-comment">// → ["1"]</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">digit</span>.<span class="cm-property">exec</span>(<span class="cm-string">"and now: 1"</span>));
+<span class="cm-comment">// → null</span></pre>
+<p><a class="p_ident" id="p_9l7tQ3SsME" href="./09_regexp.html#p_9l7tQ3SsME"></a>Друг интересен ефект на глобалната опция g е, че тя променя начина на работа на метода <code>match</code> в <em>string</em>. Когато се извика с глобален израз, вместо да връща масив, подобен на този върнат от <code>exec</code>, <code>match</code> ще намери всички съвпадения от модела в <em>string</em> и ще върне масив от съвпадащите <em>string</em>.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_Omc+QSkcb/" href="./09_regexp.html#c_Omc+QSkcb/"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"Banana"</span>.<span class="cm-property">match</span>(<span class="cm-string-2">/an/g</span>));
+<span class="cm-comment">// → ["an", "an"]</span></pre>
+<p><a class="p_ident" id="p_zFHO63a2iV" href="./09_regexp.html#p_zFHO63a2iV"></a>Така че, бъдете внимателни с глобалните регулярни изрази. В случаите, когато те са необходими,( обикновено това са единствените случаи, където искате да ги използвате) извиквайте <code>replace</code> в местата, където изрично искате да използвате <code>lastIndex</code>.</p>
+<h3><a class="h_ident" id="h_m0fs21dHEg" href="./09_regexp.html#h_m0fs21dHEg"></a>Цикъл  за  съвпадения</h3>
+<p><a class="p_ident" id="p_sFhvrUR1vm" href="./09_regexp.html#p_sFhvrUR1vm"></a>Един общ модел за сканиране на всички съвпадения в string, по начин, който ни дава достъп до обекта на съвпадението в тялото на цикъл, е с помощта на <code>lastIndex</code> и <code>exec</code>.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_VfL6IpLSid" href="./09_regexp.html#c_VfL6IpLSid"></a><span class="cm-keyword">var</span> <span class="cm-variable">input</span> <span class="cm-operator">=</span> <span class="cm-string">"A string with 3 numbers in it... 42 and 88."</span>;
+<span class="cm-keyword">var</span> <span class="cm-variable">number</span> <span class="cm-operator">=</span> <span class="cm-string-2">/\b(\d+)\b/g</span>;
+<span class="cm-keyword">var</span> <span class="cm-variable">match</span>;
+<span class="cm-keyword">while</span> (<span class="cm-variable">match</span> <span class="cm-operator">=</span> <span class="cm-variable">number</span>.<span class="cm-property">exec</span>(<span class="cm-variable">input</span>))
+  <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"Found"</span>, <span class="cm-variable">match</span>[<span class="cm-number">1</span>], <span class="cm-string">"at"</span>, <span class="cm-variable">match</span>.<span class="cm-property">index</span>);
+<span class="cm-comment">// → Found 3 at 14</span>
+<span class="cm-comment">//   Found 42 at 33</span>
+<span class="cm-comment">//   Found 88 at 40</span></pre>
+<p><a class="p_ident" id="p_ZdCI2+edqA" href="./09_regexp.html#p_ZdCI2+edqA"></a>Той се възползва от факта, че стойността на задачата в израза е (<code>=</code>) на очакваната стойност. Така с помоща на <code>match = number.exec(input)</code>, като условие в <code>while</code> цикъла, ще извършваме съвпадение в началото на всяка итерация, като съхраняваме резултата в променлива и спиране на цикъла, когато не са намерени повече съвпадения.</p>
+<h2 id="ini"><a class="h_ident" id="h_RGsf6ah1EY" href="./09_regexp.html#h_RGsf6ah1EY"></a>Разбор  на  INI  файла</h2>
+<p><a class="p_ident" id="p_JbrLORqV9r" href="./09_regexp.html#p_JbrLORqV9r"></a>В заключение на главата, ще разгледаме един проблем, който се отнася до регулярните изрази. Представете си, че пишем програма за автоматично събиране на информация, за враговете ни от Интернет. (Ние всъщност няма да напишем тази програма тук, и по-точно, частта, която чете конфигурационния файл. Съжаляваме за пропуска.) Конфигурационния файл, изглежда така:</p>
+<pre data-language="text/plain" class="snippet cm-s-default"><a class="c_ident" id="c_OXIK3oNw6Q" href="./09_regexp.html#c_OXIK3oNw6Q"></a>searchengine=http://www.google.com/search?q=$1
+spitefulness=9.7
+
+; comments are preceded by a semicolon...
+; each section concerns an individual enemy
+[larry]
+fullname=Larry Doe
+type=kindergarten bully
+website=http://www.geocities.com/CapeCanaveral/11451
+
+[gargamel]
+fullname=Gargamel
+type=evil sorcerer
+outputdir=/home/marijn/enemies/gargamel</pre>
+<p><a class="p_ident" id="p_OgIQS1TJxB" href="./09_regexp.html#p_OgIQS1TJxB"></a>Точните правила за този формат( който, всъщност е широко използван формат, се нарича <em>INI</em> файл) са както следва:</p>
+<div class="ulist"><ul>
+<li>
+<p><a class="p_ident" id="p_jIewfc/40B" href="./09_regexp.html#p_jIewfc/40B"></a>
+Празни редове и редове започващи с точка и запетая се игнорират.
+</p>
+</li>
+<li>
+<p><a class="p_ident" id="p_O/dGCr+aR5" href="./09_regexp.html#p_O/dGCr+aR5"></a>
+Линиите увити в <code>[</code> and <code>]</code> трябва да започват на нов ред.
+</p>
+</li>
+<li>
+<p><a class="p_ident" id="p_l2Yjl1fUVB" href="./09_regexp.html#p_l2Yjl1fUVB"></a>
+Линии, съдържащи буквено-цифров идентификатор последвани от характера <code>=</code>, добавя настройка за текущата секция.
+</p>
+</li>
+<li>
+<p><a class="p_ident" id="p_bCaQwCXJCi" href="./09_regexp.html#p_bCaQwCXJCi"></a>
+Всичко останало е невалидно.
+</p>
+</li>
+</ul></div>
+<p><a class="p_ident" id="p_LWCnDNCUFW" href="./09_regexp.html#p_LWCnDNCUFW"></a>Нашата задача е да конвертира <em>string</em>, като този в масив от обекти, всеки с името на свойство и масив от настройки. Ще имаме нужда от един такъв обект за всяка секция и един за глобалните настройки в началото.</p>
+<p><a class="p_ident" id="p_8golZvaoZS" href="./09_regexp.html#p_8golZvaoZS"></a>Тъй като, формата трябва да бъде обработен ред по ред, разделянето на файла на отделни линии е добро начало. Ние използвахме <code>string.split("\n")</code> за да направим това в <a href="./06_object.html#split">Глава 6</a>. Някои операционни системи обаче, не използват само символа за нов ред за отделяне на линии, а използват символа за връщане последван от този за нов ред (<code>"\r\n"</code>). Като се има в предвид, че метода <code>split</code> позволява също и регулярен израз, като аргумент, можем да разделим регулярния израз, като се раздели по този начин <code>/\r?\n/</code>, който позволява едновременно  и <code>"\n"</code> and <code>"\r\n"</code> между линиите.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_4pk9fouX3a" href="./09_regexp.html#c_4pk9fouX3a"></a><span class="cm-keyword">function</span> <span class="cm-variable">parseINI</span>(<span class="cm-def">string</span>) {
+  <span class="cm-comment">// Start with an object to hold the top-level fields</span>
+  <span class="cm-keyword">var</span> <span class="cm-def">currentSection</span> <span class="cm-operator">=</span> {<span class="cm-property">name</span>: <span class="cm-atom">null</span>, <span class="cm-property">fields</span>: []};
+  <span class="cm-keyword">var</span> <span class="cm-def">categories</span> <span class="cm-operator">=</span> [<span class="cm-variable-2">currentSection</span>];
+
+  <span class="cm-variable-2">string</span>.<span class="cm-property">split</span>(<span class="cm-string-2">/\r?\n/</span>).<span class="cm-property">forEach</span>(<span class="cm-keyword">function</span>(<span class="cm-def">line</span>) {
+    <span class="cm-keyword">var</span> <span class="cm-def">match</span>;
+    <span class="cm-keyword">if</span> (<span class="cm-string-2">/^\s*(;.*)?$/</span>.<span class="cm-property">test</span>(<span class="cm-variable-2">line</span>)) {
+      <span class="cm-keyword">return</span>;
+    } <span class="cm-keyword">else</span> <span class="cm-keyword">if</span> (<span class="cm-variable-2">match</span> <span class="cm-operator">=</span> <span class="cm-variable-2">line</span>.<span class="cm-property">match</span>(<span class="cm-string-2">/^\[(.*)\]$/</span>)) {
+      <span class="cm-variable-2">currentSection</span> <span class="cm-operator">=</span> {<span class="cm-property">name</span>: <span class="cm-variable-2">match</span>[<span class="cm-number">1</span>], <span class="cm-property">fields</span>: []};
+      <span class="cm-variable-2">categories</span>.<span class="cm-property">push</span>(<span class="cm-variable-2">currentSection</span>);
+    } <span class="cm-keyword">else</span> <span class="cm-keyword">if</span> (<span class="cm-variable-2">match</span> <span class="cm-operator">=</span> <span class="cm-variable-2">line</span>.<span class="cm-property">match</span>(<span class="cm-string-2">/^(\w+)=(.*)$/</span>)) {
+      <span class="cm-variable-2">currentSection</span>.<span class="cm-property">fields</span>.<span class="cm-property">push</span>({<span class="cm-property">name</span>: <span class="cm-variable-2">match</span>[<span class="cm-number">1</span>],
+                                  <span class="cm-property">value</span>: <span class="cm-variable-2">match</span>[<span class="cm-number">2</span>]});
+    } <span class="cm-keyword">else</span> {
+      <span class="cm-keyword">throw</span> <span class="cm-keyword">new</span> <span class="cm-variable">Error</span>(<span class="cm-string">"Line '"</span> <span class="cm-operator">+</span> <span class="cm-variable-2">line</span> <span class="cm-operator">+</span> <span class="cm-string">"' is invalid."</span>);
+    }
+  });
+
+  <span class="cm-keyword">return</span> <span class="cm-variable-2">categories</span>;
+}</pre>
+<p><a class="p_ident" id="p_aXK65jiU6o" href="./09_regexp.html#p_aXK65jiU6o"></a>Този код минава през всеки ред във файла и актуализира  обекта на “текущата секция”, тъй като върви заедно с него. Първо се проверява дали линията може да бъде игнорирана, използвайки <code>/^\s*(;.*)?$/</code>. Виждате ли как работи ? Частта между скобите ще съвпадне с коментарите, въпросителния знак <code>?</code> ще се увери, че също така съвпада с линии, които съдържат само празни символи.</p>
+<p><a class="p_ident" id="p_CKB+LQEvXY" href="./09_regexp.html#p_CKB+LQEvXY"></a>Ако линията не е коментар, кодът проверява, дали  с тази линия започва нов раздел. Ако е така, той създава нова текуща секция-обект, към който ще бъдат добавени следващите настройки.</p>
+<p><a class="p_ident" id="p_XjKuxzEtw/" href="./09_regexp.html#p_XjKuxzEtw/"></a>Последната смислена възможност е, че линията е нормална и кодът я добавя към текущата секция-обект.</p>
+<p><a class="p_ident" id="p_oU+yccn9dn" href="./09_regexp.html#p_oU+yccn9dn"></a>Ако линията не съвпада с някоя от тези форми, функцията хвърля грешка.</p>
+<p><a class="p_ident" id="p_FPzqsloIkT" href="./09_regexp.html#p_FPzqsloIkT"></a>Обърнете внимание на повтарящото се използване на <code>^</code> и <code>$</code>, което ни уверява, че изразът съвпада с цялата линия, а не само с част от нея. Трудно може да се проследи бъг, при пропускането на резултат в кода, който предимно работи, но се държи странно за някакъв вход.</p>
+<p><a class="p_ident" id="p_SLY/jPojdT" href="./09_regexp.html#p_SLY/jPojdT"></a>Моделът <code>if (match
+= string.match(...))</code> е подобен на трика за използване на състоянието докато на цикъла <code>while</code>. Ако не сте сигурни, че извикването на <code>match</code> ще успее, може да получите достъп до получения обект само вътре в <code>if</code> изявлението на тестовете за това. За да не прекъснем веригата на <code>if</code> формите, ще възложим резултата от съвпадението на променлива и веднага ще я използваме, като задача за теста в <code>if</code> изявлението.</p>
+<h2><a class="h_ident" id="h_+y54//b0l+" href="./09_regexp.html#h_+y54//b0l+"></a>Международни  характери</h2>
+<p><a class="p_ident" id="p_Gw6mX6NBqt" href="./09_regexp.html#p_Gw6mX6NBqt"></a>Поради първоначално опростеното прилагане на JavaScript и в следствие на това, че този опростен подход беше непоклатим, като стандартно поведение, регулярните изрази в JavaScript  са доста тъпи като символи, които не са включени в английския език. Например, що се отнася до регулярни изрази в JavaScript, за ангажираните “word character” са само един от 26-те характера в латинската азбука (главни и малки букви) и по някаква причина  и символа за долна черта. Неща като <em>é</em> или <em>β</em>, които най-категорично са условни знаци, няма да съвпаднат с <code>\w</code>, а ще съответстват на главна <code>\W</code> (<em>nonword</em> категория).</p>
+<p><a class="p_ident" id="p_hQosIPfRoo" href="./09_regexp.html#p_hQosIPfRoo"></a>По странна историческа случайност <code>\s</code> празно пространство (<em>whitespace</em>) няма такъв проблем и съвпада с всички знаци, които Unicode счита за празно пространство, включително неща, като пространството <em>nonbreaking</em> и Монголската гласна за сепаратор.</p>
+<p><a class="p_ident" id="p_ssmpiUydMx" href="./09_regexp.html#p_ssmpiUydMx"></a>Някои регулярни изрази инплементирани в други програмни езици имат синтаксис за съответствие на специфични категории характери в Unicode таблицата, като например “всички главни букви”, ”всички препинателни знаци” или ”контролни символи”. Има планове за добавяне на подкрепа за такива категории в JavaScript, но за съжаление изглежда, че няма да се реализират в близко бъдеще.</p>
+<h2 id="summary_regexp"><a class="h_ident" id="h_ErccPg/l98" href="./09_regexp.html#h_ErccPg/l98"></a>Резюме</h2>
+<p><a class="p_ident" id="p_/hQX04GtpS" href="./09_regexp.html#p_/hQX04GtpS"></a>Регулярните изрази са обекти, които представляват модели в <em>strings</em>. Те използват собствения си синтаксис за да изразят тези модели.</p>
+<table>
+<tbody><tr>
+<td><code>/abc/</code></td>
+<td>A sequence of characters</td>
+</tr>
+<tr>
+<td><code>/[abc]/</code></td>
+<td>Any character from a set of characters</td>
+</tr>
+<tr>
+<td><code>/[^abc]/</code></td>
+<td>Any character <em>not</em> in a set of characters</td>
+</tr>
+<tr>
+<td><code>/[0-9]/</code></td>
+<td>Any character in a range of characters</td>
+</tr>
+<tr>
+<td><code>/x+/</code></td>
+<td>One or more occurrences of the pattern <code>x</code></td>
+</tr>
+<tr>
+<td><code>/x+?/</code></td>
+<td>One or more occurrences, nongreedy</td>
+</tr>
+<tr>
+<td><code>/x*/</code></td>
+<td>Zero or more occurrences</td>
+</tr>
+<tr>
+<td><code>/x?/</code></td>
+<td>Zero or one occurrence</td>
+</tr>
+<tr>
+<td><code>/x{2,4}/</code></td>
+<td>Between two and four occurrences</td>
+</tr>
+<tr>
+<td><code>/(abc)/</code></td>
+<td>A group</td>
+</tr>
+<tr>
+<td><code>/a|b|c/</code></td>
+<td>Any one of several patterns</td>
+</tr>
+<tr>
+<td><code>/\d/</code></td>
+<td>Any digit character</td>
+</tr>
+<tr>
+<td><code>/\w/</code></td>
+<td>An alphanumeric character (“word character”)</td>
+</tr>
+<tr>
+<td><code>/\s/</code></td>
+<td>Any whitespace character</td>
+</tr>
+<tr>
+<td><code>/./</code></td>
+<td>Any character except newlines</td>
+</tr>
+<tr>
+<td><code>/\b/</code></td>
+<td>A word boundary</td>
+</tr>
+<tr>
+<td><code>/^/</code></td>
+<td>Start of input</td>
+</tr>
+<tr>
+<td><code>/$/</code></td>
+<td>End of input</td>
+</tr>
+</tbody></table>
+<p><a class="p_ident" id="p_AVY5pFcEyH" href="./09_regexp.html#p_AVY5pFcEyH"></a>Регулярният израз има метод <code>test</code> за да провери  дали  даден <em>string</em> съвпада. Той разполага също с <code>exec</code> метод, който когато установи съвпадение, връща масив съдържащ всички съвпадащи групи. Такъв масив има свойството <code>index</code>, което показва къде е започнало съвпадението.</p>
+<p><a class="p_ident" id="p_Ml7hKXO6Ll" href="./09_regexp.html#p_Ml7hKXO6Ll"></a><em>Strings</em> имат <code>match</code> метод, за да ги обвърже с регулярния израз и <code>search</code> метод за търсене, който връща само отправната точка в съвпадението. Техният   <code>replace</code> метод, може да замени съвпаденията на един модел със заменящ <em>string</em>. Друга възможност е подаваща функция към <code>replace</code>, която ще бъде използвана за изграждане на заместващ <em>string</em> на базата на текста за съвпадение и съвпадащите групи.</p>
+<p><a class="p_ident" id="p_XsUkGFZG+B" href="./09_regexp.html#p_XsUkGFZG+B"></a>Регулярни изрази могат да имат опции, които са написани след чертата за затваряне. Опцията <code>i</code> прави съвпадението да се влияе от случая, докато опцията <code>g</code> option makes the expression <em>global</em> прави израза глобален, което наред с други неща прави метода <code>replace</code> да заменя всички инстанции, вместо само първата.</p>
+<p><a class="p_ident" id="p_CW10Ac/SDj" href="./09_regexp.html#p_CW10Ac/SDj"></a>Конструктора <code>RegExp</code> може да се използва за създаване на регулярен израз със стойност <em>string</em>.</p>
+<p><a class="p_ident" id="p_gsM3HikR5c" href="./09_regexp.html#p_gsM3HikR5c"></a>Регулярните изрази са остър инструмент с неудобна дръжка. Те опростяват някои задачи неимоверно, но могат бързо да станат трудни, когато се прилагат за сложни проблеми. Част от програмистите не занят как да ги използват и се съпротивляват на желанието да опитат да опростят нещата, когато не могат нормално да се изразяват с тях.</p>
+<h2><a class="h_ident" id="h_TcUD2vzyMe" href="./09_regexp.html#h_TcUD2vzyMe"></a>Упражнения</h2>
+<p><a class="p_ident" id="p_meNfX2B/+s" href="./09_regexp.html#p_meNfX2B/+s"></a>Това е почти неизбежно, че в хода на работа по тези упражнения, вие ще се объркате и разочаровате от необяснимото поведение на някои регулярни изрази. Понякога помага да въведете вашия израз в онлайн инструмент, като <a href="https://www.debuggex.com/"><em>debuggex.com</em></a> за да видите дали неговата  визуализация съответства на това, което сте искали и да експериментирате с начина, по който реагира на различни входни <em>strings</em>.</p>
+<h3><a class="h_ident" id="h_vDM8PzwQWU" href="./09_regexp.html#h_vDM8PzwQWU"></a>RegExp голф</h3>
+<p><a class="p_ident" id="p_1t8xXpFN7O" href="./09_regexp.html#p_1t8xXpFN7O"></a><em>Код голф е термин използван за игра и се опитва да изрази конкретна програма в няколко знака, ако е възможно. По същия начин <em>regexp golf</em> е практика при писане на малък регулярен израз, който ако е възможно да съвпадне с определен модел и само с този модел.</p>
+<p><a class="p_ident" id="p_VGCqgCur6C" href="./09_regexp.html#p_VGCqgCur6C"></a>За всяка от следните позиции, напиши регулярен израз, който да тества дали някой от дадените под - <em>strings</em> e в <em>string</em>. Регулярният израз трябва да съвпада само с <em>strings</em>, съдържащ един от описаните под - <em>strings</em>. Не се притеснявайте за обработката на текстовите граници, освен ако изрично не е описано. Когато вашия израз работи, вижте дали можете да гo направите по-малък.</p>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p><a class="p_ident" id="p_togdFO+/b9" href="./09_regexp.html#p_togdFO+/b9"></a>
+<em>car</em> and <em>cat</em>
+</p>
+</li>
+<li>
+<p><a class="p_ident" id="p_2Q37Tsr9DS" href="./09_regexp.html#p_2Q37Tsr9DS"></a>
+<em>pop</em> and <em>prop</em>
+</p>
+</li>
+<li>
+<p><a class="p_ident" id="p_2Ah4dFikw1" href="./09_regexp.html#p_2Ah4dFikw1"></a>
+<em>ferret</em>, <em>ferry</em>, and <em>ferrari</em>
+</p>
+</li>
+<li>
+<p><a class="p_ident" id="p_ttiBCcePDl" href="./09_regexp.html#p_ttiBCcePDl"></a>
+Any word ending in <em>ious</em>
+</p>
+</li>
+<li>
+<p><a class="p_ident" id="p_XnqTy5SopM" href="./09_regexp.html#p_XnqTy5SopM"></a>
+A whitespace character followed by a dot, comma, colon, or semicolon
+</p>
+</li>
+<li>
+<p><a class="p_ident" id="p_Ku7hE3qqDn" href="./09_regexp.html#p_Ku7hE3qqDn"></a>
+A word longer than six letters
+</p>
+</li>
+<li>
+<p><a class="p_ident" id="p_2Tx4SPp5Wm" href="./09_regexp.html#p_2Tx4SPp5Wm"></a>
+A word without the letter <em>e</em>
+</p>
+</li>
+</ol></div>
+<p><a class="p_ident" id="p_Tzjl1Axr+h" href="./09_regexp.html#p_Tzjl1Axr+h"></a>Вижте таблицата в резюмето на <a href="./09_regexp.html#summary_regexp">главата за помощ</a>. Тествайте всяко решение с няколко текстови под-<em>strings</em>.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_PjFdBrmWuQ" href="./09_regexp.html#c_PjFdBrmWuQ"></a><span class="cm-comment">// Fill in the regular expressions</span>
+
+<span class="cm-variable">verify</span>(<span class="cm-string-2">/.../</span>,
+       [<span class="cm-string">"my car"</span>, <span class="cm-string">"bad cats"</span>],
+       [<span class="cm-string">"camper"</span>, <span class="cm-string">"high art"</span>]);
+
+<span class="cm-variable">verify</span>(<span class="cm-string-2">/.../</span>,
+       [<span class="cm-string">"pop culture"</span>, <span class="cm-string">"mad props"</span>],
+       [<span class="cm-string">"plop"</span>]);
+
+<span class="cm-variable">verify</span>(<span class="cm-string-2">/.../</span>,
+       [<span class="cm-string">"ferret"</span>, <span class="cm-string">"ferry"</span>, <span class="cm-string">"ferrari"</span>],
+       [<span class="cm-string">"ferrum"</span>, <span class="cm-string">"transfer A"</span>]);
+
+<span class="cm-variable">verify</span>(<span class="cm-string-2">/.../</span>,
+       [<span class="cm-string">"how delicious"</span>, <span class="cm-string">"spacious room"</span>],
+       [<span class="cm-string">"ruinous"</span>, <span class="cm-string">"consciousness"</span>]);
+
+<span class="cm-variable">verify</span>(<span class="cm-string-2">/.../</span>,
+       [<span class="cm-string">"bad punctuation ."</span>],
+       [<span class="cm-string">"escape the dot"</span>]);
+
+<span class="cm-variable">verify</span>(<span class="cm-string-2">/.../</span>,
+       [<span class="cm-string">"hottentottententen"</span>],
+       [<span class="cm-string">"no"</span>, <span class="cm-string">"hotten totten tenten"</span>]);
+
+<span class="cm-variable">verify</span>(<span class="cm-string-2">/.../</span>,
+       [<span class="cm-string">"red platypus"</span>, <span class="cm-string">"wobbling nest"</span>],
+       [<span class="cm-string">"earth bed"</span>, <span class="cm-string">"learning ape"</span>]);
+
+
+<span class="cm-keyword">function</span> <span class="cm-variable">verify</span>(<span class="cm-def">regexp</span>, <span class="cm-def">yes</span>, <span class="cm-def">no</span>) {
+  <span class="cm-comment">// Ignore unfinished exercises</span>
+  <span class="cm-keyword">if</span> (<span class="cm-variable-2">regexp</span>.<span class="cm-property">source</span> <span class="cm-operator">==</span> <span class="cm-string">"..."</span>) <span class="cm-keyword">return</span>;
+  <span class="cm-variable-2">yes</span>.<span class="cm-property">forEach</span>(<span class="cm-keyword">function</span>(<span class="cm-def">s</span>) {
+    <span class="cm-keyword">if</span> (<span class="cm-operator">!</span><span class="cm-variable-2">regexp</span>.<span class="cm-property">test</span>(<span class="cm-variable-2">s</span>))
+      <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"Failure to match '"</span> <span class="cm-operator">+</span> <span class="cm-variable-2">s</span> <span class="cm-operator">+</span> <span class="cm-string">"'"</span>);
+  });
+  <span class="cm-variable-2">no</span>.<span class="cm-property">forEach</span>(<span class="cm-keyword">function</span>(<span class="cm-def">s</span>) {
+    <span class="cm-keyword">if</span> (<span class="cm-variable-2">regexp</span>.<span class="cm-property">test</span>(<span class="cm-variable-2">s</span>))
+      <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"Unexpected match for '"</span> <span class="cm-operator">+</span> <span class="cm-variable-2">s</span> <span class="cm-operator">+</span> <span class="cm-string">"'"</span>);
+  });
+}</pre>
+<h3><a class="h_ident" id="h_dTiEW14oG0" href="./09_regexp.html#h_dTiEW14oG0"></a>Цитати - стил</h3>
+<p><a class="p_ident" id="p_Zvl6rHT09m" href="./09_regexp.html#p_Zvl6rHT09m"></a>Представете си, че сте написали една история и използвате единични кавички за да отбележите парчета диалог. Сега искате да замените всички цитати на диалога с двойни кавички, като запазите единичните кавички използвани, като знак за съкращение.</p>
+<p><a class="p_ident" id="p_k3Y0NF9w4b" href="./09_regexp.html#p_k3Y0NF9w4b"></a>Помислете за модел, който отличава тези два вида ползване на цитат и направете извикване към <code>replace</code> метода, който прави правилно подмяната.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_KNcaojz4vQ" href="./09_regexp.html#c_KNcaojz4vQ"></a><span class="cm-keyword">var</span> <span class="cm-variable">text</span> <span class="cm-operator">=</span> <span class="cm-string">"'I'm the cook,' he said, 'it's my job.'"</span>;
+<span class="cm-comment">// Change this call.</span>
+<span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">text</span>.<span class="cm-property">replace</span>(<span class="cm-string-2">/A/g</span>, <span class="cm-string">"B"</span>));
+<span class="cm-comment">// → "I'm the cook," he said, "it's my job."</span></pre>
+<div class="solution"><div class="solution-text">
+<p><a class="p_ident" id="p_rNoBQVCfFp" href="./09_regexp.html#p_rNoBQVCfFp"></a>Най-очевидното решение е да се заменят само цитатите с <em>nonword</em> характер поне на едната страна. Нещо, като <code>/\W'|'\W/</code>. Но също трябва да се вземе началото и края на линията под внимание.</p>
+<p><a class="p_ident" id="p_1SUsrUgWek" href="./09_regexp.html#p_1SUsrUgWek"></a>В допълнение, трябва да сте сигурни, че замяната включва знаците, които са били съвпаднати от <code>\W</code> модела, така че да не се пропуснат. Това може да стане, като ги опаковате в скоби включително и техните групи в заместващ <em>string</em> (<code>$1</code>, <code>$2</code>). Групи, които не се покриват няма да бъдат заменени с нещо. .</p>
+</div></div>
+<h3><a class="h_ident" id="h_izldJoT3uv" href="./09_regexp.html#h_izldJoT3uv"></a>Отново числа</h3>
+<p><a class="p_ident" id="p_2Z15nSCOWO" href="./09_regexp.html#p_2Z15nSCOWO"></a>Серия от цифри могат да бъдат съчетани с прост регулярен израз <code>/\d+/</code>.</p>
+<p><a class="p_ident" id="p_4ILW7h/ou4" href="./09_regexp.html#p_4ILW7h/ou4"></a>Напишете израз, който съвпада само със стил JavaScript номера. Той трябва да подържа незадължителните знаци  плюс + и минус - в предната част на числото, след десетичната точка и експонента нотацията - <code>5e-3</code> или <code>1E10</code> - отново  с допълнителен знак пред експонентата. Също така, имайте в предвид, че това не е необходимо, където има цифри пред или след точката, но броят им не може да бъде само една точка. Това означава, че <code>.5</code> и <code>5.</code> са валидни номера на JavaScript, но само точка не е.</p>
+<pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_svZIRqtX/7" href="./09_regexp.html#c_svZIRqtX/7"></a><span class="cm-comment">// Fill in this regular expression.</span>
+<span class="cm-keyword">var</span> <span class="cm-variable">number</span> <span class="cm-operator">=</span> <span class="cm-string-2">/^...$/</span>;
+
+<span class="cm-comment">// Tests:</span>
+[<span class="cm-string">"1"</span>, <span class="cm-string">"-1"</span>, <span class="cm-string">"+15"</span>, <span class="cm-string">"1.55"</span>, <span class="cm-string">".5"</span>, <span class="cm-string">"5."</span>, <span class="cm-string">"1.3e2"</span>, <span class="cm-string">"1E-4"</span>,
+ <span class="cm-string">"1e+12"</span>].<span class="cm-property">forEach</span>(<span class="cm-keyword">function</span>(<span class="cm-def">s</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-operator">!</span><span class="cm-variable">number</span>.<span class="cm-property">test</span>(<span class="cm-variable-2">s</span>))
+    <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"Failed to match '"</span> <span class="cm-operator">+</span> <span class="cm-variable-2">s</span> <span class="cm-operator">+</span> <span class="cm-string">"'"</span>);
+});
+[<span class="cm-string">"1a"</span>, <span class="cm-string">"+-1"</span>, <span class="cm-string">"1.2.3"</span>, <span class="cm-string">"1+1"</span>, <span class="cm-string">"1e4.5"</span>, <span class="cm-string">".5."</span>, <span class="cm-string">"1f5"</span>,
+ <span class="cm-string">"."</span>].<span class="cm-property">forEach</span>(<span class="cm-keyword">function</span>(<span class="cm-def">s</span>) {
+  <span class="cm-keyword">if</span> (<span class="cm-variable">number</span>.<span class="cm-property">test</span>(<span class="cm-variable-2">s</span>))
+    <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"Incorrectly accepted '"</span> <span class="cm-operator">+</span> <span class="cm-variable-2">s</span> <span class="cm-operator">+</span> <span class="cm-string">"'"</span>);
+});</pre>
+<div class="solution"><div class="solution-text">
+<p><a class="p_ident" id="p_vkoPQ1fhR2" href="./09_regexp.html#p_vkoPQ1fhR2"></a>На първо място, не забравяйте обратно наклонената черта пред точката.</p>
+<p><a class="p_ident" id="p_ShOca+aF11" href="./09_regexp.html#p_ShOca+aF11"></a>Съвпадението с незадължителен знак пред номера, както и пред експонентата, може да се направи със <code>[+\-]?</code> или <code>(\+|-|)</code> (плюс, минус или нищо).</p>
+<p><a class="p_ident" id="p_z9QJjd6IxQ" href="./09_regexp.html#p_z9QJjd6IxQ"></a>Най-сложната част от упражнението е проблема със съвпадението на двете <code>"5."</code> and <code>".5"</code> без да съвпада точката <code>"."</code>. За тази цел, е добро решение да използвате оператора <code>|</code> да раздели двата случая - една или повече цифри по желание последвани от точка и нула или повече цифри или точка, последвана от една или повече цифри.</p>
+<p><a class="p_ident" id="p_XC+73LgOvD" href="./09_regexp.html#p_XC+73LgOvD"></a>И накрая, за да се влияе от случая или добавете <code>i</code> опция за регулярния израз или използвайте <code>[eE]</code>.</p>
+</div></div>
+<nav>
+  <a href="./08_error.html" title="previous chapter">◀</a>
+  <a href="./index.html" title="cover">◆</a>
+  <a href="./10_modules.html" title="next chapter">▶</a>
+</nav>
+</article>
+</body></html>
