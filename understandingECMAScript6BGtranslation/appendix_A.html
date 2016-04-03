@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Приложение А :: Understanding ECMAScript 6</title>
+	<link rel="stylesheet" href="font.css">
+</head>
+<body>
+	<nav>
+  <a href="./13_modules.html" title="previous chapter">◀</a>
+  <a href="./index.html" title="cover">◆</a>
+</nav>
+	
+	<header id="header" class="">
+		<h1>Приложение А: Други промени</h1>
+		<p>Заедно с промените споменати в тази книга, ECMAScript 6 направи някои много малки промени и подобрения. Това приложение съдържа списък на тези промени.</p>
+	</header><!-- /header -->
+	<article>
+		<h3>Работа с цели числа</h3>
+		<p>Много от объркванията, причинени през годините, са свързани с типа <em>number</em> на JavaScript, който се използва за представяне, както на цели числа така и на десетични. Езика минава през големи усилия за да гарантира, че програмистите не трябва да се притесняват за детайлите, но проблеми все още се създават от време на време. ECMAScript 6 има за цел да се справи с това, като прави по-лесно идентифицирането и работата с числа.</p>
+		<h3>Идентифициране на цели числа</h3>
+		<p>Първата добавка е <em>Number.isInteger()</em>, която позволява да се определи дали една стойност е цяло число в JavaScript. Тъй като цели и десетични числа се съхраняват по различен начин, JavaScript машината преглежда най-базисно представянето на стойността, за да направи своя избор. Това означава, че номера, които приличат на десетични, могат в действителност да се съхраняват, като цели числа и за това да върнат <em>true</em> от <em>Number.isInteger()</em>. Например:</p>
+		<dl>
+			<dd>
+				<pre class="highlight">
+console.log(<span class="code">Number</span>.isInteger(25));      // true
+console.log(<span class="code">Number</span>.isInteger(25.0));    // true
+console.log(<span class="code">Number</span>.isInteger(25.1));    // false
+				</pre>
+			</dd>
+		</dl>
+		<p>В този код, <em>Number.isInteger()</em> връща <em>true</em> за 25 и  25.0 въпреки, че последното прилича на десетично. Добавянето на десетична точка за номер, не означава автоматично десетично число в JavaScript. Тъй като, 25.0 е наистина само 25, то се съхранява, като цяло число. Номерът 25.1, обаче се съхранява, като десетично, защото има стойност на фракция.</p>
+		<h3>Safe Integers</h3>
+		<p>Обаче, не всичко е толкова просто с числата. JavaScript може точно да представя числата между -253 и 253 и извън този безопасен диапазон, бинарното представяне използва повторно някои числови стойности. Например:</p>
+		<dl>
+			<dd>
+				<pre class="highlight">
+console.log(<span class="code">Math</span>.pow(2, 53));      // 9007199254740992
+console.log(<span class="code">Math</span>.pow(2, 53) + 1);  // 9007199254740992
+				</pre>
+			</dd>
+		</dl>
+		<p>В този пример се съдържа печатна грешка, двата различни номера в крайна сметка представляват едно и също цяло число. Ефекта става все по-разпространен от по-нататъшното отиване на стойността извън безопасния диапазон. </p>
+		<p>ECMAScript 6 въвежда <em>Number.isSafeInteger()</em> за по добро идентифициране на цели числа, които могат точно да се представят от езика. Има също <em>Number.MAX_SAFE_INTEGER</em> и <em>Number.MIN_SAFE_INTEGER</em>, които съответно представляват горната и долна граница на този диапазон. <em>Number.isSafeInteger()</em> метода гарантира, че стойността е цяло число и попада в рамките на безопасния диапазон за целочислени стойности.</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">var</span> inside = <span class="code">Number</span>.MAX_SAFE_INTEGER,
+    outside = inside + 1;
+
+console.log(<span class="code">Number</span>.isInteger(inside));          // true
+console.log(<span class="code">Number</span>.isSafeInteger(inside));      // true
+
+console.log(<span class="code">Number</span>.isInteger(outside));         // true
+console.log(<span class="code">Number</span>.isSafeInteger(outside));     // false
+			</pre></dd>
+		</dl>
+		<p>Номерът в <em>inside</em> е най-голямото безопасно число, така че връща <em>true</em> от <em>Number.isInteger()</em> и от <em>Number.isSafeInteger()</em>. Номерът <em>outside</em> е първата съмнителна стойност за цяло число, така че вече не се смята за безопасна, въпреки че тя все още е цяло число. </p>
+		<p>През по-голямата част от времето вие ще искате да се справяте с безопасни числа, при аритметика или сравняване в JavaScript, така че е добра идея да използвате <em>Number.isSafeInteger()</em>, като част от въвеждане за валидиране.</p>
+		<h3>Нови Math методи</h3>
+		<p>Гореспоменатия нов акцент върху игри и графики в JavaScript води до осъзнаването, че много математически изчисления могат да се направят по-ефективно от JavaScript машината от колкото с чист JavaScript код. Стратегии за оптимизация, като <em>asm.js</em>, който работи върху подмножество на JavaScript за подобряване на производителноста, се нуждае от повече информация за извършване на изчисления по най-бързия възможен начин. Важно е например да се знае, дали цифрите трябва да се третират, като 32-битови цели числа или като 64-битови десетични.</p>
+		<p>В резултат на това, ECMAScript 6 добавя няколко нови метода към <em>Math</em> обекта. Тези нови методи са важни за подобряване на скоростта за общи математически изчисления и следователно подобряват скоростта на приложенията, които трябва да изпълняват много изчисления (като графични програми). Новите методи са описани по-долу:</p>
+		
+				<table class="table-marg">
+					<tr>
+						<th>Method</th>
+						<th>Description</th>
+					</tr>
+					<tr>
+						<td>Math.acosh(x)</td>
+						<td>Връща обратния хиперболичен косинус на  x.</td>
+					</tr>
+					<tr>
+						<td>Math.asinh(x)</td>
+						<td>Връща обратния хиперболичен синус на  x.</td>
+					</tr>
+					<tr>
+						<td>Math.atanh(x)</td>
+						<td>Връща обратния хиперболичен тангенс на  x.</td>
+					</tr>
+					<tr>
+						<td>Math.cbrt(x)</td>
+						<td>Връща кубичния корен на x.</td>
+					</tr>
+					<tr>
+						<td>Math.clz32(x)</td>
+						<td>Връща броя на водещите нулеви битове в представянето на 32-битово цяло число x.</td>
+					</tr>
+					<tr>
+						<td>Math.cosh(x)</td>
+						<td>Връща хиперболичния косинус на  x.</td>
+					</tr>
+				    <tr>
+				    	<td>Math.expm1(x)</td>
+				    	<td>Връща резултата от изваждането на 1 от експоненциална функция на x.</td>
+				    </tr>
+				    <tr>
+				    	<td>Math.fround(x)</td>
+				    	<td>Връща най-близката единична точност на float на x.</td>
+				    </tr>
+				    <tr>
+				    	<td>Math.hypot(...values)</td>
+				    	<td>Връща корен квадратен от сбора на квадратите на всеки аргумент.</td>
+				    </tr>
+				    <tr>
+				    	<td>Math.imul(x, y)</td>
+				    	<td>Връща резултата от извършване вярно 32-битово умножение на два аргумента.</td>
+				    </tr>
+				    <tr>
+				    	<td>Math.log1p(x)</td>
+				    	<td>Връща натуралния логаритъм от 1 + x.</td>
+				    </tr>
+				    <tr>
+				    	<td>Math.log10(x)</td>
+				    	<td>Връща база 10 логаритъм на x.</td>
+				    </tr>
+				    <tr>
+				    	<td>Math.log2(x)</td>
+				    	<td>Връща база 2 логаритъм на x.</td>
+				    </tr>
+				    <tr>
+				    	<td>Math.sign(x)</td>
+				    	<td>Връща -1 ако х е отрицателно, 0 ако x е + 0 или - 0, и 1 ако х е положително.</td>
+				    </tr>
+				    <tr>
+				    	<td>Math.sinh(x)</td>
+				    	<td>Връща хиперболичния синус на x.</td>
+				    </tr>
+				    <tr>
+				    	<td>Math.tanh(x)</td>
+				    	<td>Връща хиперболичния тангенс на x.</td>
+				    </tr>
+				    <tr>
+				    	<td>Math.trunc(x)</td>
+				    	<td>Премахва цифри след десетичната запетая от float и връща  integer число.</td>
+				    </tr>
+				</table>
+		<p>Извън обхвата на тази книга е да се обясни по подробно всеки нов метод и това което прави. Въпреки това, ако търсите по-разумно общо изчисление, не забравяйте да проверите за нови <em>Math</em> методи, преди да го изпълните сами.</p>
+		<h3>Unicode идентификатори</h3>
+		<p>По-добра <em>Unicode</em> подкрепа в ECMAScript 6 също означава промени в това, което символите могат да използват за идентификатор. В ECMAScript 5, вече е възможно да се използват <em>Unicode escape</em> последователности за идентификатори, като например:</p>
+		<dl>
+			<dd>
+				<pre class="highlight">
+<span class="comment"><em>// Валидно в ECMAScript 5 и 6</em></span>
+<span class="code">var</span> \u0061 = "abc";
+
+console.log(\u0061);        // "abc"
+
+<span class="comment"><em>// еквивалентно на</em></span>
+// console.log(a);          // "abc"
+				</pre>
+			</dd>
+		</dl>
+		<p>В ECMAScript 6, можете да използвате <em>Unicode code point escape</em> последователности, като идентификатори:</p>
+		<dl>
+			<dd>
+				<pre class="highlight">
+<span class="comment"><em>// Валидно в ECMAScript 5 и 6</em></span>
+<span class="code">var</span> \u{61} = "abc";
+
+console.log(\u{61});        // "abc"
+
+<span class="comment"><em>// еквивалентно на</em></span>
+// console.log(a);          // "abc"
+				</pre>
+			</dd>
+		</dl>
+		<p>Освен това, ECMAScript 6 официално определя валидни идентификатори по отношение на <a href="http://unicode.org/reports/tr31/">Unicode Standard Annex #31: Unicode Identifier and Pattern Syntax</a>
+		<dl>
+			<dd>
+				<ol>
+					<li>Първия символ трябва да бъде  $, _, или всеки Unicode символ с извлечено основно свойство от ID_Start. </li><br>
+					<li>Всеки следващ символ трябва да бъде $, _, \u200c (zero-width non-joiner), \u200d (zero-width joiner), или всеки Unicode символ с извлечено основно свойство от ID_Continue.</li>
+				</ol>
+			</dd>
+		</dl>
+		<p>На ID_Start и ID_Continue извлечените основни свойства са определени в <em>Unicode Identifier</em> и <em>Pattern Syntax</em>, като начин за идентифициране на символи, които са подходящи за използване в идентификатори, като променливи и имена на домейни (спецификацията не е специфична за JavaScript).</p>
+		<h3>Официална форма на proto свойство</h3>
+		<p>Дори преди ECMAScript 5 да е завършен, JavaScript машината вече изпълняваше потребителско свойство, наречено __proto__  , което може да се използва за получаване и задаване на [[Prototype]]. Ефективно, __proto__  беше ранен предшественик на методите <em>Object.getPrototypeOf()</em> и <em>Object.setPrototypeOf()</em>. Нереалистично е да се очаква JavaScript машината да премахне това свойство, така че ECMAScript 6 също формализира __proto__  поведение. Въпреки, че формализирането е в приложение B, заедно с това предупреждение:</p>
+		<dl>
+			<dd style ="color: cornflowerblue">Тези функции не се считат за част от основния език ECMAScript. Програмистите не трябва да използват или приемат съществуването на тези характеристики и поведение, когато пишат нов ECMAScript код. ECMAScript реализациите са обезкуражени от формите на прилагане, освен ако изпълнението е част от уеб браузър или се изисква да изпълните същото наследяване в ECMAScript кода, с което уеб браузърите се сблъскват.</dd>
+		</dl>
+		<p>Въпреки, че най-добре е да се избягва използването на __proto__, е интересно да се види как спецификацията го определя. В ECMAScript 6 машината, <em>Object.prototype.__proto__ </em> е дефинирано, като свойство за достъп, чиито <em>get</em> метод извиква <em>Object.getPrototypeOf()</em> и чиито <em>set</em> метод извиква <em>Object.setPrototypeOf()</em>. Това оставя впечатление, че няма реална разлика между използването на __proto__  и другите методи, освен че  __proto__  позволява да зададем прототип на обект литерал директно. Ето как става това:</p>
+		<dl>
+			<dd>
+				<pre class="highlight-overflow">
+<span class="code">let</span> person = {
+    getGreeting() {
+        <span class="code">return</span> "Hello";
+    }
+};
+
+<span class="code">let</span> dog = {
+    getGreeting() {
+        <span class="code">return</span> "Woof";
+    }
+};
+
+<span class="comment"><em>// прототипа е person</em></span>
+<span class="code">let</span> friend = {
+    __proto__: person
+};
+console.log(friend.getGreeting());                      // "Hello"
+console.log(<span class="code">Object</span>.getPrototypeOf(friend) === person);  // true
+console.log(friend.__proto__ === person);               // true
+
+// set prototype to dog
+friend.__proto__ = dog;
+console.log(friend.getGreeting());                      // "Woof"
+console.log(friend.__proto__ === dog);                  // true
+console.log(<span class="code">Object</span>.getPrototypeOf(friend) === dog);     // true
+				</pre>
+			</dd>
+		</dl>
+		<p>Този пример е функционално еквивалентен на <em>getGreeting()</em> примера. Извикването на <em>Object.create()</em> се заменя с обект литерал чиято присвоена стойност е  __proto__  свойството. Единствената реална разлика между създаването на обект с <em>Object.create()</em> или  обект литерал с  __proto__  е, че при първото е необходимо да посочим  пълно описание на свойства за каквито и да било допълнителни обектни свойства. Последното е просто един стандартен обект литерал.</p>
+		<dl>
+			<dd><div class="worning">
+         <img src="./img/worning.jpg" alt="worning">
+       </div><strong>
+				<p>Свойството  __proto__  е специално по няколко причини:</p>
+				<ol>
+					<li>Можете да го зададете само веднъж в обект литерал. Ако зададете две __proto__  свойства ще бъде хвърлена грешка. Това е единственото свойство на обект литерал с такова ограничение.</li><br>
+					<li>Изчислената форма ["__proto__"]  действа, като редовно свойство и не определя или връща прототипа на текущия обект. Всички правила за свойства на обект литерал се прилагат в тази форма, за разлика от не-изчислената форма, която има изключения.</li>
+				</ol>
+				<p>Поради тези причини се препоръчва избягването на използването на  __proto__  , когато можете да използвате <em>Object.getPrototypeOf()</em> и <em>Object.setPrototypeOf()</em>.</p>
+			</strong></dd>
+		</dl>
+	</article>
+	<nav>
+  <a href="./13_modules.html" title="previous chapter">◀</a>
+  <a href="./index.html" title="cover">◆</a>
+</nav>
+</body>
+</html>

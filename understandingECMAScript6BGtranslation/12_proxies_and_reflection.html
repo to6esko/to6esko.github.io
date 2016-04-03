@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Proxies and Reflection :: Understanding ECMAScript 6</title>
+	<link rel="stylesheet" href="font.css">
+</head>
+<body>
+	<nav>
+	<a href="11_promises.html" title="previous chapter">◀</a>
+  <a href="./index.html" title="cover">◆</a>
+  <a href="./13_modules.html" title="next chapter">▶</a>
+</nav>
+  <header id="header" class="">
+  	<h1><div class="head-num">Глава 12</div>Proxies and Reflection</h1>
+  	<dl>
+			<dd><div class="worning">
+         <img src="./img/worning.jpg" alt="worning">
+       </div><strong>Тази глава е още в процес на работа. Съдържанието трябва да е вярно, но може да не е пълно.</strong>
+			</dd>
+		</dl>
+		<p>Една от целите, споделяни от ECMAScript 5 и ECMAScript 6 е продължаване на разбулване на тайнственоста около функционалността на JavaScript. Преди ECMAScript 5, например, имаше <em>nonenumerable</em> и <em>nonwritable</em> обектни свойства в JavaScript, но нямаше начин разработчиците да определят свои собствени <em>nonenumerable</em> или <em>nonwritable</em> свойства. Това доведе до включването на <em>Object.defineProperty()</em> в ECMAScript 5 за да даде възможност на програмистите да правят това, което JavaScript машината вече беше способна да прави.</p>
+		<p>ECMAScript 6 продължава тенденцията за осигуряване на възможност на програмистите да правят, това което JavaScript машината вече прави с вградените обекти. За да направи това езика трябва да изложи повече за това как работят обектите и резултата е създаването на <em>proxies</em>. Но преди да разберете, какво са <em>proxies</em> и какво могат да правят, е полезно да разберете вида на проблема, за който <em>proxies</em> са адресирани.</p>
+  </header><!-- /header -->
+  <article>
+  	<h3>Проблем с масивите</h3>
+  	<p>Масивите имат дълга история в JavaScript, като поведението им не може да бъде имитирано от програмистите в собствените им обекти. Свойството <em>length</em> се засяга от присвояване на стойности на специфични елементи на масиви и може да променяме елементите на масиви чрез промяна на <em>length</em> свойството. Например:</p>
+  	<dl>
+  		<dd>
+  			<pre class="highlight">
+<span class="code">let</span> colors = ["red", "green", "blue"];
+
+console.log(colors.length);         // 3
+
+colors[3] = "black";
+
+console.log(colors.length);         // 4
+console.log(colors[3]);             // "black"
+
+colors.length = 2;
+
+console.log(colors.length);         // 2
+console.log(colors[3]);             // undefined
+console.log(colors[2]);             // undefined
+console.log(colors[1]);             // "green"
+  				
+  			</pre>
+  		</dd>
+  	</dl>
+  	<p>Тука, масива <em>colors</em> започва с три елемента. Привояването на <em>colors[3]</em> автоматично увеличава стойността на <em>length</em> свойството на четири. Определянето на <em>length</em> свойството обратно на две, премахва последните два елемента в масива, оставяйки само първите два елемента. Няма нищо в ECMAScript 5, което да позволява на разработчиците да постигнат същото поведение. Ето защо са създадени <em>proxies</em>.</p>
+  	<h3>Какво са Proxies и Reflection?</h3>
+  	<p><em>Proxy</em>, създаден с помощта на <em>new Proxy()</em>, е обект, който може да се използва вместо друг обект (наречен <em>target</em>). <em>Proxy</em> визуализира мишената, което означава, че <em>proxy</em> и <em>target</em> изглежда са един и същи обект на функционалност използвана от <em>proxy</em>. <em>Proxies</em>, обаче позволява да се намесим в операции от ниско ниво, които иначе са вътрешни за JavaScript машината. Тези операции от ниско ниво са засечени с помощта на <em>trap</em>, който е функция, която отговаря за конкретна операция.</p>
+  	<p><em>Reflection API</em>, представлявана от <em>Reflect object</em>, е колекция от методи, които дават поведение по подразбиране за същите операции от ниско ниво, които <em>proxies</em> могат да отменят. Има <em>Reflect</em> метод за всеки <em>proxy trap</em> и този метод има същото име и му се подават същите аргументи, както на неговия съответен <em>proxy trap</em>. Таблицата по-долу съдържа всички <em>proxy traps</em>.</p>
+    <div id="table-stayle">
+  	<dl>
+  		<dd>
+  			<table class="table">
+  				<tr>
+  					<th>Proxy Trap</th>
+  					<th>Overrides the Behavior Of</th>
+  					<th>Default Behavior</th>
+  				</tr>
+  				<tr>
+  					<td>enumerate</td>
+  					<td>for-in и Object.keys()</td>
+  					<td>Reflect.enumerate()</td>
+  				</tr>
+          <tr>
+            <td>set</td>
+            <td>Writing to a property</td>
+            <td>Reflect.set()</td>
+          </tr>
+          <tr>
+            <td>has</td>
+            <td>The in operator</td>
+            <td>Reflect.has()</td>
+          </tr>
+          <tr>
+            <td>deletePropery</td>
+            <td>The delete operator</td>
+            <td>Reflect.deleteProperty()</td>
+          </tr>
+          <tr>
+            <td>getPrototypeOf</td>
+            <td>Object.getPrototypeOf()</td>
+            <td>Reflect.getPrototypeOf()</td>
+          </tr>
+          <tr>
+            <td>setPrototypeOf</td>
+            <td>Object.setPrototypeOf()</td>
+            <td>Reflect.setPrototypeOf()</td>
+          </tr>
+          <tr>
+            <td>isExtensible</td>
+            <td>Object.isExtensible()</td>
+            <td>Reflect.isExtensible()</td>
+          </tr>
+          <tr>
+            <td>preventExtensions</td>
+            <td>Object.preventExtensions()</td>
+            <td>Reflect.preventExtensions()</td>
+          </tr>
+          <tr>
+            <td>Reflect.preventExtensions()</td>
+            <td>Reflect.preventExtensions()</td>
+            <td>Reflect.getOwnPropertyDescriptor()</td>
+          </tr>
+          <tr>
+            <td>defineProperty</td>
+            <td>Object.defineProperty()</td>
+            <td>Reflect.defineProperty()</td>
+          </tr>
+          <tr>
+            <td>enumerate</td>
+            <td>for-in and Object.keys()</td>
+            <td>Reflect.enumerate()</td>
+          </tr>
+          <tr>
+            <td>ownKeys</td>
+            <td>Object.getOwnPropertyNames()  and Object.getOwnPropertySymbols()</td>
+            <td>Reflect.ownKeys()</td>
+          </tr>
+          <tr>
+            <td>apply</td>
+            <td>Calling a function</td>
+            <td>Reflect.apply()</td>
+          </tr>
+          <tr>
+            <td>construct</td>
+            <td>Calling a function with new</td>
+            <td>Reflect.construct()</td>
+          </tr>
+  			</table>
+  		</dd>
+  	</dl>
+    </div>
+    <p>Всеки един <em>traps</em> замества някое от вградените поведения на  JavaScript обектите, позволявайки ни да се намесим и променяме поведението. Ако все още се нуждаем от използване на вградено поведение, тогава можем да използваме съответния <em>reflection API</em> метод. Връзката между <em>proxies</em> и <em>reflection API</em> става ясна, когато започнем да създаваме <em>proxies</em>, така че най-добре да разгледаме няколко примера.</p>
+    <h3>Създаване на Proxy</h3>
+    <p><em>Proxies</em> се създават с помощта на <em>Proxy</em> конструктор и подаване на два аргумента <em>target</em> (цел) и <em>handler</em> (манипулатор). Манипулатора (<em>handler</em>) е обект, който определя една или повече цели (<em>targets</em>). Proxy използва поведение по подразбиране за всички операции, освен когато <em>traps</em> са дефинирани за тази операция. За да се създаде просто препращане на <em>proxy</em>, можем да използваме <em>handler</em> без никакви <em>traps</em>:</p>
+    <dl>
+      <dd>
+        <pre class="highlight">
+<span class="code">let</span> target = {};
+
+<span class="code">let</span> proxy = <span class="code">new Proxy</span>(target, {});
+
+proxy.name = "proxy";
+console.log(proxy.name);        // "proxy"
+console.log(target.name);       // "proxy"
+
+target.name = "target";
+console.log(proxy.name);        // "target"
+console.log(target.name);       // "target"
+          
+        </pre>
+      </dd>
+    </dl>
+    <p>В този пример, <em>proxy</em> препраща всички операции директно на <em>target</em>. Свойството <em>name</em> е създадено на <em>target</em>, когато <em>proxy.name</em> се определя на "proxy". Самия <em>proxy</em> не съхранява това свойство, това е просто препращане на операцията към <em>target</em>. Аналогично, стойностите на <em>proxy.name</em> и <em>target.name</em> са същите, защото те са две препратки към <em>target.name</em>. Това също означава, че настройването на <em>target.name</em> на нова стойност води до <em>proxy.name</em> отразяващо същата промяна. Разбира се, <em>proxies</em> без <em>traps</em> не са много интересни, така че какво се случва, когато дефинираме <em>trap</em>?</p>
+    <h3>Валидиране на свойства с използване на set Trap</h3>
+    <p>Да предположим, че искаме да създадем обект, чийто стойности на свойства трябва да са номера. Това означава, че всяко ново свойство, добавено към обекта трябва да е валидирано и да бъде хвърлена грешка, ако стойността не е номер. За да постигнем това трябва да дефинираме <em>set trap</em>, който отменя подразбиращото се поведение на настройката на стойността. <em>Set trap</em> получава четири аргумента:</p>
+    <dl>
+      <dd>
+        <ol>
+          <li><strong>trapTarget</strong> - обекта, който ще получи свойството (<em>proxy target</em>).</li>
+          <li><strong>key</strong> - ключ свойство (<em>string</em> или символ) за записване.</li>
+          <li><strong>value</strong> - стойност за записване на свойството.</li>
+          <li><strong>receiver</strong> - обекта, на който се извършва операцията (обикновено <em>proxy</em>).</li>
+        </ol>
+      </dd>
+    </dl>
+    <p>Съответния <em>reflection</em> метод е <em>Reflect.set()</em>, който е поведението по подразбиране за тази операция. <em>Reflect.set()</em> метода приема същите четири аргумента, като <em>set proxy trap</em>, което го прави лесен за използване метод във вътрешността на <em>trap</em>. <em>Trap</em> трябва да върне <em>true</em>, ако свойството е създадено или <em>false</em> ако не е (<em>Reflect.set()</em> връща правилната стойност на базата на успешна <em>if</em> операция).</p>
+    <p>За валидиране на стойността на свойството, можем да използваме <em>set trap</em> и да инспектираме стойността, която се подава. Ето един пример:</p>
+    <dl>
+      <dd>
+        <pre class="highlight-overflow">
+<span class="code">let</span> target = {
+    name: "target"
+};
+
+<span class="code">let</span> proxy = <span class="code">new Proxy</span>(target, {
+        set(trapTarget, key, value, receiver) {
+
+            <span class="comment"><em>// игнорира съществуващите свойства за да не ги засегне</em></span>
+            <span class="code">if</span> (!trapTarget.hasOwnProperty(key)) {
+                <span class="code">if</span> (<span class="code">Object</span>.is(<span class="code">Number</span>(value), <span class="code">NaN</span>)) {
+                    <span class="code">throw new</span> TypeError("Property must be a number.");
+                }
+            }
+
+            <span class="comment"><em>// добавяне на свойство</em></span>
+            <span class="code">return</span> Reflect.set(trapTarget, key, value, receiver);
+        }
+    });
+
+<span class="comment"><em>// добавяне на ново свойство</em></span>
+proxy.count = 1;
+console.log(proxy.count);       // 1
+console.log(target.count);      // 1
+
+<span class="comment"><em>// може да зададете име, защото то съществува в целта вече</em></span>
+proxy.name = "proxy";
+console.log(proxy.name);        // "proxy"
+console.log(target.name);       // "proxy"
+
+<span class="comment"><em>// хвърля грешка</em></span>
+proxy.anotherName = "proxy";
+        </pre>
+      </dd>
+    </dl>
+    <p>Този пример дефинира <em>proxy trap</em>, който валидира стойността на всяко ново свойство добавено към <em>target</em>. Когато <em>proxy.count = 1</em> е изпълнено, се извиква <em>set trap</em>. The <em>trapTarget</em> е равно на <em>target</em>, <em>key</em> е "count", <em>value</em> е 1 и <em>receiver</em> (не се използва в този пример) е <em>proxy</em>. Тъй като, не съществува свойство с име <em>count</em> в <em>target</em>, стойността се валидира чрез подаването и към <em>Number</em> и сравняване с <em>NaN</em>. Ако резултата е <em>NaN</em>, тогава стойността на свойството не е цифрова и се хвърля грешка. Въпреки това, тъй като <em>count</em> е настроен на 1, новото свойство се добавя чрез извикване на <em>Reflect.set()</em> със същите четири аргумента, които са подадени на <em>trap</em>.</p>
+    <p>Когато <em>proxy.name</em> се задава със <em>string</em>, операцията завършва успешно. Тъй като, <em>target</em> вече има <em>name</em> свойство, което е пропуснато от проверката за валидиране, чрез използване на <em>trapTarget.hasOwnProperty()</em>. Това гарантира, че по-рано съществуващите стойности, които не са цифрови свойства все още се поддържат.</p>
+    <p>Когато <em>proxy.anotherName</em> се задава със <em>string</em>, обаче, се хвърля грешка. Свойството <em>anotherName</em> не съществува в <em>target</em>, така че неговата стойност се валидира. Тъй като, "proxy" не е цифрова стойност, се хвърля грешка.</p>
+    <p>Като се има в предвид, че <em>set proxy trap</em> ни позволява да се намесим, когато се пишат свойства, то <em>get proxy trap</em> ни позволява да се намесим, когато се четат свойства.</p>
+    <h3>Валидиране на обектна форма с използване на get Trap</h3>
+    <p>Един от най-интересните и понякога объркващи аспекти на  JavaScript е, когато четенето на несъществуващи свойства не хвърля грешка. Вместо това се използва <em>undefined</em> за стойност на свойството. Например:</p>
+    <dl>
+      <dd>
+        <pre class="highlight">
+<span class="code">let</span> target = {};
+
+console.log(target.name);       // undefined
+        </pre>
+      </dd>
+    </dl>
+    <p>В повечето други езици, при опит за четене на <em>target.name</em> се хвърля грешка, защото свойството не съществува. JavaScript, обаче използва стойността <em>undefined</em> за <em>target.name</em>. Ако някога сте работили с голяма база код, това поведение може да доведе до значителни проблеми, особено, когато имате и правописна грешка в името на свойството. С <em>proxies</em>, можем да се спасим от този проблем, чрез валидиране на обектна форма.</p>
+    <p>Една обектна форма е колекция от свойства и методи на разположение на обекта. JavaScript машината използва обектната форма за оптимизиране на кода и често създава класове за представяне на обектите. Ако можем безопасно да предположим, че един обект има същите свойства и методи, започвайки с (използване на <em>Object.preventExtensions(), Object.seal()</em> или <em>Object.freeze()</em>) после това може да бъде полезно, когато се опитваме да получим достъп до несъществуващо свойство. Това валидиране на обектна форма може лесно да се направи с помощта на <em>proxies</em>.</p>
+    <p>Тъй като, валидирането на свойство трябва да се направи, когато се чете, трябва да използваме <em>get trap. The get trap</em> се извиква всеки път, когато едно свойство се чете, дори ако това свойство не съществува в обекта. Има три аргумента, които се подават към <em>get trap</em>:</p>
+    <dl>
+      <dd>
+        <ol>
+          <li><strong>trapTarget</strong> - обект, от който се чете свойството (<em>proxy target</em>).</li>
+          <li><strong>key</strong> - ключ свойство (<em>string</em> или символ) за четене.</li>
+          <li><strong>receiver</strong> - обекта, на който се извършва операцията (обикновено <em>proxy</em>).</li>
+        </ol>
+      </dd>
+    </dl>
+    <p>Тези аргументи са огледален образ на тези за <em>set trap</em>, с единствената разлика, че няма <em>value</em> аргумент. <em>Reflect.get()</em> метода приема тези три аргумента и връща стойност по подразбиране за свойството. Можем да ги използваме за хвърляне на грешка, ако свойството не съществува в целта:</p>
+    <dl>
+      <dd>
+        <pre class="highlight-overflow">
+<span class="code">let</span> proxy = new Proxy({}, {
+        get(trapTarget, key, receiver) {
+            <span class="code">if</span> (!(key <span class="code">in</span> receiver)) {
+                <span class="code">throw new</span> TypeError("Property " + key + " doesn't exist.");
+            }
+
+            <span class="code">return</span> Reflect.get(trapTarget, key, receiver);
+        }
+    });
+
+<span class="comment"><em>// добавянето на свойство все още работи</em></span>
+proxy.name = "proxy";
+console.log(proxy.name);            // "proxy"
+
+<span class="comment"><em>// несъществуващи свойства хвърлят грешка</em></span>
+console.log(proxy.nme);             <span class="comment"><em>// хвърля грешка</em></span>
+          
+        </pre>
+      </dd>
+    </dl>
+    <p>В този пример, <em>get trap</em> се използва за намеса в операциите при четене на свойства. Оператора <em>in</em> се използва за определяне дали свойството не съществува в <em>receiver</em>. Използваме <em>receiver</em> с <em>in</em> вместо <em>trapTarget</em>, в случай, че <em>receiver</em> е <em>proxy</em>, който има <em>trap</em>. Използването на <em>trapTarget</em> ще заобиколи наличието на <em>trap</em> и потенциално ще даде грешен резултат. Грешка се хвърля , ако свойството не съществува, в противен случай се използва поведението по подразбиране.</p>
+    <p>Този код разрешава добавянето на нови свойства, като <em>proxy.name</em>, които се четат и пишат без никакъв проблем. Последният ред съдържа правописна грешка, <em>proxy.nme</em>, което вероятно трябва да бъде <em>proxy.name</em>. Това хвърля грешка, защото <em>nme</em> не съществува, като свойство.</p>
+    <h3>Скриване на наличието на свойства, използвайки  has Trap</h3>
+    <p>Оператора <em>in</em> определя дали съществува свойство в даден обект и връща <em>true</em> ако има съвпадение с името или символа на собствено или прототипно свойство. Например:</p>
+    <dl>
+      <dd>
+        <pre class="highlight">
+<span class="code">let</span> target = {
+    value: 42;
+}
+
+console.log("value" <span class="code">in</span> target);     // true
+console.log("toString" <span class="code">in</span> target);  // true
+          
+        </pre>
+      </dd>
+    </dl>
+    <p>И двата <em>value</em> и <em>toString</em> съществуват в обекта, така че и двата случая с <em>in</em> оператора връщат <em>true</em>. Свойството <em>value</em> е собствено, докато <em>toString</em> е прототипно свойство (наследено от <em>Object</em>). <em>Proxies</em> ни позволяват да се намесим в тази операция и да върнем различна стойност за <em>in</em> с помощта на <em>has trap</em>.</p>
+    <p>The <em>has trap</em> се извиква всеки път, когато се използва оператора <em>in</em>. Когато се извиква, там има два аргумента подадени към <em>has trap</em>:</p>
+    <dl>
+      <dd>
+        <ol>
+          <li><strong>trapTarget</strong> - обект, от който се чете свойството (<em>proxy target</em>).</li>
+          <li><strong>key</strong> - ключ свойство (<em>string</em> или символ) за проверка.</li>
+        </ol>
+      </dd>
+    </dl>
+    <p><em>Reflect.has()</em> метода приема тези аргументи и връща отговор по подразбиране за <em>in</em> оператора. Използването на <em>has trap</em> и <em>Reflect.has()</em> ни позволяват да променим поведението на <em>in</em> за някои свовойста, докато съвпаднат с поведението по подразбиране за другите. Например, да предположим, че искаме да скрием свойството <em>value</em>, можем да го направим по следния начин:</p>
+    <dl>
+      <dd>
+        <pre class="highlight">
+<span class="code">let</span> target = {
+    name: "target",
+    value: 42
+};
+
+<span class="code">let</span> proxy = <span class="code">new Proxy</span>(target, {
+    has(trapTarget, key) {
+
+        <span class="code">if</span> (key === "value") {
+            <span class="code">return false</span>;
+        } <span class="code">else</span> {
+            <span class="code">return</span> Reflect.has(trapTarget, key);
+        }
+    }
+});
+
+
+console.log("value" <span class="code">in</span> proxy);      // false
+console.log("name" <span class="code">in</span> proxy);       // true
+console.log("toString" <span class="code">in</span> proxy);   // true
+        </pre>
+      </dd>
+    </dl>
+    <p>The <em>has trap</em> е за <em>proxy</em> проверките, за да се види дали <em>key</em> е "value", и ако е така връща <em>false</em>. В противен случай се използва поведение по подразбиране с <em>Reflect.has()</em>. Резултата е, че <em>in</em> оператора връща <em>false</em> за свойството <em>value</em> въпреки, че в действителност съществува в целта. Другите свойства, <em>name</em> и <em>toString</em>, правилно връщат <em>true</em> когато се използва in оператора.</p>
+    <h3>Предотвратяване на заличаване на свойство с deleteProperty Trap</h3>
+    <p>Оператора <em>delete</em> премахва свойство от един обект и при успех връща <em>true</em>, а при неуспех връща <em>false</em>. В <em>strict mode</em> режим, <em>delete</em> хвърля грешка, при опит за изтриване на <em>nonconfigurable</em> свойство (<em>delete</em> просто връща <em>false</em> в <em>nonstrict mode</em> режим). Ето един пример:</p>
+    <dl>
+      <dd>
+        <pre class="highlight">
+<span class="code">let</span> target = {
+    name: "target",
+    value: 42
+};
+
+Object.defineProperty(target, "name", { configurable: <span class="code">false</span> });
+
+console.log("value" <span class="code">in</span> target);     // true
+
+<span class="code">let</span> result1 = <span class="code">delete</span> target.value;
+console.log(result1);               // true
+
+console.log("value" <span class="code">in</span> target);     // false
+
+<span class="comment"><em>// Забележка: Следващия ред хвърля грешка в strict mode</em></span>
+<span class="code">let</span> result2 = <span class="code">delete</span> target.name;
+console.log(result2);               // false
+
+console.log("name" <span class="code">in</span> target);      // true
+        </pre>
+      </dd>
+    </dl>
+    <p>Свойството <em>value</em> се изтрива с помощта на оператора <em>delete</em> и като резултат <em>in</em> връща <em>false. Nonconfigurable name</em> свойството не може да бъде изтрито, така че оператора <em>delete</em> просто връща <em>false</em> (ако този код се изпълнява в <em>strict mode</em> режим, ще бъде хвърлена грешка). Можем да променим това поведение с помощта на <em>deleteProperty trap</em> в <em>proxy</em>.</p>
+    <p>The <em>deleteProperty trap</em> се извиква винаги, когато <em>delete</em> оператора се използва върху дадено обектно свойство. The <em>trap</em> подава два аргумента:</p>
+    <dl>
+      <dd>
+        <ol>
+          <li><strong>trapTarget</strong> - обект, от който трябва да се премахне свойство (<em>proxy target</em>).</li>
+          <li><strong>key</strong> - ключ свойство (<em>string</em> или символ) за изтриване.</li>
+        </ol>
+      </dd>
+    </dl>
+    <p><em>Reflect.deleteProperty()</em> метода осигурява изпълнението по подразбиране на <em>deleteProperty trap</em> и приема тези два аргумента. Използването на комбинацията от <em>Reflect.deleteProperty()</em> и <em>deleteProperty trap</em>, ни позволява да променим поведението на <em>delete</em> оператора, например, като се гарантира, че <em>value</em> свойството не може да бъде изтрито:</p>
+    <dl>
+      <dd>
+        <pre class="highlight">
+<span class="code">let</span> target = {
+    name: "target",
+    value: 42
+};
+
+<span class="code">let</span> proxy = <span class="code">new Proxy</span>(target, {
+    deleteProperty(trapTarget, key) {
+
+        <span class="code">ìf</span> (key === "value") {
+            <span class="code">return false</span>;
+        } <span class="code">else</span> {
+            <span class="code">return</span> Reflect.deleteProperty(trapTarget, key);
+        }
+    }
+});
+
+<span class="comment"><em>// опит за изтриване на proxy.value</em></span>
+
+console.log("value" <span class="code">in</span> proxy);      // true
+
+<span class="code">let</span> result1 = <span class="code">delete</span> proxy.value;
+console.log(result1);               // false
+
+console.log("value" <span class="code">in</span> proxy);      // true
+
+<span class="comment"><em>// опит за изтриване на proxy.name</em></span>
+
+console.log("name" <span class="code">in</span> proxy);       // true
+
+<span class="code">let</span> result2 = <span class="code">delete</span> proxy.name;
+console.log(result2);               // true
+
+console.log("name" <span class="code">in</span> proxy);       // false
+          
+        </pre>
+      </dd>
+    </dl>
+    <p>Този код е много подобен на <em>has trap</em> примера в това, че <em>deleteProperty trap</em> проверява да види дали <em>key</em> е "value" и ако е така връща <em>false</em>. В противен случай се използва поведението по подразбиране, като се извиква <em>Reflect.deleteProperty()</em>. Свойството <em>value</em> не може да бъде изтрито през <em>proxy</em>, защото операцията е в <em>trapped</em>, докато свойството <em>value</em> се премахва, както се очаква. Този подход е особено полезен, когато искаме да защитим свойства от премахване, без да предизвиква грешка в <em>strict mode</em> режим.</p>
+    <h3>Prototype Proxy Traps</h3>
+    <p>В <a href="./04_object_function.html #setPrototype">Глава 4</a>, учихме за ECMAScript 6 <em>Object.setPrototypeOf()</em>, който се добавя за да допълни ECMAScript 5 <em>Object.getPrototypeOf()</em> метода. <em>Proxies</em> позволяват прихващане на изпълнението на двата метода със <em>setPrototypeOf</em> и <em>getPrototypeOf traps</em>. И в двата случая метода на <em>Object</em> извиква <em>trap</em> върху съответното име на <em>proxy</em>, което ни позволява да променяме поведението им. The <em>setPrototypeOf trap</em> получава тези аргументи:</p>
+    <dl>
+      <dd>
+        <ol>
+          <li><strong>trapTarget</strong> - обекта, за който трябва да се създаде прототип (<em>proxy target</em>).</li>
+          <li><strong>proto</strong> - обекта, който трябва да се използва, като прототип.</li>
+        </ol>
+      </dd>
+    </dl>
+    <p>Това са едни и същи аргументи подадени към <em>Object.setPrototypeOf()</em> и <em>Reflect.setPrototypeOf()</em>. The <em>getPrototypeOf trap</em> получава само <em>trapTarget</em> аргумент, който е аргумента подаден към <em>Object.getPrototypeOf()</em> и <em>Reflect.setPrototypeOf()</em>. </p>
+    <dl>
+        <dd><div class="info">
+         <img src="./img/info.jpg" alt="info">
+       </div><strong>Да, има два комплекта методи: <em>Object.getPrototypeOf()</em> и <em>Object.setPrototypeOf()</em>, заедно с <em>Reflect.getPrototypeOf()</em> и <em>Reflect.setPrototypeOf()</em>. Разликите между тези два метода са едва доловими и ще бъдат обсъдени по късно в тази глава.</strong></dd>
+      </dl>
+      <p>Има някои ограничения за тези <em>traps</em>. Първо, <em>getPrototypeOf trap</em> трябва да върне обект или <em>null</em>, както и всички други резултати, връщащи грешка по време на работа. Проверката за връщане на стойност гарантира, че <em>Object.getPrototypeOf()</em> винаги ще върне очакваната стойност. По същия начин, върнатата стойност от <em>setPrototypeOf  trap</em> трябва да бъде <em>false</em> ако операцията не успее. Когато <em>setPrototypeOf</em> връща <em>false, Object.setPrototypeOf()</em> хвърля грешка. Ако <em>setPrototypeOf</em> връща някаква стойност различна от <em>false</em>, тогава <em>Object.setPrototypeOf()</em> приема, че операцията е успяла.</p>
+      <p>Следващия пример скрива прототипа на <em>proxy</em>, като винаги връща <em>null</em> и също така не позволява на прототипа да бъде променен:</p>
+      <dl>
+        <dd><pre class="highlight">
+<span class="code">let</span> target = {};
+<span class="code">let</span> proxy = <span class="code">new Proxy</span>(target, {
+    getPrototypeOf(trapTarget) {
+        <span class="code">return null</span>;
+    },
+    setPrototypeOf(trapTarget, proto) {
+        <span class="code">return false</span>;
+    }
+});
+
+<span class="code">let</span> targetProto = <span class="code">Object</span>.getPrototypeOf(target);
+<span class="code">let</span> proxyProto = <span class="code">Object</span>.getPrototypeOf(proxy);
+
+console.log(targetProto === <span class="code">Object</span>.prototype);      // true
+console.log(proxyProto === <span class="code">Object</span>.prototype);       // false
+console.log(proxyProto);                            // null
+
+// succeeds (успех)
+<span class="code">Object</span>.setPrototypeOf(target, {});
+
+// throws error
+<span class="code">Object</span>.setPrototypeOf(proxy, {});
+        </pre></dd>
+      </dl>
+      <p>Можем да видим разликата между поведението на <em>target</em> и <em>proxy</em> в този пример. Докато <em>Object.getPrototypeOf()</em> връща стойност за <em>target</em>, той връща <em>null</em> за <em>proxy</em>, защото <em>getPrototypeOf trap</em> е извикан. По същия начин,<em>Object.setPrototypeOf()</em> успява, когато се използва върху <em>target</em>, но хвърля грешка, когато се използва за <em>proxy</em> към <em>setPrototypeOf trap</em>.</p>
+      <p>Ако искаме да използваме поведение по подразбиране за тези два <em>traps</em>, можем да използваме съответните методи на <em>Reflect</em>. Например, този пример изпълнява поведение по подразбиране за <em>getPrototypeOf</em> и <em>setPrototypeOf traps</em>:</p>
+      <dl>
+        <dd>
+          <pre class="highlight">
+<span class="code">let</span> target = {};
+<span class="code">let</span> proxy = <span class="code">new Proxy</span>(target, {
+    getPrototypeOf(trapTarget) {
+        <span class="code">return</span> Reflect.getPrototypeOf(trapTarget);
+    },
+    setPrototypeOf(trapTarget, proto) {
+        <span class="code">return</span> Reflect.setPrototypeOf(trapTarget, proto);
+    }
+});
+
+<span class="code">let</span> targetProto = <span class="code">Object</span>.getPrototypeOf(target);
+<span class="code">let</span> proxyProto = <span class="code">Object</span>.getPrototypeOf(proxy);
+
+console.log(targetProto === <span class="code">Object</span>.prototype);      // true
+console.log(proxyProto === <span class="code">Object</span>.prototype);       // true
+
+// успява
+<span class="code">Object</span>.setPrototypeOf(target, {});
+
+// също успява
+<span class="code">Object</span>.setPrototypeOf(proxy, {});
+            
+          </pre>
+        </dd>
+      </dl>
+      <p>В този пример можем да използваме взаимозаменяеми <em>target</em> и <em>proxy</em> и да получим същия резултат, защото <em>getPrototypeOf</em> и <em>setPrototypeOf traps</em> са само подадени да използват изпълнението по подразбиране. Важното в този пример е, че използваме <em>Reflect.getPrototypeOf()</em> и <em>Reflect.setPrototypeOf()</em> методите, вместо методите с едно и също име на <em>Object</em> поради някои важни разлики.</p>
+      <h3>Защо два комплекта методи?</h3>
+      <p>Най объркващия аспект на <em>Reflect.getPrototypeOf()</em> и <em>Reflect.setPrototypeOf()</em> е, че изглеждат подозрително подобни на <em>Object.getPrototypeOf()</em> и <em>Object.setPrototypeOf()</em>. Докато двете групи методи извършват подобни операции, има някои видими разлики между двата.</p>
+      <p>Да започнем с, <em>Object.getPrototypeOf()</em> и <em>Object.setPrototypeOf()</em>, които са операции от по-високо ниво, което означава, че са създадени за използване от разработчиците още от самото начало. <em>Reflect.getPrototypeOf()</em> и <em>Reflect.setPrototypeOf()</em> са операции от по-ниско ниво, което означава, че те излагат някакво поведение, което по-рано не е било предназначено за програмистите. Методите на <em>Reflect</em> са предназначени да дават достъп до предвидените само за вътрешни операции [[GetPrototypeOf]] и [[SetPrototypeOf]]. Можем да мислим за отношенията между тези две групи методи, като че <em>Object.getPrototypeOf()</em> е извикване на <em>Reflect.getPrototypeOf()</em> и <em>Object.setPrototypeOf()</em> е извикване на <em>Reflect.setPrototypeOf()</em>. Докато това не е строго вярно според спецификацията, все пак е добър начин да се опише връзката им.</p>
+      <p><em>Reflect.getPrototypeOf()</em> методите хвърлят грешка, ако аргумента им не е обект, докато <em>Object.getPrototypeOf()</em> първо коригира стойността в обект, преди извършване на операцията. Така че, ако ви се налага да подадете номер във всеки метод, ще получите различен резултат:</p>
+      <dl>
+        <dd>
+          <pre class="highlight">
+<span class="code">let</span> result1 = <span class="code">Object</span>.getPrototypeOf(1);
+console.log(result1 === <span class="code">Number</span>.prototype);  // true
+
+// throws an error
+Reflect.getPrototypeOf(1);
+          </pre>
+        </dd>
+      </dl>
+      <p><em>Object.getPrototypeOf()</em> метода ни позволява да извлечем прототип за цифрата 1, защото той първо коригира стойността в <em>Number</em> обект и след това връща <em>Number.prototype. Reflect.getPrototypeOf()</em> метода не коригира стойността и тъй като 1 не е обект, той хвърля грешка.</p>
+      <p><em>Reflect.setPrototypeOf()</em> метода също има някои съществени разлики с <em>Object.setPrototypeOf()</em> метода. Първо, той връща булева стойност, показваща дали операцията е успешна (<em>true</em> за успех, <em>false</em> за провал); ако <em>Object.setPrototypeOf()</em> не успее, той хвърля грешка. Както видяхме по-рано, когато <em>setPrototypeOf proxy trap</em> върне <em>false</em>, той предизвиква <em>Object.setPrototypeOf()</em> да хвърли грешка. <em>Object.setPrototypeOf()</em> метода връща първия аргумент, като негова стойност и следователно не е подходящ за прилагане на поведение по подразбиране на <em>setPrototypeOf proxy trap</em>. Ето един пример за тези разлики:</p>
+      <dl>
+        <dd>
+          <pre class="highlight">
+<span class="code">let</span> target1 = {};
+<span class="code">let</span> result1 = <span class="code">Object</span>.setPrototypeOf(target1, {});
+console.log(result1 === target1);                   // true
+
+<span class="code">let</span> target2 = {};
+<span class="code">let</span> result2 = Reflect.setPrototypeOf(target2, {});
+console.log(result2 === target2);                   // false
+console.log(result2);                               // true
+          </pre>
+        </dd>
+      </dl>
+      <p>В този пример, <em>Object.setPrototypeOf()</em> връща <em>target1</em>, като негова стойност, докато <em>Reflect.setPrototypeOf()</em> връща <em>false</em>. Тази малка разлика е много важна, когато се използва с <em>proxy traps</em>, така че не забравяйте да използвате <em>Reflect</em> вътре в тях.</p>
+      <dl>
+        <dd><div class="info">
+         <img src="./img/info.jpg" alt="info">
+       </div><strong>И двете групи методи ще наричаме <em>getPrototypeOf</em> и <em>setPrototypeOf proxy traps</em> когато ги използваме за <em>proxy</em>.</strong></dd>
+      </dl>
+      <h3>Object Extensibility Traps</h3>
+      <p>ECMAScript 5 добавя <em>object extensibility</em> модификация през <em>Object.preventExtensions()</em> и <em>Object.isExtensible()</em> методите и ECMAScript 6 позволява <em>proxies</em> да прихваща тези извиквания на методи към основните обекти чрез <em>preventExtensions</em> и <em>isExtensible traps</em>. И двата <em>traps</em> получават един аргумент <em>trapTarget</em>, който е обекта върху който е извикан метода. The <em>isExtensible trap</em> трябва да върне булева стойност, показваща дали обекта е <em>extensible</em>, докато <em>preventExtensions trap</em> трабва да върне булева стойност, показваща дали операцията е успяла.</p>
+      <p>Има също и <em>Reflect.preventExtensions()</em> и <em>Reflect.isExtensible()</em> методи за прилагане на поведение по подразбиране (които връщат булеви стойности, така че могат да се използват директно в съответните им <em>traps</em>). Ето един прост пример, който реализира поведение по подразбиране за <em>isExtensible</em> и <em>preventExtensions traps</em>:</p>
+      <dl>
+        <dd>
+          <pre class="highlight">
+<span class="code">let</span> target = {};
+<span class="code">let</span> proxy = <span class="code">new Proxy</span>(target, {
+    isExtensible(trapTarget) {
+        <span class="code">return</span> Reflect.isExtensible(trapTarget);
+    },
+    preventExtensions(trapTarget) {
+        <span class="code">return</span> Reflect.preventExtensions(trapTarget);
+    }
+});
+
+
+console.log(<span class="code">Object</span>.isExtensible(target));       // true
+console.log(<span class="code">Object</span>.isExtensible(proxy));        // true
+
+<span class="code">Object</span>.preventExtensions(proxy);
+
+console.log(<span class="code">Object</span>.isExtensible(target));       // false
+console.log(<span class="code">Object</span>.isExtensible(proxy));        // false
+          </pre>
+        </dd>
+      </dl>
+      <p>Този пример показва, че и двата <em>Object.preventExtensions()</em> и <em>Object.isExtensible()</em> правилно преминават от <em>proxy</em> към <em>target</em>. Можем разбира се, също да променим поведението. Например, ако не искаме да позволим на <em>Object.preventExtensions()</em> на нашето <em>proxy</em>, можем да върнем <em>false</em> от <em>preventExtensions trap</em>:</p>
+      <dl>
+        <dd>
+          <pre class="highlight">
+<span class="code">let</span> target = {};
+<span class="code">let</span> proxy = <span class="code">new Proxy</span>(target, {
+    isExtensible(trapTarget) {
+        <span class="code">return</span> Reflect.isExtensible(trapTarget);
+    },
+    preventExtensions(trapTarget) {
+        <span class="code">return false;</span> 
+    }
+});
+
+
+console.log(<span class="code">Object</span>.isExtensible(target));       // true
+console.log(<span class="code">Object</span>.isExtensible(proxy));        // true
+
+<span class="code">Object</span>.preventExtensions(proxy);
+
+console.log(<span class="code">Object</span>.isExtensible(target));       // true
+console.log(<span class="code">Object</span>.isExtensible(proxy));        // true
+          </pre>
+        </dd>
+      </dl>
+      <p>Тука, извикването към <em>Object.preventExtensions(proxy)</em> се игнорира ефективно, защото <em>preventExtensions trap</em> връща <em>false</em>. Операцията не се препраща към основната цел, така че <em>Object.isExtensible()</em> връща <em>true</em>.</p>
+      <h3>Duplicate Extensibility Methods</h3>
+      <p>Може би, за пореден път забелязвате, че има привидно дублиращи се методи за <em>Object</em> и <em>Reflect</em>, като в този случай, те са по-близки от колкото не са. Методите <em>Object.isExtensible()</em> и <em>Reflect.isExtensible()</em> са сходни с изключение на, когато подадената стойност не е обект. В този случай, <em>Object.isExtensible()</em> винаги връща <em>false</em>, докато <em>Reflect.isExtensible()</em> хвърля грешка. Ето един пример за това поведение:</p>
+      <dl>
+        <dd>
+          <pre class="highlight">
+<span class="code">let</span> result1 = <span class="code">Object</span>.isExtensible(2);
+console.log(result1);                       // false
+
+// throws error
+<span class="code">let</span> result2 = Reflect.isExtensible(2);
+          </pre>
+        </dd>
+      </dl>
+      <p>Това ограничение е подобно на разликата между <em>Object.getPrototypeOf()</em> и  <em>Reflect.getPrototypeOf()</em>, тъй като функционалността на по-ниско ниво има по-строги проверки за грешки, от колкото на по-високо ниво.</p>
+      <p> Методите <em>Object.preventExtensions()</em> и <em>Reflect.preventExtensions()</em> също са много сходни. Метода <em>Object.preventExtensions()</em> винаги връща стойността, която и е подадена като аргумент, дори ако не е обект. Метода <em>Reflect.preventExtensions()</em> от друга страна, хвърля грешка, ако аргумента не е обект; ако аргумента е обект <em>Reflect.preventExtensions()</em> връща <em>true</em> когато операцията е успешна или <em>false</em> ако не е. Например:</p>
+      <dl>
+        <dd>
+          <pre class="highlight">
+<span class="code">let</span> result1 = <span class="code">Object</span>.preventExtensions(2);
+console.log(result1);                               // 2
+
+<span class="code">let</span> target = {};
+<span class="code">let</span> result2 = Reflect.preventExtensions(target);
+console.log(result2);                               // true
+
+// throws error
+<span class="code">let</span> result3 = Reflect.preventExtensions(2);
+          </pre>
+        </dd>
+      </dl>
+      <p>Тука, на <em>Object.preventExtensions()</em> е подадена стойност 2, като той връща тази стойност въпреки, че не е обект. Метода <em>Reflect.preventExtensions()</em> връща <em>true</em>, когато и е подаден обект и хвърля грешка, когато и е подадено  2.</p>
+       <dl>
+        <dd><div class="info">
+         <img src="./img/info.jpg" alt="info">
+       </div><strong>Както, бе споменато по-рано, когато има привидно дублиращи се методи за <em>Object</em> и <em>Reflect</em>, винаги трябва да се използват методите на <em>Reflect</em> вътре в <em>proxy traps</em>.</strong></dd>
+      </dl>
+      <h3>Функция Proxies с използване на apply и construct traps</h3>
+      <p>От всички <em>proxy traps</em>, само <em>apply</em> и <em>construct</em> изискват <em>proxy target</em> да бъде функция. Както научихме в <a href="./03_function.html #izqsnqwane">Глава 3</a> функциите имат два вътрешни метода, [[Call]] и [[Construct]], които се изпълняват, когато една функция се извика без или със оператора <em>new</em>. The <em>apply</em> и <em>construct traps</em> съответстват на тези вътрешни методи и ни позволяват да ги заменим. The <em>apply trap</em> получава, а <em>Reflect.apply()</em> очаква следните аргументи, когато дадена функция се извиква без <em>new</em>:</p>
+      <dl>
+        <dd>
+          <ol>
+            <li><strong>trapTarget</strong> - функцията се изпълнява (<em>proxy target</em>).</li>
+            <li><strong>thisArg</strong> - стойността на <em>this</em> вътре във функцията по време на извикване.</li>
+            <li><strong>argumentsList</strong> - масив от аргументи подадени на функцията.</li>
+          </ol>
+        </dd>
+      </dl>
+      <p>The <em>construct trap</em>, който се извиква, когато функцията се изпълнява с помощта на new, получава следните аргументи:</p>
+      <dl>
+        <dd>
+          <ol>
+            <li><strong>trapTarget</strong> - функцията се изпълнява (<em>proxy target</em>).</li>
+            <li><strong>argumentsList</strong> - масив от аргументи подадени на функцията.</li>
+          </ol>
+        </dd>
+      </dl>
+      <p><em>Reflect.construct()</em> метода приема тези два аргумента и има трети не задължителен аргумент, <em>newTarget</em>. Аргумента <em>newTarget</em>, когато се дава уточнява стойността на <em>new.target</em> вътре във функцията.</p>
+      <p>Заедно, <em>apply</em> и <em>construct traps</em> напълно контролират поведението на всяка <em>proxy target</em> функция. За да имитираме поведение по подразбиране на функцията, можем да направим следното:</p>
+      <dl>
+        <dd>
+          <pre class="highlight-overflow">
+<span class="code">let</span> target = <span class="code">function</span>() { <span class="code">return</span> 42 },
+    proxy = <span class="code">new Proxy</span>(target, {
+        apply: <span class="code">function</span>(trapTarget, thisArg, argumentList) {
+            <span class="code">return</span> Reflect.apply(trapTarget, thisArg, argumentList);
+        },
+        construct: <span class="code">function</span>(trapTarget, argumentList) {
+            <span class="code">return</span> Reflect.construct(trapTarget, argumentList);
+        }
+    });
+
+<span class="comment"><em>// proxy с функция, като target изглежда, като функция</em></span>
+console.log(<span class="code">typeof</span> proxy);                  // "function"
+
+console.log(proxy());                       // 42
+
+<span class="code">var</span> instance = <span class="code">new</span> proxy();
+console.log(instance <span class="code">instanceof</span> proxy);     // true
+console.log(instance <span class="code">instanceof</span> target);    // true
+          </pre>
+        </dd>
+      </dl>
+      <p>Този пример има функция, която връща номера 42. The <em>proxy</em> за тази функция използва <em>apply</em> и <em>construct traps</em> да делегират това поведение до <em>Reflect.apply()</em> и <em>Reflect.construct()</em>, съответно. Крайният резултат е, че <em>proxy</em> функцията работи, като <em>target функция</em>, включително идентифицираща се, като функция при използване на <em>typeof</em>. The <em>proxy</em> се извиква без <em>new</em> за да върне 42 и после се извиква с <em>new</em> за да създаде обект, наречен <em>instance</em>. Обекта <em>instance</em> се счита за инстанция на <em>proxy</em> и <em>target</em> едновременно, защото <em>instanceof</em> използва прототипната верига за да определи тази информация. Тъй като прототипната верига не се влияе от това <em>proxy</em>, то <em>proxy</em> и <em>target</em> изглежда имат същия прототип на JavaScript машината.</p>
+      <h3>Валидиране на параметрите на функция</h3>
+      <p>The <em>apply</em> и <em>construct traps</em> отварят много възможности за промяна на начина, по който функцията се изпълнява. Например, да предположим, че искаме да потвърдим, че всички аргументи са на специфичен тип? Можем да проверим аргументите в <em>apply trap</em>:</p>
+      <dl>
+        <dd>
+          <pre class="highlight-overflow">
+<span class="comment"><em>// добавя заедно всички аргументи</em></span>
+<span class="code">function</span> sum(...values) {
+    <span class="code">return</span> values.reduce((previous, current) => previous + current, 0);
+}
+
+<span class="code">let</span> sumProxy = <span class="code">new Proxy</span>(sum, {
+        apply: <span class="code">function</span>(trapTarget, thisArg, argumentList) {
+
+            argumentList.forEach((arg) => {
+                 <span class="code">if</span> ( <span class="code">typeof</span> arg !== "number") {
+                     <span class="code">throw new</span> TypeError("All arguments must be numbers.");
+                }
+            });
+
+             <span class="code">return</span> Reflect.apply(trapTarget, thisArg, argumentList);
+        },
+        construct: <span class="code">function</span>(trapTarget, argumentList) {
+            <span class="code">throw new</span> TypeError("This function can't be called with new.");
+        }
+    });
+
+console.log(sumProxy(1, 2, 3, 4));          // 10
+
+<span class="comment"><em>// хвърля грешка</em></span>
+console.log(sumProxy(1, "2", 3, 4));
+
+<span class="comment"><em>// също хвърля грешка</em></span>
+<span class="code">let</span> result = <span class="code">new</span> sumProxy();
+          </pre>
+        </dd>
+      </dl>
+      <p>Този пример използва <em>apply trap</em> за да гарантира, че всички аргументи са номера. Функцията <em>sum()</em> добавя всички аргументи, които са и подадени. Ако и се подаде не-номер стойност, тя ще опита операция, която може да доведе до неочаквани резултати. Чрез увиването на <em>sum()</em> в <em>proxy</em> извиквайки <em>sumProxy()</em>, този код прихваща извикванията на функции и гарантира, че всеки аргумент е номер, преди да позволи повикването да продължи. За по-сигурно, кода също използва <em>construct trap</em> за да гарантира, че функциите не могат да бъдат извикани с <em>new</em>.</p>
+      <p>Можем също да направим обратното и да гарантираме, че дадена функция трябва да бъде извикана с <em>new</em> и да валидираме аргументите да бъдат номера:</p>
+      <dl>
+        <dd>
+          <pre class="highlight-overflow">
+<span class="code">function</span> Numbers(...values) {
+    <span class="code">this</span>.values = values;
+}
+
+<span class="code">let</span> NumbersProxy = <span class="code">new Proxy</span>(Numbers, {
+
+        apply: <span class="code">function</span>(trapTarget, thisArg, argumentList) {
+            <span class="code">throw new</span> TypeError("This function must be called with new.");
+        },
+
+        construct: <span class="code">function</span>(trapTarget, argumentList) {
+            argumentList.forEach((arg) => {
+                <span class="code">if</span> (<span class="code">typeof</span> arg !== "number") {
+                    <span class="code">throw new</span> TypeError("All arguments must be numbers.");
+                }
+            });
+
+            <span class="code">return</span> Reflect.construct(trapTarget, argumentList);
+        }
+    });
+
+<span class="code">let</span> instance = <span class="code">new</span> NumbersProxy(1, 2, 3, 4);
+console.log(instance.values);               // [1,2,3,4]
+
+// throws error
+NumbersProxy(1, 2, 3, 4);
+            
+          </pre>
+        </dd>
+      </dl>
+      <p>Тука, <em>apply trap</em> хвърля грешка, докато <em>construct trap</em> прави валидиране на входа и връща нов модел използвайки <em>Reflect.construct()</em>. Разбира се можем да постигнем същото нещо без <em>proxies</em> ако използваме <em>new.target</em>.</p>
+      <h3>Извикване на конструктора без new</h3>
+      <p>В <a href="./03_function.html #target">Глава 3</a> въведохме <em>new.target metaproperty</em>. Да преговорим, <em>new.target</em> е препратка към функция, която се извиква с <em>new</em>, което означава, че можем да разберем дали дадена функция се извиква с използване на <em>new</em> или чрез проверка на стойността на <em>new.target</em>, също като:</p>
+      <dl>
+        <dd>
+          <pre class="highlight-overflow">
+<span class="code">function</span> Numbers(...values) {
+
+    <span class="code">if</span> (<span class="code">typeof new</span>.target === "undefined") {
+        <span class="code">throw new</span> TypeError("This function must be called with new.");
+    }
+
+    <span class="code">this</span>.values = values;
+}
+
+<span class="code">let</span> instance = <span class="code">new</span> Numbers(1, 2, 3, 4);
+console.log(instance.values);               // [1,2,3,4]
+
+// throws error
+Numbers(1, 2, 3, 4);
+            
+          </pre>
+        </dd>
+      </dl>
+      <p>Този пример хвърля грешка, когато <em>Numbers()</em> се извиква без <em>new</em> (подобно на примера в предишната част, но без използване на <em>proxy</em>). Писането на код, като този е много по-лесно, от колкото с използване на <em>proxy</em> и е за предпочитане, ако единствената ви цел е да предотвратите извикване на функция без <em>new</em>. Обаче, понякога нямаме контрол над функцията, чието поведение трябва да се измени. В този случай използването на <em>proxy</em> има смисъл.</p>
+      <p>Да предположим, че функцията <em>Numbers</em> е определена на друго място в код, който не може да се промени. Ние знаем, че кода разчита на <em>new.target </em>и искаме да избегнем тази проверка, като все още можем да извикваме функцията. Поведението при използване на <em>new</em> е вече определено, така че просто можем да използваме <em>apply trap</em>:</p>
+      <dl>
+        <dd>
+          <pre class="highlight-overflow">
+<span class="code">function</span> Numbers(...values) {
+
+    <span class="code">if</span> (<span class="code">typeof new</span>.target === "undefined") {
+        <span class="code">throw new</span> TypeError("This function must be called with new.");
+    }
+
+    <span class="code">this</span>.values = values;
+}
+
+
+<span class="code">let</span> NumbersProxy = <span class="code">new Proxy</span>(Numbers, {
+        apply: <span class="code">function</span>(trapTarget, thisArg, argumentsList) {
+            <span class="code">return</span> Reflect.construct(trapTarget, argumentsList);
+        }
+    });
+
+
+<span class="code">let</span> instance = NumbersProxy(1, 2, 3, 4);
+console.log(instance.values);               // [1,2,3,4]
+            
+          </pre>
+        </dd>
+      </dl>
+      <p>Функцията <em>NumbersProxy</em> ни позволява да извикаме <em>Numbers</em> без да използваме <em>new</em> и тя се държи така, все едно, че е използван <em>new</em>. За да направим това, <em>apply trap</em> извиква <em>Reflect.construct()</em> с аргументите подадени в <em>apply</em>. Правейки това означава, че <em>new.target</em> вътре в <em>Numbers</em> е равно на себе си и следователно няма хвърлена грешка. Въпреки, че това е един прост пример за модифициране на <em>new.target</em>, можем да го направим по-директен.</p>
+      <h3>Висш абстрактен базов клас конструктори</h3>
+      <p>Да отидем една стъпка напред и да определим третия аргумент на <em>Reflect.construct()</em>, като специфична стойност за присвояване от <em>new.target</em>. Това е полезно, когато една функция проверява <em>new.target</em> срещу известна стойност, като например създаването на абстрактен базов клас конструктор (обсъден в <a href="09_classes.html #newTarget">Глава 9</a>). В абстрактния базов клас конструктор, <em>new.target</em> се очаква да бъде нещо различно от себе си в конструктора на класа, като:</p>
+      <dl>
+        <dd>
+          <pre class="highlight-overflow">
+<span class="code">class</span> AbstractNumbers {
+
+    constructor(...values) {
+        <span class="code">if</span> (<span class="code">new.target</span> === AbstractNumbers) {
+            <span class="code">throw new</span> TypeError("This function must be inherited from.");
+        }
+
+        <span class="code">this</span>.values = values;
+    }
+}
+
+<span class="code">class</span> Numbers <span class="code">extends</span> AbstractNumbers {}
+
+<span class="code">let</span> instance = <span class="code">new</span> Numbers(1, 2, 3, 4);
+console.log(instance.values);           // [1,2,3,4]
+
+// throws error
+<span class="code">new</span> AbstractNumbers(1, 2, 3, 4);
+            
+          </pre>
+        </dd>
+      </dl>
+      <p>Когато <em>new AbstractNumbers()</em> се извика, <em>new.target</em> е равно на <em>AbstractNumbers</em> и се хвърля грешка. Въпреки това, <em>new Numbers()</em> работи, защото <em>new.targetis</em> е равно на <em>Numbers</em>. Можем да заобиколим това ограничение, чрез ръчно задаване на <em>new.target</em> с proxy:</p>
+      <dl>
+        <dd>
+          <pre class="highlight-overflow">
+<span class="code">class</span> AbstractNumbers {
+
+    constructor(...values) {
+        <span class="code">if</span> (<span class="code">new</span>.target === AbstractNumbers) {
+            <span class="code">throw new </span>TypeError("This function must be inherited from.");
+        }
+
+        <span class="code">this</span>.values = values;
+    }
+}
+
+<span class="code">let</span> AbstractNumbersProxy = <span class="code">new Proxy</span>(AbstractNumbers, {
+        construct: function(trapTarget, argumentList) {
+            <span class="code">return</span> Reflect.construct(trapTarget, argumentList, <span class="code">function</span>() {});
+        }
+    });
+
+
+<span class="code">let</span> instance = <span class="code">new</span> AbstractNumbersProxy(1, 2, 3, 4);
+console.log(instance.values);               // [1,2,3,4]
+          </pre>
+        </dd>
+      </dl>
+      <p><em>AbstractNumbersProxy</em> използва <em>construct trap</em> за да прекъсне извикването към <em>new AbstractNumbersProxy()</em>. След това, <em>Reflect.construct()</em> метода се извиква с аргументи от <em>trap</em> и добавя празна функция, като аргумент. Тази празна функция се използва, като стойност на <em>new.target</em> вътре в конструктора. Понеже <em>new.target</em> е равен на <em>AbstractNumbers</em>, няма хвърлена грешка и конструктора се изпълнява напълно.</p>
+      <h3>Изискуем клас конструктор</h3>
+      <p>В <a href="09_classes.html">Глава 9</a>, научихме, че клас конструктора винаги трябва да се извиква с <em>new</em>. Това се случва, защото вътрешния [[Call]] метод за клас конструктори е настроен да хвърли грешка. Въпреки това, тъй като <em>proxies</em> могат да се намесят в разговорите към [[Call]], и ефективно да създадат изискване към клас конструктора да използва <em>proxy</em>. Например, ако искаме клас конструктора да работи без да използва <em>new</em>, можем да използваме <em>apply trap</em> да създаде нова инстанция. Ето един примерен код:</p>
+      <dl>
+        <dd>
+          <pre class="highlight">
+<span class="code">class</span> Person {
+    constructor(name) {
+        <span class="code">this</span>.name = name;
+    }
+}
+
+<span class="code">let</span> PersonProxy = <span class="code">new Proxy</span>(Person, {
+        apply: <span class="code">function</span>(trapTarget, thisArg, argumentList) {
+            <span class="code">return new </span>trapTarget(...argumentList);
+        }
+    });
+
+
+<span class="code">let</span> me = PersonProxy("Nicholas");
+console.log(me.name);                   // "Nicholas"
+console.log(me <span class="code">instanceof</span> Person);      // true
+console.log(me <span class="code">instanceof</span> PersonProxy); // true
+            
+          </pre>
+        </dd>
+      </dl>
+      <p>Обекта <em>PersonProxy</em> е <em>proxy</em> на <em>Person</em> клас конструктора. Клас конструкторите са само функции, така че се държат по същия начин, когато се използват в <em>proxies</em>. The <em>apply trap</em> отменя поведението по подразбиране и вместо това връща нова инстанция на <em>trapTarget</em>, която е равна на <em>Person</em> (например, използва <em>trapTarget</em> за да покаже, че не е нужно ръчно да определим класа). The <em>argumentList</em> се подава към <em>trapTarget</em> използвайки оператора <em>spread</em> да подаде всеки аргумент по отделно. Извикването на <em>PersonProxy()</em> без използване на <em>new</em> връща инстанция на <em>Person</em> (ако се опитаме да извикаме <em>Person()</em> без <em>new</em>, ще бъде хвърлена грешка). Създаване на изискуеми клас конструктори е нещо, което е възможно използвайки само <em>proxies</em>.</p>
+      <h3>Отмяна на Proxies</h3>
+      <p>Обикновено, <em>proxy</em> не може дабъде освободен от <em>target</em>, след като <em>proxy</em> вече е бил създаден. Всички примери до този момент в тази глава използват неотменими <em>proxies</em>. Въпреки това, може да има ситуации, когато да искаме да отменим <em>proxy</em> до по-късен момент от време, когато вече да не може да се използва. Това обикновено се случва, когато искаме да се осигури обект чрез API за целите на сигурността, като се запази възможността да се отреже достъпа до някои функции във някаква точка от времето.</p>
+      <p>Отмяна на <em>proxies</em> се създават с помощта на метода <em>Proxy.revocable()</em>, който има същите аргументи, както <em>Proxy constructor - target object</em> и <em>proxy handler</em>. Върнатата стойност е обект със свойства:</p>
+      <dl>
+        <dd>
+          <ol>
+            <li><strong>proxy</strong> - самия обект <em>proxy</em></li>
+            <li><strong>revoke</strong> - функция извикваща <em>revoke</em> на <em>proxy</em></li>
+          </ol>
+        </dd>
+      </dl>
+      <p>Когато функцията <em>revoke()</em> се извика, няма по-нататъшни операции, които могат да се извършат с <em>proxy</em>. Всеки опит за взаимодействие с <em>proxy object</em> ще предизвика <em>proxy trap</em> да хвърли грешка. Например:</p>
+      <dl>
+        <dd>
+           <pre class="highlight">
+<span class="code">let</span> target = {
+    name: "target"
+};
+
+<span class="code">let</span> { proxy, revoke } = <span class="code">Proxy</span>.revocable(target, {});
+
+console.log(proxy.name);        // "target"
+
+revoke();
+
+// throws error
+console.log(proxy.name);
+          </pre>
+        </dd>
+      </dl>
+      <p>Този пример създава отмяна на <em>proxy</em> и използва <em>destructuring</em> (разграждане) за да зададе <em>proxy</em> и <em>revoke</em> променливите на свойствата със същото име на обекта върнат от <em>Proxy.revocable()</em>. След това, <em>proxy</em> обекта, може да се използва само, като неотменим <em>proxy</em> обект, така <em>proxy.name</em> връща "target", защото той минава през <em>target.name</em>. Веднъж извикана функцията <em>revoke()</em>, обаче, <em>proxy</em> вече не функционира. Опита за достъп до <em>proxy.name</em> хвърля грешка, както и за всяка друга операция, която разчита на <em>proxy traps</em>.</p>
+  </article>
+  <nav>
+  <a href="11_promises.html" title="previous chapter">◀</a>
+  <a href="./index.html" title="cover">◆</a>
+  <a href="./13_modules.html" title="next chapter">▶</a>
+</nav>
+</body>
+</html>

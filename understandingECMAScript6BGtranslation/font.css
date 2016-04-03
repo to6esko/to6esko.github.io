@@ -1,0 +1,202 @@
+ html, body {
+ 	padding: 0;
+    margin: 0;
+
+ 	 }
+
+ body {
+ 	font-size: 21px;
+  line-height: 1.45;
+  color: black;
+  background: white;
+ }
+ 
+ h1 {
+  font-size: 2.5em;
+ }
+
+h3 {
+	font-size: 1.6em;
+}
+
+nav {
+	margin: 0 auto;
+  max-width: 35em;
+  padding: 2em 0 5em 0;
+  position: relative;
+  display: block;
+  height: 0;
+  text-align: right;
+}
+
+nav a {
+	margin: 0 auto;
+  max-width: 35em;
+  padding: 2em 0 5em 0;
+  position: relative;
+	font-size: 200%;
+  color: #aaa !important;
+  text-decoration: none !important;
+}
+
+ header {
+
+ 	margin: 0 auto;
+  max-width: 35em;
+  padding: 2em 0 5em 0;
+  position: relative;
+}
+
+ article {
+ 	margin: 0 auto;
+  max-width: 35em;
+  padding: 2em 0 5em 0;
+  position: relative;
+}
+
+ footer {
+ 	margin: 0 auto;
+  max-width: 35em;
+  padding: 2em 0 5em 0;
+  position: relative;
+}
+
+ol li {
+	 margin-left: 50px;
+   padding-bottom: 10px;
+}
+
+ul li {
+margin-left: 30px;
+  padding:10px;
+}
+
+img {
+  width:35px;
+  height:35px;
+}
+
+#table-stayle{
+  overflow:scroll;
+}
+
+.table-marg th {
+text-align: center;
+  font-size: 1.3em;
+  border-bottom: 1px solid black;
+  padding:10px;
+  position: relative;
+}
+
+.table-marg  tr{
+  padding-left: 50px;
+}
+
+.table-marg td {
+  text-align: left;
+  border-bottom: 1px solid black;
+  padding-left: 35px;
+}
+
+.table {
+
+  width: 50%;
+  margin-left:25px;
+}
+
+.table th {
+  text-align: center;
+  font-size: 1.3em;
+  border-bottom: 1px solid black;
+  padding:10px;
+  position: relative;
+}
+
+.table  tr{
+  padding-left: 50px;
+}
+
+.table  td {
+
+  text-align: left;
+  border-bottom: 1px solid black;
+  padding-left: 35px;
+}
+
+.head-num {
+  font-size: 60%;
+  font-style: normal;
+  color: #aaa;
+  margin-top: -.7em;
+}
+
+.highlight-overflow{
+    overflow:scroll;
+    border-radius: 1px;
+    font-family: "Lucida Console", Monaco, monospace;
+    font-style: normal;
+    margin: 1em;
+    padding-top:1em;
+    padding-left: 1em;
+    font-size: 0.8em;
+    background: rgb(244,244,244) ;
+}
+
+.highlight {
+    border-radius: 1px;
+    font-family: "Lucida Console", Monaco, monospace;
+    font-style: normal;
+    margin: 1em;
+    padding-top:1em;
+    padding-left: 1em;
+    font-size: 0.8em;
+    background: rgb(244,244,244) ;
+}
+
+ .code {
+  color:rgb(0, 128, 0);
+  font-family: "Lucida Console", Monaco, monospace;
+  font-size: 1em;
+  font-style: normal;
+}
+
+.comment {
+  color: cornflowerblue; 
+  font-family:serif;
+  font-style: italic;
+  font-size: 1.2em;
+}
+
+.aside-overfolw{
+  overflow:scroll;
+  border-style: solid;
+    border-color: #cbcbcb;
+    border-width: thin;
+    margin: 1em;
+    padding: 1em 1.5em;
+
+}
+ .aside{
+
+    border-style: solid;
+    border-color: #cbcbcb;
+    border-width: thin;
+    margin: 1em;
+    padding: 1em 1.5em;
+ }
+
+.worning{
+      margin-left: -2em;
+    margin-top: -0.2em;
+    font-weight: normal;
+    font-style: normal;
+    position: absolute;
+}
+
+.info{
+  margin-left: -2em;
+    margin-top: -0.2em;
+    font-weight: normal;
+    font-style: normal;
+    position: absolute;
+}

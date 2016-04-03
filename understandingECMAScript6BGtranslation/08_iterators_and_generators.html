@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Iterators и Generators :: Understanding ECMAScript 6</title>
+	<link rel="stylesheet" href="font.css">
+</head>
+<body>
+	<nav>
+	<a href="./07_set_and_map.html" title="previous chapter">◀</a>
+  <a href="./index.html" title="cover">◆</a>
+  <a href="09_classes.html" title="next chapter">▶</a>
+</nav>
+	<header id="header" class="">
+		<h1><div class="head-num">Глава 8</div>Iterators и Generators</h1>
+		<p>Итераторите се използват в много програмни езици, като начин за по-лесна работа с колекции от данни. Много езици са изместили далеч нуждата от използване на <em>for</em> цикли, където инициализацията на променливи, които проследяват позиция в колекцията е необходима за използване на итератор обекти, които програмно се връщат на следващия елемент в колекцията. В ECMAScript 6, JavaScript добавя итератори, като важен елемент от езика. При съчетаване на нови методи за масиви и нови видове колекции (като <em>sets</em> и <em>maps</em>), итераторите стават още по-важни за ефективната обработка на данни.</p>
+	</header><!-- /header -->
+	<article>
+		<h3>Цикъл проблем</h3>
+		<p>Ако някога сте писали JavaScript има шанс да сте писали код, който изглежда така:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">var</span> colors = ["red", "green", "blue"];
+
+<span class="code">for</span> (<span class="code">var</span> i = 0, len < colors.length; i < len; i++) {
+    console.log(colors[i]);
+}
+			</pre></dd>
+		</dl>
+		<p>Това е стандартен <em>for</em> цикъл, който създава променливата <em>i</em> за да следи индекса в масива. Стойността на <em>i</em> се увеличава всеки път в цикъла, ако тя не е по-голяма от дължината на масива (съхраняван в <em>len</em>). Това е един сравнително прост пример, сложността нараства, когато се правят вложени цикли и трябва да се следят няколко променливи. Тази допълнителна сложност може да доведе до грешки, а шаблонния характер на кода се поддава на повече грешки, тъй като подобен код се пише на няколко места. Това е проблема, който итераторите са предназначени да решат.</p>
+		<h3 id="iterators">Какво са итераторите?</h3>
+		<p>Итераторите не са нищо повече от обекти със специфичен интерфейс. Този интерфейс се състои от метод наречен <em>next()</em>, чийто резултат връща обект. Обекта резултат има две свойства, <em>value</em>, която е следващата стойност и <em>done</em>, който е булева стойност, която е <em>true</em>, когато няма повече стойности за връщане. Итератора поддържа вътрешен указател за местоположение в набора от стойности и с всяко извикване на <em>next()</em>, връща следващата подходяща стойност.</p>
+		<p>Ако извикаме <em>next()</em>, след като последната стойност е била върната, връща метода <em>done</em>, като <em>true</em> и <em>value</em> съдържаща върнатата стойност за итератора. Тази върната стойност, не се счита за част от набора с данни, а по-скоро, като последната част от свързани данни или <em>undefined</em>,  ако не съществуват такива данни. (Тази концепция ще стане по-ясна в раздела за генератори, разгледани по-късно в тази глава).</p>
+		<p>С това разбиране е сравнително лесно да се създаде итератор, използвайки ECMAScript 5, например:</p>
+		<dl>
+			<dd><pre class="highlight-overflow">
+<span class="code">function</span> createIterator(items) {
+
+    <span class="code">var</span> i = 0;
+
+    <span class="code">return</span> {
+        next: <span class="code">function</span>() {
+
+            <span class="code">var</span> done = (i >= items.length);
+            <span class="code">var</span> value = !done ? items[i++] : <span class="code">undefined</span>;
+
+            <span class="code">return</span> {
+                done: done,
+                value: value
+            };
+
+        }
+    };
+}
+
+<span class="code">var</span> iterator = createIterator([1, 2, 3]);
+
+console.log(iterator.next());           // "{ value: 1, done: false }"
+console.log(iterator.next());           // "{ value: 2, done: false }"
+console.log(iterator.next());           // "{ value: 3, done: false }"
+console.log(iterator.next());           // "{ value: undefined, done: true }"
+
+<span class="comment"><em>// за всички по-нататъшни извиквания</em></span>
+console.log(iterator.next());           // "{ value: undefined, done: true }"
+			</pre></dd>
+		</dl>
+		<p>Функцията <em>createIterator()</em> в този пример, връща обект с <em>next()</em> метод. Всеки път, когато се извика, се премества на следващата стойност в <em>items</em> масива с елементи и се връща, като <em>value</em>. Когато <em>i</em> е 3, <em>items[i++]</em> връща <em>undefined</em> и <em>done</em> е <em>true</em>, което отговаря на специалния последен случай за итератори в ECMAScript 6.</p>
+		<p>Може би си мислите, че итераторите изглеждат интересни, но по-сложни за писане. В действителност писането на итератори, които да се придържат към правилното поведение е малко трудно, ето защо ECMAScript 6 предвижда генератори.</p>
+		<h3 id="generators">Генератори</h3>
+		<p>Генератор е специален вид функция, която връща итератор. Генератор функциите са обозначени чрез вмъкване на символ звезда (*) след ключовата дума <em>function</em> (няма значение дали звездата е в непосредствена близост до функцията или има някакво празно пространство между тях). Ключовата дума <em>yield</em> се използва вътре в генератора, за да определи стойностите, които итератора трябва да върне, когато се извика <em>next()</em>. Така, че ако искате да върнете три различни стойности за всяко следващо извикване на <em>next()</em>, може да го направите по следния начин:</p>
+		<dl>
+			<dd><pre class="highlight-overflow">
+// generator
+<span class="code">function</span> *createIterator() {
+    <span class="code">yield</span> 1;
+    <span class="code">yield</span> 2;
+    <span class="code">yield</span> 3;
+}
+<span class="comment"><em>//генератора се извиква, като редовна функция, но се връща като итератор</em></span>
+<span class="code">let</span> iterator = createIterator();
+
+console.log(iterator.next().value);     // 1
+console.log(iterator.next().value);     // 2
+console.log(iterator.next().value);     // 3
+			</pre></dd>
+		</dl>
+		<p>В този пример, функцията <em>createIterator()</em> е генератор (както е посочено от звездата * преди името) и се извиква, като всяка друга функция. Стойността връща итератор. Няколкото <em>yield</em> изявления във вътрешността на генератора, показват развитието на стойностите, които трябва да бъдат върнати, когато <em>next()</em> се извика върху <em>iterator</em>. Първия, <em>next()</em> трябва да върне 1, после 2 и след това 3 преди итератора да завърши.</p>
+		<p>Може би най-интересния аспект на генератор функцията е, че спира изпълнението след всяко <em>yield</em> изявление, така че, <em>yield</em> 1 се изпълнява и след това функцията не прави нищо друго, докато не се извика итератора на следващия <em>next()</em> метод. В този момент, изпълнението се възобновява със следващия отчет след <em>yield</em> 1, който в този случай е <em>yield</em> 2. Тази способност да спира изпълнението по средата на една функция е изключително мощна и се поддава на някои интересни приложения за генератор функции (обсъдени по-късно в тази глава).</p>
+		<p>Ключовата дума <em>yield</em> може да се използва с всяка стойност или израз, така че можем да направим интересни неща, като например използване на <em>yield</em> във вътрешността на <em>for</em> цикъл:</p>
+		<dl>
+			<dd><pre class="highlight-overflow">
+<span class="code">function</span> *createIterator(items) {
+    <span class="code">for</span> (<span class="code">let</span> i=0; i < items.length; i++) {
+        <span class="code">yield</span> items[i];
+    }
+}
+
+<span class="code">let</span> iterator = createIterator([1, 2, 3]);
+
+console.log(iterator.next());           // "{ value: 1, done: false }"
+console.log(iterator.next());           // "{ value: 2, done: false }"
+console.log(iterator.next());           // "{ value: 3, done: false }"
+console.log(iterator.next());           // "{ value: undefined, done: true }"
+
+<span class="comment"><em>// за всички по-нататъшни извиквания</em></span>
+console.log(iterator.next());           // "{ value: undefined, done: true }"
+			</pre></dd>
+		</dl>
+		<p>В този пример, масива се използва в <em>for</em> цикъл и получаваме всяка позиция с напредването на цикъла. Всеки път, където се среща <em>yield</em> цикъла спира и всеки път, когато <em>next()</em> се извика върху итератора, цикъла скача обратно от където е спрял.</p>
+		<p>Генератор функциите са важна част от ECMAScript 6 и тъй като са само функции, те могат да се използват на същите места.</p>
+		<h3>Израз на генератор функция</h3>
+		<p>Генераторите могат да бъдат създадени с помощта на функционални изрази по същия начин, както използваме декларация на функция с включване на символ звезда (*) между ключовата дума <em>function</em> и отварящите скоби, например:</p>
+		<dl>
+			<dd><pre class="highlight-overflow">
+<span class="code">let</span> createIterator = <span class="code">function</span> *(items) {
+    <span class="code">for</span> (<span class="code">let</span> i=0; i < items.length; i++) {
+        <span class="code">yield</span> items[i];
+    }
+};
+
+<span class="code">let</span> iterator = createIterator([1, 2, 3]);
+
+console.log(iterator.next());           // "{ value: 1, done: false }"
+console.log(iterator.next());           // "{ value: 2, done: false }"
+console.log(iterator.next());           // "{ value: 3, done: false }"
+console.log(iterator.next());           // "{ value: undefined, done: true }"
+
+<span class="comment"><em>// за всички по-нататъшни извиквания</em></span>
+console.log(iterator.next());           // "{ value: undefined, done: true }"
+			</pre></dd>
+		</dl>
+		<p>В този код, <em>createIterator()</em> е по-скоро израз на генератор функция, от колкото декларация на функция (както в предишния пример). Тъй като израза на функцията е анонимен, звездата е между ключовата дума <em>function</em> и отварящите скоби. В противен случай, този пример ще е същия, като предишния използвайки декларация на генератор функция.</p>
+		<dl>
+			<dd><div class="info">
+         <img src="./img/info.jpg" alt="info">
+       </div><strong>Не е възможно да се създаде функция стрела, която да е генератор.</strong></dd>
+		</dl>
+		<h3>Методи на генератор обекта</h3>
+		<p>Тъй като генераторите са само функции, те могат да бъдат добавени към обекти, по същия начин, както и другите функции. Например, можем да използваме ECMAScript 5-<em>style</em> обекта литерал с функция израз:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">var</span> o = {
+
+    createIterator: <span class="code">function</span> *(items) {
+        <span class="code">for</span> (<span class="code">let</span> i=0; i < items.length; i++) {
+            <span class="code">yield</span> items[i];
+        }
+    }
+};
+
+<span class="code">let</span> iterator = o.createIterator([1, 2, 3]);
+				
+			</pre></dd>
+		</dl>
+		<p>Можем да използваме ECMAScript 6 метода за краткия запис, като поставим името на метода със звезда (*):</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">var</span> o = {
+
+    *createIterator(items) {
+        <span class="code">for</span> (<span class="code">let</span> i=0; i < items.length; i++) {
+            <span class="code">yield</span> items[i];
+        }
+    }
+};
+
+<span class="code">let</span> iterator = o.createIterator([1, 2, 3]);
+			</pre></dd>
+		</dl>
+		<p>Този пример е функционално еквивалентен на предишния, като единствената разлика е в използването на синтаксиса. Тъй като метода се дефинира с помощта на краткия запис и няма ключовата дума <em>function</em>, звездата се поставя непосредствено преди името на метода (макар, че може да има празно пространство между звездата и метода).</p>
+		<h3 id="iterables">Iterables и for-of</h3>
+		<p>Тясно свързана с концепцията за итератори е <em>iterable</em>. Един <em>iterable</em> е обект с <em>Symbol.iterator</em> свойство. <em>Well-known Symbol.iterator</em> определя функция, която връща итератор за дадения обект. Всички обекти колекции, включително масиви, <em>sets</em> и <em>maps</em>, както и <em>strings</em>, са <em>iterable</em> в ECMAScript 6 и така имат зададен итератор по подразбиране. <em>Iterable</em> са предназначени да бъдат използвани с ново допълнение в ECMAScript: <em>for-of</em> цикъл.</p>
+		<dl>
+			<dd><div class="info">
+         <img src="./img/info.jpg" alt="info">
+       </div><strong>Всички итератори създадени от генератори са <em>iterables</em>, тъй като генераторите присвояват свойството <em>Symbol.iterator</em> по подразбиране.</strong></dd>
+		</dl>
+		<p>Цикъла <em>for-of</em> е втората част от решението на проблема, въведен в началото на тази глава. Вместо да се налага да следите индекса в колекцията, <em>for-of</em> цикъла извиква <em>next() iterable</em> всеки път през цикъла и съхранява стойността от обекта на резултата в променлива. Цикъла продължава този процес, докато свойството <em>done</em> от върнатия обект е <em>true</em>. Например:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> values = [1, 2, 3];
+
+<span class="code">for</span> (<span class="code">let</span> num of values) {
+    console.log(num);
+}
+			</pre></dd>
+		</dl>
+		<p>Този код извежда следното:</p>
+		<dl>
+			<dd><pre class="highlight">
+				<p>1<br>2<br>3</p>
+			</pre>
+			</dd>
+		</dl>
+		<p>Цикъла <em>for-of</em> в този пример е първото извикване на <em>Symbol.iterator</em> метода на масива за извличане на итератор (както бе споменато по-рано, всички масиви са <em>iterables</em>). После, се извиква <em>iterator.next()</em> и <em>value</em> свойството на обекта на резултата се чете в <em>num</em>. Така <em>num</em> е първо 1, после 2 и на края 3. Когато <em>done</em> в обекта на резултата стане <em>true</em>, цикъла излиза, така <em>num</em> никога няма да присвои стойността <em>undefined</em>.</p>
+		<p>Предимството на <em>for-of</em> за разлика от традиционния <em>for</em> цикъл е, че  никога не трябва да следите индекса в колекцията. Вместо това, можете да се фокусирате върху работата със съдържанието на колекцията.</p>
+		<dl>
+			<dd><div class="worning">
+         <img src="./img/worning.jpg" alt="worning">
+       </div><strong><em>for-of</em> изявлението ще хвърли грешка, когато се използва върху <em>non-iterable, null</em> или <em>undefined</em>.</strong></dd>
+		</dl>
+		<h3>Достъп до итератор по подразбиране</h3>
+		<p>Можем да получим достъп до итератор по подразбиране за даден обект, използвайки <em>Symbol.iterator</em>, например:</p>
+		<dl>
+			<dd><pre class="highlight-overflow">
+<span class="code">let</span> values = [1, 2, 3];
+<span class="code">let</span> iterator = values[Symbol.iterator]();
+
+console.log(iterator.next());           // "{ value: 1, done: false }"
+console.log(iterator.next());           // "{ value: 2, done: false }"
+console.log(iterator.next());           // "{ value: 3, done: false }"
+console.log(iterator.next());           // "{ value: undefined, done: true }"
+			</pre></dd>
+		</dl>
+		<p>Този код получава итератор по подразбиране за <em>values</em> и използва това за обхождане на стойностите в масива. Това е същия процес, който се случва зад кулисите, когато се използва <em>for-of</em> цикъл.</p>
+		<p>Знаейки, че <em>Symbol.iterator</em> задава итератор по подразбиране е възможно да се открие, ако един обект е <em>iterable</em> с помощта на следното:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">function</span> isIterable(object) {
+    <span class="code">return typeof</span> object[Symbol.iterator] === "function";
+}
+
+console.log(isIterable([1, 2, 3]));     // true
+console.log(isIterable("Hello"));       // true
+console.log(isIterable(<span class="code">new</span> Map()));     // true
+console.log(isIterable(<span class="code">new</span> Set()));     // true
+console.log(isIterable(<span class="code">new</span> WeakMap())); // false
+console.log(isIterable(<span class="code">new</span> WeakSet())); // false
+			</pre></dd>
+		</dl>
+		<p>Функцията <em>isIterable()</em> просто проверява дали съществува итератор по подразбиране в обекта и дали е функция. Това е подобно на проверката, която <em>for-of</em> цикъла прави преди да се изпълни.</p>
+		<p>Сега знаейки за достъпа до итератора по подразбиране с помощта <em>Symbol.iterator</em>, можете да използвате това свойство за да създадете свой собствен <em>iterables</em>.</p>
+		<h3 id="iterable">Създаване на  Iterables</h3>
+		<p>Програмно дефинирани обекти не са <em>iterable</em> по подразбиране но можем да ги направим <em>iterable</em> чрез създаване на <em>Symbol.iterator</em> свойство съдържащо генератор. Например:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> collection = {
+    items: [],
+    *[Symbol.iterator]() {
+        <span class="code">for</span> (<span class="code">let</span> item of <span class="code">this</span>.items) {
+            <span class="code">yield</span> item;
+        }
+    }
+
+};
+
+collection.items.push(1);
+collection.items.push(2);
+collection.items.push(3);
+
+<span class="code">for</span> (<span class="code">let</span> x of collection) {
+    console.log(x);
+}
+
+// Output:
+// 1
+// 2
+// 3
+			</pre></dd>
+		</dl>
+		<p>Този код дефинира <em>iterator</em> по подразбиране за променлива наречена <em>collection</em> използвайки краткия запис на обект литерал и изчисляване на свойство с помощта на <em>Symbol.iterator</em> (обърнете внимание, че звездата все още идва преди името). Генератора след това  използва <em>for-of</em> за обхождане на стойностите в <em>this.items</em> и използва <em>yield</em> за да върне всяка една. Така че, вместо ръчни итерации определящи стойности, да се върне като част от итератор по подразбиране, обекта колекция разчита на итератора по подразбиране на <em>this.items</em> да си свърши работата.</p>
+		<dl>
+			<dd><div class="info">
+         <img src="./img/info.jpg" alt="info">
+       </div><strong>Друг подход за използване на итератор на друг обект е да се използват делегирани генератори, една тема обсъдена по късно в тази глава.</strong></dd>
+		</dl>
+		<p>До сега видяхме някои употреби на итератори по подразбиране за масиви, но има много повече вградени итератори в ECMAScript 6 за да направи работата с колекции от данни по-лесна.</p>
+		<h3>Вградени итератори</h3>
+		<p>Итераторите са важна част от ECMAScript 6 и като такива, са достъпни за много обекти по подразбиране. Не е нужно да създавате свои собствени итератори за много от вградените типове, защото езика има вече готови. Ще ви се наложи да създавате итератори, когато откриете, че няма такива вградени, които да обслужват целите ви, най-често при определяне на ваши собствени обекти или класове. В противен случай, можете да разчитате на вградените итератори да си свършат работата. Може би най-често срещаните употреби на итератори са тези, които работят с колекции. </p>
+		<h3 id="values">Итератори за колекции</h3>
+		<p>ECMAScript 6 има три вида обекти колекции: <em>arrays, maps</em> и <em>sets</em>. И трите имат едни и същи вградени итератори, за да ви помогнат да навигирате в тяхното съдържание. Може да изтеглите итератор за събиране, като извикате един от следните методи:</p>
+		<dl>
+			<dd>
+				<ul>
+					<li><strong>entries() </strong>- връща итератор, чиито стойности са двойка ключ-стойност.</li>
+					<li><strong>values() </strong>- връща итератор, чиито стойности са стойностите на колекцията.</li>
+					<li><strong>keys() </strong>- връща итератор, чийто, стойности са ключовете, които се съдържат в колекцията.</li>
+				</ul>
+			</dd>
+		</dl>
+		<p>Итератора <em>entries()</em> връща масив с два елемента и извиква <em>next()</em> всеки път. Дву-елементния масив представлява ключ и стойност за всеки елемент в колекцията. За масиви първият елемент е цифров индекс. За <em>sets</em> първия елемент е също и стойността (понеже стойността се удвоява с ключовете в <em>sets</em>). За <em>maps</em> първия елемент е ключа. Ето един пример:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> colors = [ "red", "green", "blue" ];
+<span class="code">let</span> tracking = <span class="code">new</span> Set([1234, 5678, 9012]);
+<span class="code">let</span> data = <span class="code">new</span> Map();
+
+data.set("title", "Understanding ECMAScript 6");
+data.set("format", "ebook");
+
+<span class="code">for</span> (<span class="code">let</span> entry of colors.entries()) {
+    console.log(entry);
+}
+
+<span class="code">for</span> (<span class="code">let</span> entry of tracking.entries()) {
+    console.log(entry);
+}
+
+<span class="code">for</span> (<span class="code">let</span> entry of data.entries()) {
+    console.log(entry);
+}
+			</pre></dd>
+		</dl>
+		<p>Този пример извежда следното:</p>
+			<dl>
+				<dd><pre class="highlight">
+					<p>[0, "red"] <br>[1, "green"] <br>[2, "blue"]<br>[1234, 1234]<br>[5678, 5678]<br>[9012, 9012]<br>["title", "Understanding ECMAScript 6"]<br>["format", "ebook"]</p>
+				</pre>
+				</dd>
+			</dl>
+			<p>Този код използва метода <em>entries()</em> за всеки тип от колекцията за извличане на итератор и <em>for-of</em> за обхождане на елементите. От изхода на конзолата, можете да видите ключовете и стойностите, върнати по двойки за всеки елемент.</p>
+			<p>Итератора <em>values()</em> просто връща стойностите, тъй като те се съхраняват в колекция. Например:</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">let</span> colors = [ "red", "green", "blue" ];
+<span class="code">let</span> tracking = <span class="code">new</span> Set([1234, 5678, 9012]);
+<span class="code">let</span> data = <span class="code">new</span> Map();
+
+data.set("title", "Understanding ECMAScript 6");
+data.set("format", "ebook");
+
+<span class="code">for</span> (<span class="code">let</span> value of colors.values()) {
+    console.log(value);
+}
+
+<span class="code">for</span><span class="code">for</span> (<span class="code">let</span> value of tracking.values()) {
+    console.log(value);
+}
+
+<span class="code">for</span> (<span class="code">let</span> value of data.values()) {
+    console.log(value);
+} 
+                </pre></dd>
+			</dl>
+			<p>Този пример извежда следното:</p>
+			<dl>
+				<dd><pre class="highlight">
+					<p>"red"<br>"green"<br>"blue"<br> 1234<br> 5678<br> 9012<br>"Understanding ECMAScript 6"<br>"ebook"</p>
+				</pre>
+				</dd>
+			</dl>
+			<p>В този случай, използвайки <em>values()</em> връща точните данни, съдържащи се в колекцията без никаква информация за тяхното местонахождение.</p>
+			<p>Итератора <em>keys()</em> връща всеки ключ присъстващ в колекцията. За масиви, това е само цифровия ключ (той никога не връща други собствени свойства на масива). За <em>sets</em>, ключовете винаги са същите, като стойностите и така <em>keys()</em> и <em>values()</em> връщат също итератор. За maps, това е всеки уникален ключ. Ето един пример:</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">let</span> colors = [ "red", "green", "blue" ];
+<span class="code">let</span> tracking = <span class="code">new</span> Set([1234, 5678, 9012]);
+<span class="code">let</span> data = <span class="code">new</span> Map();
+
+data.set("title", "Understanding ECMAScript 6");
+data.set("format", "ebook");
+
+<span class="code">for</span> (<span class="code">let</span> key of colors.keys()) {
+    console.log(key);
+}
+
+<span class="code">for</span> (<span class="code">let</span> key of tracking.keys()) {
+    console.log(key);
+}
+
+<span class="code">for</span> (<span class="code">let</span> key of data.keys()) {
+    console.log(key);
+}
+				</pre></dd>
+			</dl>
+			<p>Този пример извежда следното:</p>
+			<dl>
+				<dd>
+					<pre class="highlight">
+					<p>0 <br>1 <br>2 <br>1234 <br>5678<br>9012 <br>"title"<br>"format"</p>
+				</pre>
+				</dd>
+			</dl>
+			<p>Когато използвате <em>keys()</em> итератор, ще получите само съответните цифрови ключове в колекцията. За масиви, това означава че ще получите само цифрови индекси дори ако сте добавили именувани свойства към обекта масив. Това е различно от начина, по който <em>for-in</em> цикъла работи с масиви, тъй като итерациите на <em>for-in</em> цикъла минават над свойствата, а не само върху цифровите индекси.</p>
+			<p>Освен това, всеки тип колекция има итератор по подразбиране, който се използва от <em>for-of</em> всеки път, когато итератора не е изрично посочен. Итератора по подразбиране за <em>arrays</em> и <em>sets</em> е <em>values()</em>, докато итератора по подразбиране за <em>maps</em> е <em>entries()</em>. Това го прави малко по-лесни за използване на обекти колекции в <em>for-of</em>:</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">let</span> colors = [ "red", "green", "blue" ];
+<span class="code">let</span> tracking = <span class="code">new</span> Set([1234, 5678, 9012]);
+<span class="code">let</span> data = <span class="code">new</span> Map();
+
+data.set("title", "Understanding ECMAScript 6");
+data.set("format", "ebook");
+
+<span class="comment"><em>//също, като използването на colors.values()</em></span>
+<span class="code">for</span> (<span class="code">let</span> value of colors) {
+    console.log(value);
+}
+
+<span class="comment"><em>//също, като използването на tracking.values()</em></span>
+<span class="code">for</span> (<span class="code">let</span> num of tracking) {
+    console.log(num);
+}
+
+<span class="comment"><em>//също, като използването на data.entries()</em></span>
+<span class="code">for</span> (<span class="code">let</span> entry of data) {
+    console.log(entry);
+}
+				</pre></dd>
+			</dl>
+			<p>Този пример извежда следното:</p>
+			<dl>
+				<dd>
+					<pre class="highlight">
+					<p>"red"<br>"green"<br>"blue"<br>1234 <br>5678 <br>9012 <br>["title", "Understanding ECMAScript 6"]<br>["format", "ebook"]</p>
+				</pre>
+				</dd>
+			</dl>
+			<p>Итераторите по подразбиране за <em>arrays</em>, <em>sets</em> и <em>maps</em> са проектирани да работят по същия начин, както се инициализират тези обекти. Така масиви и <em>sets</em> връщат техните стойности по подразбиране, докато <em>maps</em> връща същия формат - масив, който може да бъде прехвърлен в <em>Map</em> конструктора. Това е полезно, когато се използва в <em>for-of</em> цикли с разграждане, както в този пример:</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">let</span> data = <span class="code">new</span> Map();
+
+data.set("title", "Understanding ECMAScript 6");
+data.set("format", "ebook");
+
+<span class="comment"><em>// също, като използването на data.entries()</em></span>
+<span class="code">for</span> (<span class="code">let</span> [key, value] of data) {
+    console.log(key + "=" + value);
+}
+				</pre></dd>
+			</dl>
+			<p>Цикъла <em>for-of</em> в този пример, използва разграден масив, за да зададе <em>key</em> и <em>value</em> за всеки запис в <em>map</em>. По този начин можете лесно да работите с ключове и стойности едновременно без да се налага да получавате достъп до масива с двата елемента.</p>
+			<dl>
+				<dd><div class="worning">
+         <img src="./img/worning.jpg" alt="worning">
+       </div><strong><em>Weak sets</em> и <em>weak maps</em> нямат никакви вградени итератори. Управлението на <em>weak</em> референции означава, че няма начин да се знае точно колко стойности има в тези колекции, което също означава, че няма начин да минават итерации над тях</strong></dd>
+			</dl>
+			<h3>String итератори</h3>
+			<p>Започвайки с ECMAScript 5, JavaScript <em>strings</em> бавно се развиват да бъдат масиво-подобни. Например, ECMAScript 5 официално стандартизират скоба нотацията за достъп до символите в <em>string</em> (<em>text[0]</em> за да получим първия символ). За съжаление скоба нотацията работи върху кодови единици, вместо символи, така че не може да се използва за достъп до двубайтови символи правилно. ECMAScript 6 е добавил много функционалност за пълна подкрепа на Unicode (виж <a href="./02_strings.html #unicode">Глава 2</a>) и така, итератора по подразбиране за <em>strings</em> работи върху символи, а не върху кодови единици.</p>
+			<p>Използва се скоба нотация и <em>length</em> свойство, кодовите единици използвани вместо символи на изхода са малко неочаквани:</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">var</span> message = "A ð ®• B";
+
+<span class="code">for</span> (<span class="code">let</span> i=0; i < message.length; i++) {
+    console.log(message[i]);
+}
+				</pre></dd>
+			</dl>
+			<p>Този код извежда следното:</p>
+			<dl>
+				<dd>
+					<pre class="highlight">
+					<p>A <br>(blank)<br>(blank)<br>(blank)<br>(blank)<br>B</p>
+				</pre>
+				</dd>
+			</dl>
+			<p>Тъй като, двубитовите символи се третират, като две отделни кодови единици, има четири празни реда между А и В в продукцията.</p>
+			<p>Използването на <em>string</em> итератор по подразбиране с <em>for-of</em> цикъл има по-добър резултат:</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">var</span> message = "A ð ®• B";
+
+<span class="code">for</span> (<span class="code">let</span> c of message) {
+    console.log(c);
+}
+				</pre></dd>
+			</dl>
+			<p>Този код извежда следното:</p>
+			<dl>
+				<dd>
+					<pre class="highlight">
+					<p>A <br>(blank)<br>ð ®• <br>(blank)<br>B</p>
+				</pre>
+				</dd>
+			</dl>
+			<p>Този изход е повече в съответствие с това, което очакваме, когато се работи със символи. <em>Strings</em> итератора по подразбиране е опит в ECMAScript 6 за решаване на проблема с итерацията чрез използване на символи вместо единици код.</p>
+			<h3>NodeList итератори</h3>
+			<p>В Document Object Model (DOM), е типа NodeList, който представлява колекция от елементи в даден документ. За тези, които пишат JavaScript да се изпълнява в уеб-барузъри, разбирането на разликата между NodeList обекти и масиви, винаги е била малко трудна. И двата използват <em>length</em> свойство за да посочи броя на елементите и двата използват скоби нотация за достъп до отделните елементи. Обаче, вътрешно NodeList и масиви се държат съвсем различно и това довежда до голямо объркване.</p>
+			<p>С добавянето на итератори по подразбиране в ECMAScript 6, DOM определението на NodeList сега специално включва итератор по подразбиране, който се държи по същия начин, както итератора по подразбиране за масиви. Това означава, че можете да използвате NodeList в <em>for-of</em> цикъл или на всяко друго място, което използва итератор по подразбиране върху даден обект. Например:</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">var</span> divs = document.getElementsByTagName("div");
+
+<span class="code">for</span> (<span class="code">let</span> div of divs) {
+    console.log(div.id);
+}
+				</pre></dd>
+			</dl>
+			<p>Този код използва <em>getElementsByTagName()</em> метода за извличане на  NodeList , който представлява всички &ltdiv&gt елементи в документа. Цикъла <em>for-of</em> минава над всеки елемент и извежда неговото ID ефективно, правейки кода също, както за стандартен масив.</p>
+			<h3>Оператора Spread</h3>
+			<p>В <a href="./07_set_and_map.html #spreads">Глава 7</a>, видяхме как оператора <em>spread (...)</em>, може да се използва за преобразуване на <em>set</em> в масив. Например:</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">let</span> set = <span class="code">new</span> Set([1, 2, 3, 3, 3, 4, 5]),
+    array = [...set];
+
+console.log(array);            // [1,2,3,4,5]
+				</pre></dd>
+			</dl>
+			<p>Този код използва оператора <em>spread</em> вътре в масива за да го попълни със стойности от <em>set</em>. Оператора <em>spread</em> работи на всички <em>iterables</em> и използва итератор по подразбиране за да определи кои стойности да включи. Всички стойности се четат от итератора и след това се поставят в масива на мястото на оператора <em>spread</em> в реда, по който се оценяват, след като се върнат от итератора. Този пример работи, защото <em>sets</em> е <em>iterables</em>, но може да работи еднакво добре на всеки <em>iterable</em>. Ето още един пример:</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">let</span> map = <span class="code">new</span> Map([ ["name", "Nicholas"], ["age", 25]]),
+    array = [...map];
+
+console.log(array);     // [ ["name", "Nicholas"], ["age", 25]]
+				</pre></dd>
+			</dl>
+			<p>Тука, <em>map</em> се конвертира в масив от масиви с помощта на оператора <em>spread</em>. Тъй като итератора по подразбиране за <em>maps</em> връща двойки ключ-стойност, резултата на масива прилича на масива, който е подаден на <em>new Map()</em>.</p>
+			<p>Няма ограничения, до колко пъти може да се използва оператора <em>spread</em> в масив литерал. Можем да го използваме навсякъде, където искаме и да вмъкнем няколко елемента <em>iterable</em>. Например:</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">let</span> smallNumbers = [1, 2, 3],
+    bigNumbers = [100, 101, 102],
+    allNumbers = [0, ...smallNumbers, ...bigNumbers];
+
+console.log(allNumbers.length);     // 7
+console.log(allNumbers);    // [0, 1, 2, 3, 100, 101, 102]
+				</pre></dd>
+			</dl>
+			<p>Тука, оператора <em>spread</em> се използва за създаване на <em>allNumbers</em> от стойностите на <em>smallNumbers</em> и <em>bigNumbers</em>. Стойностите се подреждат в реда, по който се появяват в масива литерал, така нула е на първо място, следвана от стойностите на <em>smallNumbers</em>, следвани от стойностите на <em>bigNumbers</em>. Имайте в предвид, че  оригиналните масиви са непроменени, само стойностите от тези масиви се копират в <em>allNumbers</em>.</p>
+			<p>Тъй като, оператора <em>spread</em> може да се използва на всеки <em>iterable</em>, това е най-лесният начин за конвертиране <em>iterable</em> в масив. Това означава, че можем да конвертираме <em>strings</em> в масив от символи (не кодови единици) и <em>NodeList</em> обекти в браузъра в масив от разклонения.</p>
+			<p>Сега знаете основно, как работят итераторите, включително <em>for-of</em> и оператора <em>spread</em> и е време да разгледаме някои от по-сложните приложения на итератори.</p>
+			<h3>Напреднала функционалност</h3>
+			<p>Има много неща, които могат да се извършат с основната функционалност на итераторите и удобството за тяхното създаване използвайки генератори. Въпреки това, разработчиците открили, че итераторите са много по-мощни, когато се използват за задачи различни от просто повторение през колекция от стойности. По време на разработването на ECMAScript 6, многото появили се уникални идеи и модели, са причина за добавянето на по-голяма функционалност. Някои от промените са едва доловими, но когато се използват заедно, можем да постигнем някои интересни взаимодействия.</p>
+			<h3>Подаване на параметри на итераторите</h3>
+			<p>В тази глава видяхме, че итераторите могат да  подават стойности през <em>next()</em> метода или използвайки <em>yield</em> в генератора. Също така е възможно да подаваме аргументи в итератора чрез <em>next()</em> метода. Когато един аргумент се подава към <em>next()</em>, той става стойност на <em>yield</em> изявлението вътре в генератора. Например:</p>
+			<dl>
+				<dd><pre class="highlight-overflow">
+<span class="code">function</span> *createIterator() {
+    <span class="code">let</span> first = <span class="code">yield</span> 1;
+    <span class="code">let</span> second = <span class="code">yield</span> first + 2;       // 4 + 2
+    <span class="code">yield</span> second + 3;                   // 5 + 3
+}
+
+<span class="code">let</span> iterator = createIterator();
+
+console.log(iterator.next());           // "{ value: 1, done: false }"
+console.log(iterator.next(4));          // "{ value: 6, done: false }"
+console.log(iterator.next(5));          // "{ value: 8, done: false }"
+console.log(iterator.next());           // "{ value: undefined, done: true }"
+				</pre></dd>
+			</dl>
+			<p>Първото извикване на <em>next()</em> е специален случай, където всеки аргумент подаден към него се губи. Тъй като аргументите подадени към <em>next()</em> стават стойността върната от <em>yield</em>, трябва да намерим начин за достъп до този аргумент преди първия <em>yield</em> във функцията на генератора. Това не е възможно, така че няма причина да подаваме аргумент при първото извикване на <em>next()</em>.</p>
+			<p>На второто извикване на <em>next()</em>, стойността 4 се подава, като аргумент. 4 е присвоена от първата променлива вътре във функцията на генератора. В <em>yield</em> изявлението е включено прехъврляне от дясната страна на израза за оценяване от първото извикване на <em>next()</em> и от лявата страна се оценява второто извикване на <em>next()</em> преди функцията да продължи да се изпълнява. Тъй като към второто извикване на <em>next()</em> е подадено 4, тази стойност се определя на <em>first</em> и след това изпълнението продължава.</p>
+			<p>Втория <em>yield</em> използва резултата на първия <em>yield</em> и добавя две, което означава, че връща стойност шест. Когато <em>next()</em> се извика трети път, се подава стойността 5, като аргумент. Тази стойност се присвоява от променливата <em>second</em> и след това се използва в третото <em>yield</em> изявление, за да върне осем.</p>
+			<p>Малко по-лесно е да се мисли за това, което се случва, като се вземе в предвид кой код се изпълнява всеки път, когато изпълнението продължава вътре във функцията на генератора. Фигура 6-1 използва цветове, за да покаже кода, който се изпълнява преди <em>yielding</em>.</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">function</span> *createIterator(){
+	<span style="background: yellow">next()</span>       <span style="background: aqua">let first =</span><span style="background: yellow">yield 1;</span>
+	<span style="background: aqua">next(4)</span>      <span style="background: pink">let second =</span><span style="background: aqua">yield first + 2;</span>
+	<span style="background: pink">next(5)</span>      <span style="background: pink">yield second + 3;</span>
+}				</pre></dd>
+			</dl>
+			<p>Фигура 6-1: Изпълнение на кода вътре в генератора.</p>
+			<p>Жълтия цвят представлява първото извикване на <em>next()</em> и целия код, който се изпълнява в рамките на генератора, като резултат. Зеления цвят представлява извикването на <em>next(4)</em> и кода който се изпълнява.  Розовия цвят представлява извикването на <em>next(5)</em> и кода, който се изпълнява, като резултат. Най-сложната част е кода от дясната страна на всеки израз, изпълнението и спирането преди изпълнението на лявата страна. Това прави дебъгването на генератори малко по-ангажиращо, от колкото на редовни функции.</p>
+			<p>До сега видяхме, че <em>yield</em> може да действа, като <em>return</em>, когато се подаде стойност към <em>next()</em>. Все пак, това не е само трик при изпълнението вътре в генератора. Можем също така да накараме итератора да хвърля грешки.</p>
+			<h3>Хвърляне на грешки в итераторите</h3>
+			<p>Не само е възможно да подаваме данни в итераторите, а също така е възможно да подаваме условия за грешки. Итераторите могат да изберат да приложат <em>throw()</em> метод, който възлага на итератора да хвърли грешка, когато се задейства отново. Вие може да подадете обект за грешка, която трябва да бъде хвърлена, докато итератора продължава обработката. Например:</p>
+			<dl>
+				<dd><pre class="highlight-overflow">
+<span class="code">function</span> *createIterator() {
+    <span class="code">let</span> first = <span class="code">yield</span> 1;
+    <span class="code">let</span> second = <span class="code">yield</span> first + 2;       <span class="comment"><em>// yield 4 + 2, след това хвърля грешка</em></span>
+    <span class="code">yield</span> second + 3;                   <span class="comment"><em>// никога не се изпълнява</em></span>
+}
+
+<span class="code">let</span> iterator = createIterator();
+
+console.log(iterator.next());                   // "{ value: 1, done: false }"
+console.log(iterator.next(4));                  // "{ value: 6, done: false }"
+console.log(iterator.<span class="code">throw</span>(<span class="code">new Error</span>("Boom"))); <span class="comment"><em>// грешка хвърлена от генератора</em></span>
+				</pre></dd>
+			</dl>
+			<p>В този пример, първите два <em>yield</em> изрази се оценяват, като нормални, но когато се извика <em>throw()</em> е хвърлена грешка преди да се оцени  втория <em>let</em>. Това на практика спира изпълнението на кода, подобно на директно хвърляне на грешка. Единствената разлика е мястото, където се хвърля грешката. Фигура 6-2 показва кой код се изпълнява на всяка стъпка.</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">function</span> *createIterator(){
+	<span style="background: yellow">next()</span>                <span style = "background: aqua">let first =</span><span style="background: yellow">yield 1;</span>
+	<span style="background: aqua">next(4)</span>               let second<span style = "background: red">*</span><span style="background: aqua">yield first + 2;</span>
+	<span style="background: red">throw(new Error());</span>   yield + 3;
+}				</pre></dd>
+			</dl>
+			<p>Фигура 6-2: Хвърляне на грешка вътре в генератора.</p>
+			<p>В тази фигура, червеният цвят представлява кода, който се изпълнява, когато се извика <em>throw()</em> и червената звезда показва приблизително, кога грешката е хвърлена вътре в генератора. Първите две <em>yield</em> изявления се изпълняват, това е само, когато <em>throw()</em> се извика за хвърляне на грешка, преди изпълнението на някакъв друг код. Знаейки, че е възможно да се улови такава грешка вътре в генератора, можем да използваме <em>try-catch</em> блок, като:</p>
+			<dl>
+				<dd><pre class="highlight-overflow">
+<span class="code">function</span> *createIterator() {
+    <span class="code">let</span> first = <span class="code">yield</span> 1;
+    <span class="code">let</span> second;
+
+    <span class="code">try</span> {
+        second = <span class="code">yield</span> first + 2;       <span class="comment"><em>// yield 4 + 2, след това хвърля грешка</em></span>
+    } <span class="code">catch</span> (ex) {
+        second = 6;                     <span class="comment"><em> // на грешката е присвоена различна стойност</em></span>
+    }
+    <span class="code">yield</span> second + 3;
+}
+
+<span class="code">let</span> iterator = createIterator();
+
+console.log(iterator.next());                   // "{ value: 1, done: false }"
+console.log(iterator.next(4));                  // "{ value: 6, done: false }"
+console.log(iterator.<span class="code">throw</span>(<span class="code">new Error</span>("Boom"))); // "{ value: 9, done: false }"
+console.log(iterator.next());            // "{ value: undefined, done: true }"
+				</pre></dd>
+			</dl>
+			<p>В този пример, <em>try-catch</em> блока се увива около второто <em>yield</em> изявление. Докато този <em>yield</em> се изпълнява без грешка, грешката се хвърля преди някаква стойност да може да бъде присвоена на <em>second</em>, така че, <em>catch</em> блока му присвоява стойност шест. Изпълнението продължава към следващия <em>yield</em> и връща девет.</p>
+			<p>Също ще забележите, че се случва нещо интересно - <em>throw()</em> метода връща стойност подобна на тази върната от <em>next()</em>. Защото, грешката е уловена във вътршността на генератора и изпълнението на кода  продължава към следващия <em>yield</em> и връща съответната стойност.</p>
+			<p>Това помага да се мисли за <em>next()</em> и <em>throw()</em>, като две инструкции за итератора: <em>next()</em> инструктира итератора да продължи изпълнението (евентуално с дадената стойност), а <em>throw()</em> инструктира итератора да продължи изпълнението с хвърляне на грешка. Какво се случва след тази точка, зависи от кода вътре в генератора.</p>
+			<p>Методите за контрол на изпълнението <em>next()</em> и <em>throw()</em> вътре в генератора са с използване на <em>yield</em>, но може също да използваме <em>return</em> изявлението. Въпреки, че то работи малко по-различно, от колкото обикновените функции.</p>
+			<h3>Return изявление на генератор</h3>
+			<p>Тъй като генераторите са функции, можем да използваме <em>return</em> изявление за да излезем по-рано и да зададем върнатата стойност за последното извикване на <em>next()</em>. В повечето примери, които видяхме в тази глава, последното извикване на <em>next()</em> върху итератора връща <em>undefined</em>. Възможно е да посочим алтернативна стойност, чрез използване на <em>return</em>, както бихме направили във всяка друга функция. В генератора, <em>return</em> показва, че цялата обработка е приключила,  така че <em>done</em> свойството е настроено на <em>true</em> и стойността, ако условието има поле за стойност. Ето един пример, който излиза рано използвайки <em>return</em>:</p>
+			<dl>
+				<dd><pre class="highlight-overflow">
+<span class="code">function</span> *createIterator() {
+    <span class="code">yield</span> 1;
+   <span class="code">return</span>;
+    <span class="code">yield</span> 2;
+    <span class="code">yield</span> 3;
+}
+
+<span class="code">let</span> iterator = createIterator();
+
+console.log(iterator.next());           // "{ value: 1, done: false }"
+console.log(iterator.next());           // "{ value: undefined, done: true }"
+				</pre></dd>
+			</dl>
+			<p>В този код генератора има <em>yield</em> изявление последвано от <em>return</em> изявление. <em>Return</em> показва, че няма да идват повече стойности и останалата част от <em>yield</em> изявленията не се изпълнява (те са недостижими).</p>
+			<p>Можем също така да укажем на върната стойност, да се окаже в полето за стойност на върнатия обект . Например:</p>
+			<dl>
+				<dd><pre class="highlight-overflow">
+<span class="code">function</span> *createIterator() {
+    <span class="code">yield</span> 1;
+    <span class="code">return</span> 42;
+}
+
+<span class="code">let</span> iterator = createIterator();
+
+console.log(iterator.next());           // "{ value: 1, done: false }"
+console.log(iterator.next());           // "{ value: 42, done: true }"
+console.log(iterator.next());           // "{ value: undefined, done: true }"
+				</pre></dd>
+			</dl>
+			<p>Тука, върнатата стойност е 42, в полето за стойност от второто извикване на <em>next()</em> (което е първия път, когато done е <em>true</em>). Третото извикване на <em>next()</em> връща обект, чието <em>value</em> свойство отново е <em>undefined</em>. Всяка стойност посочена с <em>return</em> е достъпна само един път във върнатия обект, преди полето за стойност да се нулира на <em>undefined</em>.</p>
+			<dl>
+				<dd><div class="info">
+         <img src="./img/info.jpg" alt="info">
+       </div><strong>Всяка стойност определена от <em>return</em> се игнорира от <em>for-of</em> и оператора <em>spread</em>. Веднага след като видят, че done е <em>true</em>, те спират без да прочетат стойността.</strong></dd>
+			</dl>
+			<h3>Делегиране на генератори</h3>
+			<p>В някои случаи може да е полезно да се обединят стойностите от два итератора в един. Възможно е, при използването на генератори да се делегира друг генератор, използвайки специалната форма на <em>yield</em> със звезда (*). Както с дефиницията на генератор, няма значение къде се поставя звездата, стига да е между ключовата дума <em>yield</em> и името на функцията генератор. Например:</p>
+			<dl>
+				<dd><pre class="highlight-overflow">
+<span class="code">function</span> *createNumberIterator() {
+    <span class="code">yield</span> 1;
+    <span class="code">yield</span> 2;
+}
+
+<span class="code">function</span> *createColorIterator() {
+    <span class="code">yield</span> "red";
+    <span class="code">yield</span> "green";
+}
+
+<span class="code">function</span> *createCombinedIterator() {
+    <span class="code">yield</span> *createNumberIterator();
+    <span class="code">yield</span> *createColorIterator();
+    <span class="code">yield</span> true;
+}
+
+<span class="code">var</span> iterator = createCombinedIterator();
+
+console.log(iterator.next());           // "{ value: 1, done: false }"
+console.log(iterator.next());           // "{ value: 2, done: false }"
+console.log(iterator.next());           // "{ value: "red", done: false }"
+console.log(iterator.next());           // "{ value: "green", done: false }"
+console.log(iterator.next());           // "{ value: true, done: false }"
+console.log(iterator.next());           // "{ value: undefined, done: true }"
+				</pre></dd>
+			</dl>
+			<p>В този пример, генератора <em>createCombinedIterator()</em> делегира първо до <em>createNumberIterator()</em> и след това до <em>createColorIterator()</em>. Върнатия итератор се появява отвън, за да бъде един последователен итератор, който да произведе всички стойности. Всяко извикване на <em>next()</em> се делегира на подходящ итератор, като те са празни, а последния <em>yield</em> се изпълнява за да върне <em>true</em>.</p>
+			<p>Делегирането на генератори също ни позволява да използваме генератор за връщане на стойности (както се вижда от предишния раздел). Това е най-лесният начин за достъп до такива върнати стойности и може да бъде полезно при изпълнение на сложни задачи. Например:</p>
+			<dl>
+				<dd><pre class="highlight-overflow">
+<span class="code">function</span> *createNumberIterator() {
+    <span class="code">yield</span> 1;
+    <span class="code">yield</span> 2;
+    <span class="code">return</span> 3;
+}
+
+<span class="code">function</span> *createRepeatingIterator(count) {
+    <span class="code">for</span> (<span class="code">let</span> i=0; i < count; i++) {
+        <span class="code">yield</span> "repeat";
+    }
+}
+
+<span class="code">function</span> *createCombinedIterator() {
+    <span class="code">let</span> result = <span class="code">yield</span> *createNumberIterator();
+    <span class="code">yield</span> *createRepeatingIterator(result);
+}
+
+<span class="code">var</span> iterator = createCombinedIterator();
+
+console.log(iterator.next());           // "{ value: 1, done: false }"
+console.log(iterator.next());           // "{ value: 2, done: false }"
+console.log(iterator.next());           // "{ value: "repeat", done: false }"
+console.log(iterator.next());           // "{ value: "repeat", done: false }"
+console.log(iterator.next());           // "{ value: "repeat", done: false }"
+console.log(iterator.next());           // "{ value: undefined, done: true }"
+				</pre></dd>
+			</dl>
+			<p>Тука, генератора <em>createCombinedIterator()</em> делегира <em>createNumberIterator()</em> и подава стойността за връщане на <em>result</em>. Тъй като <em>createNumberIterator()</em> съдържа <em>return</em> 3, върнатата стойност е 3.  Променливата <em>result</em> се подава на <em>createRepeatingIterator()</em>, като аргумент, който показва, колко пъти да се приложи <em>yield</em> върху този <em>string</em> (в този случай 3 пъти).</p>
+			<p>Забележете, че стойността 3 никога не е изход за всяко извикване на <em>next()</em>, тя съществува единствено във вътрешността на <em>createCombinedIterator()</em>. Възможно е да се изведе тази стойност с добавяне на друго <em>yield</em> изявление, като този пример:</p>
+			<dl>
+				<dd><pre class="highlight-overflow">
+<span class="code">function</span> *createNumberIterator() {
+    <span class="code">yield</span> 1;
+    <span class="code">yield</span> 2;
+    <span class="code">return</span> 3;
+}
+
+<span class="code">function</span> *createRepeatingIterator(count) {
+    <span class="code">for</span> (<span class="code">let</span> i=0; i < count; i++) {
+        <span class="code">yield</span> "repeat";
+    }
+}
+
+<span class="code">function</span> *createCombinedIterator() {
+    <span class="code">let</span>result = <span class="code">yield</span> *createNumberIterator();
+    <span class="code">yield</span> result;
+    <span class="code">yield</span> *createRepeatingIterator(result);
+}
+
+<span class="code">var</span> iterator = createCombinedIterator();
+
+console.log(iterator.next());           // "{ value: 1, done: false }"
+console.log(iterator.next());           // "{ value: 2, done: false }"
+console.log(iterator.next());           // "{ value: 3, done: false }"
+console.log(iterator.next());           // "{ value: "repeat", done: false }"
+console.log(iterator.next());           // "{ value: "repeat", done: false }"
+console.log(iterator.next());           // "{ value: "repeat", done: false }"
+console.log(iterator.next());           // "{ value: undefined, done: true }"
+				</pre></dd>
+			</dl>
+			<p>В този код, допълнителното <em>yield</em> изявление изрично извежда върнатата стойност от <em>createNumberIterator()</em>.</p>
+			<p>Делегирания генератор използвайки стойността за връщане е много мощен пример, който дава възможност за много интересни възможности, особено когато се използва в асинхронни операции.</p>
+			<dl>
+				<dd><div class="info">
+         <img src="./img/info.jpg" alt="info">
+       </div><strong>Можете да използвате <em>yield *</em> директно върху <em>strings</em>, също като <em>yield * "hello"</em> и итератора по подразбиране на <em>string</em> ще бъде използван.</strong></dd>
+			</dl>
+			<h3 id="asynchron">Асинхронен task runner</h3>
+			<p>Много от вълнението около генератори е пряко свързано с използването им в асинхронното програмиране. Асинхронното програмиране в JavaScript е нож с две остриета: много е лесно да се правят  прости неща, докато сложните неща остават една поръчка в организацията на кода. Тъй като, генераторите позволяват ефективно да се слага пауза по средата на изпълнението на кода, това отваря много възможности, тъй като се отнася до асинхронна обработка.</p>
+			<p>Традиционният начин за извършване на асинхронни операции е да се извика функция, която има обратно извикване. Например, помислете за четене на файл от диск в Node.js:</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">let</span> fs = require("fs");
+
+fs.readFile("config.json", <span class="code">function</span>(err, contents) {
+   <span class="code">if</span>(err) {
+        <span class="code">throw</span> err;
+    }
+
+    doSomethingWith(contents);
+    console.log("Done");
+});
+				</pre></dd>
+			</dl>
+			<p>Метода <em>fs.readFile()</em> се извиква с името на файла за четене и функция за обратно извикване. Когато операцията приключи, се извиква функцията за обратно извикване. Обратното извикване проверява дали има грешка и ако няма процеса се връща на <em>contents</em>. Това работи добре, когато имате малък ограничен брой асинхронни задачи за извършване, но се усложнява, когато трябва да влагате още обратни извиквания или последователна поредица от асинхронни задачи. Това е мястото, където генераторите и <em>yield</em> са полезни.</p>
+			<h3>Просто task runner</h3>
+			<p>Понеже <em>yield</em> спира изпълнението и чака следващия метод <em>next()</em> да бъде извикан преди да започне отново, това осигурява начин за изпълнение на асинхронни повиквания, без управление на обратните извиквания. За да започнете ви трябва функция, която да извика генератор и да стартира итератора, също като:</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">function</span> run(taskDef) {
+
+    <span class="comment"><em>//създаване на итератор, предоставен на друго място</em></span>
+    <span class="code">let</span> task = taskDef();
+
+    <span class="comment"><em>//стартиране на task</em></span>
+    <span class="code">let</span> result = task.next();
+
+    <span class="comment"><em>//рекурсивна функция, която държи извикванията към next()</em></span>
+    <span class="code">function</span> step() {
+
+        <span class="comment"><em> // ако има още нещо за правене</em></span>
+        <span class="code">if</span> (!result.done) {
+            result = task.next();
+            step();
+        }
+    }
+
+    <span class="comment"><em>//старт на процеса</em></span>
+    step();
+
+}
+				</pre></dd>
+			</dl>
+			<p>Функцията <em>run()</em> приема дефиницията на задачата (функцията генератор), като аргумент. Тя призовава генератора да създаде итератор и го съхранява в <em>task</em>. Променливата <em>task</em> е извън функцията, така че да може да бъде достъпна от други функции (причина, поради която ще стане ясно по-късно в този раздел). Първото извикване към <em>next()</em> стартира итератора и резултата се съхранява за по-нататъшна употреба. Функцията <em>step()</em> проверява дали <em>result.done</em> е <em>false</em> и ако е така извиква <em>next()</em> преди рекурсивно да извика себе си. Всяко извикване към <em>next()</em> съхранява върнатата стойност в <em>result</em>, така тази променлива се презаписва и винаги ще съдържа актуална информация. Първоначалното извикване на <em>step()</em> стартира процеса за търсене на <em>result.done</em>.</p>
+			<p>Това изпълнение на <em>run()</em>, може да работи с генератор съдържащ множество <em>yield</em> изявления, също като:</p>
+			<dl>
+				<dd><pre class="highlight">
+run(<span class="code">function</span>*() {
+    console.log(1);
+    <span class="code">yield</span>;
+    console.log(2);
+    <span class="code"><span class="code">yield</span></span>;
+    console.log(3);
+});
+				</pre></dd>
+			</dl>
+			<p>Този пример просто извежда три номера на конзолата, което просто показва, че всички извиквания към <em>next()</em> се правят. Понеже, само получаване на номера няколко пъти не е нещо полезно, следващата стъпка е да се подават стойности във и извън итератора.</p>
+			<h3>Стартиране на задача с данни</h3>
+			<p>Най-лесният начин за подаване на данни е чрез подаване на стойността определена от <em>yield</em> на следващото извикване на <em>next()</em>. За да направим това, само трябва да подадем <em>result.value</em>, както в този код:</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">function</span> run(taskDef) {
+
+    <span class="comment"><em>//създаване на итератор, предоставен на друго място</em></span>
+    <span class="code">let</span> task = taskDef();
+
+    <span class="comment"><em>//стартиране на task</em></span>
+    <span class="code">let</span> result = task.next();
+
+    <span class="comment"><em>//рекурсивна функция, която държи извикванията към next()</em></span>
+    <span class="code">function</span> step() {
+
+        <span class="comment"><em> // ако има още нещо за правене</em></span>
+        <span class="code">if</span> (!result.done) {
+            result = task.next(result.value);
+            step();
+        }
+    }
+
+    <span class="comment"><em>//старт на процеса</em></span>
+    step();
+
+}	
+				</pre></dd>
+			</dl>
+			<p>С тази промяна, вече е възможно да се подават данни назад и напред, както в този пример:</p>
+			<dl>
+				<dd><pre class="highlight">
+run(<span class="code">function</span>*() {
+    <span class="code">let</span> value = <span class="code">yield</span> 1;
+    console.log(value);         // 1
+
+    value = <span class="code">yield</span> value + 3;
+    console.log(value);         // 4
+}); 
+            </pre></dd>
+			</dl>
+			<p>Този пример извежда две стойности на конзолата: 1 и 4. Стойността  1 идва от <em>yield</em> 1, като 1 се прехвърля обратно на променливата <em>value</em>.  4 се изчислява чрез добавяне на 3 към <em>value</em> и подава този резултат обратно към <em>value</em>. Сега, когато потока от данни между извикванията на <em>yield</em> е осъществен, трябва само една малка промяна, за да се даде възможност за асинхронни извиквания.</p>
+			<h3>Асинхронен task runner</h3>
+			<p>Като имаме в предвид предишния пример, подаванията на статични данни назад и напред в очакване на асинхронен процес е малко по-различно. <em>Task runner</em> трябва да знае за обратните повиквания и как да ги използва. И тъй като <em>yield</em> подава неговите свойства на <em>task runner</em>, това означава, че всяко извикване на функция трябва да върне стойност, която по някакъв начин показва, че е асинхронна операция, която <em>task runner</em> трябва да изчака. Как можем да сигнализираме това?</p>
+			<p>За целите на този пример, всяка функция трябва да се извика от <em>task runner</em>, който ще върне функция, която изпълнява обратното повикване. Например:</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">function</span> fetchData() {
+    <span class="code">return function</span>(callback) {
+        callback(<span class="code">null</span>, "Hi!");
+    };
+}
+				</pre></dd>
+			</dl>
+			<p>Функцията <em>fetchData()</em> връща функция, която приема функцията за обратно извикване, като аргумент. Когато върнатата функция е извикана, тя изпълнява функцията за обратно извикване с едно парче данни, <em>string</em> "Hi!". Аргумента <em>callback</em> трябва да дойде от <em>task runner</em> и да се гарантира, че това извикване правилно взаимодейства с основния итератор. Докато функцията <em>fetchData()</em> е синхронна, може лесно да се удължи и да стане асинхронна, чрез извикване на обратното повикване с леко закъснение, като например:</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">function</span> fetchData() {
+    <span class="code">return function</span>(callback) {
+        setTimeout(<span class="code">function</span>() {
+            callback(<span class="code">null</span>, "Hi!");
+        }, 50);
+    };
+}           
+            </pre></dd>
+			</dl>
+			<p>Тази версия на <em>fetchData()</em> въвежда 50ms закъснение преди да се извика обратното извикване, което показва, че този модел работи еднакво добре, както за синхронен така и за асинхронен код. Просто трябва да се уверите, че всяка функция, която трябва да се извика с помощта на <em>yield</em> следва същия този модел.</p>
+			<p>С добро разбиране на колко функции се сигнализира, че те са асинхронен процес, можете да промените <em>task runner</em> да вземе това в предвид. Винаги <em>result.value</em> е функция, <em>task runner</em> ще я изпълни вместо просто да подаде тази стойност в <em>next()</em>. Това е актуализирания код:</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">function</span> run(taskDef) {
+
+    <span class="comment"><em>// създаване на итератор, предоставен на друго място</em></span>
+    <span class="code">let</span> task = taskDef();
+
+    <span class="comment"><em>// стартиране на task</em></span>
+    <span class="code">let</span> result = task.next();
+
+   <span class="comment"><em>// рекурсивна функция, която държи извикванията към next()</em></span>
+    <span class="code">function</span> step() {
+
+        <span class="comment"><em>// ако има още нещо за правене</em></span>
+        <span class="code">if</span> (!result.done) {
+            <span class="code">if</span> (<span class="code">typeof</span> result.value === "function") {
+                result.value(<span class="code">function</span>(err, data) {
+                    <span class="code">if</span>(err) {
+                        result = task.<span class="code">throw</span>(err);
+                        <span class="code">return</span>;
+                    }
+
+                    result = task.next(data);
+                    step();
+                });
+            } <span class="code">else</span> {
+                result = task.next(result.value);
+                step();
+            }
+
+        }
+    }
+
+        <span class="comment"><em>// старт на процеса</em></span>
+    step();
+
+}
+				</pre></dd>
+			</dl>
+			<p>Когато <em>result.value</em> е функция, тя се извиква с функцията за обратно извикване. Тази функция за обратно извикване следва конвенцията на Node.js за подаване на всяка възможна грешка, като първи аргумент и резултатът, като втори аргумент. Ако се открие грешка се извиква <em>task.throw()</em> с обекта за грешка, вместо <em>task.next()</em>, така грешката е хвърлена на правилното място. Ако няма грешка, тогава данните се подават в <em>task.next()</em> и резултата се записва. След това, се извиква <em>step()</em>, за да продължи процеса. Когато <em>result.value</em> не е функция, тя се прехвърля директно в <em>next()</em> точно както преди.</p>
+			<p>Тази нова версия на <em>task runner</em> е готова за всички асинхронни задачи. За да се четат данни от файл в Node.js, вие трябва да създадете обвивка около <em>fs.readFile()</em>, която връща функция подобна на функцията <em>fetchData()</em> от по-рано в този раздел. Например:</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">let</span> fs = require("fs");
+
+<span class="code">function</span> readFile(filename) {
+    <span class="code">return function</span>(callback) {
+        fs.readFile(filename, callback);
+    };
+}
+				</pre></dd>
+			</dl>
+			<p>Метода <em>readFile()</em> приема един аргумент, името на файла и връща функция, която извиква обратното извикване. Обратното извикване се подава директно към <em>fs.readFile()</em>, която ще го изпълни след завършване. След това може да стартирате задачата с помощта на <em>yield</em>, както следва:</p>
+			<dl>
+				<dd><pre class="highlight">
+run(<span class="code">function</span>*() {
+    <span class="code">let</span> contents = <span class="code">yield</span> readFile("config.json");
+    doSomethingWith(contents);
+    console.log("Done");
+});
+				</pre></dd>
+			</dl>
+			<p>Този код, извършва асинхронна операция на <em>readFile()</em> без да прави никакви обратни извиквания. Освен <em>yield</em>, кода изглежда по същия начин, както синхронния код. Докато всички функции изпълняващи асинхронни операции, отговарят на един и същи интерфейс, можете да напишете логика, която се чете като синхронен код.</p>
+			<p>Разбира се има недостатъци на модела, използван в тези примери, а именно, че не винаги може да сме сигурни, че една функция, която връща функция е асинхронна. За сега, обаче е важно само да разберете теорията зад <em>task running</em>. Има по-мощни начини за правене на асинхронна задача за планиране с помощта на <em>promises</em> (обещания), които ще бъдат обхванати по-подробно в <a href="11_promises.html">Глава 11</a>.</p>
+	</article>
+	<footer>
+		<h3>Обобщение</h3>
+		<p>Итераторите са важна част от ECMAScript 6 и са в основата на няколко важни части от езика. На повърхността итераторите предоставят лесен начин да се върне последователност от стойности с помощта на просто API. Въпреки това, има далеч по-сложни начини за използване на итератори в ECMAScript 6</p>
+		<p><em>Symbol.iterator</em> се използва за определяне на итератори по подразбиране за обекти. Както вградените обекти, така и разработчиците могат да използват този символ, за да се осигури метод, който връща итератор. Когато е предоставен <em>Symbol.iterator</em>, обекта се счита за <em>iterable</em>.</p>
+		<p>Цикъла <em>for-of</em> използва <em>iterables</em> за да върне поредица от стойности в един цикъл. Това прави създаването на цикли по-лесно в сравнение с традиционните цикли, защото вече няма нужда да следите стойности и контрол, когато цикъла завършва. Цикъла <em>for-of</em> автоматично чете всички стойности от итератора, докато там няма повече и след това излиза.</p>
+		<p>За да бъде по-лесно използването на <em>for-of</em>, много стойности в ECMAScript 6 имат итератори по подразбиране. Всички типове колекции, <em>arrays</em>, <em>maps</em> и <em>sets</em> имат итератори, предназначени за лесен достъп до съдържанието им. <em>Strings</em> също имат итератори по подразбиране, за лесно обхождане на символите на <em>string</em> (вместо кодови единици).</p>
+		<p>Оператора <em>spread</em> работи с всички <em>iterable</em> и прави лесно конвертирането на <em>iterables</em> в масиви. Той прави това чрез четене на стойности от итератора и ги поставя индивидуално в масив.</p>
+		<p>Генераторите са специален тип функция, която автоматично създава итератор, когато се извика. Тези функции са обозначени в началото с (*) и използват ключовата дума <em>yield</em> за да укажат коя стойност да се върне със следващото извикване на <em>next()</em>.</p>
+		<p>Делегирането на генератори влияе добре на капсулиране на поведението на итераторите, като дава възможност за повторното използване на съществуващи генератори в нови такива. Това се прави, като се използва <em>yield *</em> вместо само <em>yield</em>, което позволява създаването на итератор, който връща стойности от множество итератори.</p>
+		<p>Може би най-интересния и вълнуващ аспект на генераторите и итераторите е възможността за създаване на по-чист вид асинхронен код. Вместо да се налага използването на обратни извиквания навсякъде, може да настроите кода, който изглежда синхронно, но в действителност използва <em>yield</em>, да изчака за асинхронна операция за да завърши.</p>
+	</footer>
+	<nav>
+	<a href="./07_set_and_map.html" title="previous chapter">◀</a>
+  <a href="./index.html" title="cover">◆</a>
+  <a href="09_classes.html" title="next chapter">▶</a>
+</nav>
+</body>
+</html>

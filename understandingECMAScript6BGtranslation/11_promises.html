@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Обещания :: Understanding ECMAScript 6</title>
+	<link rel="stylesheet" href="font.css">
+</head>
+<body>
+	<nav>
+	<a href="10_array.html" title="previous chapter">◀</a>
+  <a href="./index.html" title="cover">◆</a>
+  <a href="./12_proxies_and_reflection.html" title="next chapter">▶</a>
+</nav>
+	<header id="header" class="">
+		<h1><div class="head-num">Глава 11</div>Promises (Обещания)</h1>
+		<p>Една от най-силните страни на JavaScript е колко лесно се справя с асинхронното програмиране. Тъй като JavaScript възниква, като език за уеб, е изискване да бъде в състояние да отговаря на асинхронни взаимодействия с потребителите, като например кликвания и натискане на клавиш. Node.js допълнително популяризира асинхронното програмиране в JavaScritp, чрез използване на обратни извиквания, като алтернативни събития. Тъй като все повече и повече програми започнаха да използват асинхронно програмиране, нарасна чувството, че тези два модела - събития и извиквания, не са достатъчно мощни, за да поддържат всичко, което разработчиците искат да направят. Обещанията са решение на този проблем.</p>
+		<p>Обещанията са друга форма на асинхронно програмиране и подобна функционалност е достъпна в други езици под имената <em>futures</em> и <em>deferreds</em>. Основната идея е да се уточни някакъв код, който да бъде изпълнен по-късно (както събития и обратни извиквания) и също така изрично да посочи дали кода е успял или се е провалил в работата си. По този начин, можем да направим верижни обещания заедно въз основа на успеха или неуспеха по начини, които са по-лесни за разбиране и отстраняване на грешки.</p>
+		<p>Преди да може да получите добро разбиране на това как работят обещанията, е важно да се разберат някои основни понятия, от които те са изградени.</p>
+	</header><!-- /header -->
+	<article>
+		<h3>Асинхронно програмиране Background</h3>
+		<p>JavaScript машината е изградена върху идеята за едно-нишков контур на събитие. Едно-нишково означава, че само част от кода се изпълнява в даден момент от време. Това контрастира с други езици, като Java или  C++, които могат да използват нишки, за да позволят няколко различни части от код да се изпълняват по едно и също време. Поддържане и опазване на състоянието, когато няколко парчета код могат да получат достъп и променят това състояние е труден проблем и източник на чести грешки в софтуера базиран на нишки.</p>
+		<p>Понеже JavaScript машината може да изпълнява само едно парче код в даден момент, е необходимо да се следи този код, който е предназначен да се изпълнява. Този код се съхранява в <em>job queue</em>. Всеки път, когато част от кода е готов да се изпълни той се добавя към <em>job queue</em>. Когато JavaScript машината завърши изпълнението на код, контура на събитието взема следващата задача от опашката и я изпълнява. Контура на събитието е процес вътре в JavaScript машината, който следи изпълнението на код и управлява <em>job queue</em>. Запомнете, че в <em>job queue</em> изпълнението на работата започва да тече от първата задача до последната.</p>
+		<h3> Events (събития)</h3>
+		<p>Когато потребител кликне върху бутон или натисне клавиш от клавиатурата, се задейства събитие (като <em>onclick</em>). Това събитие може да се използва, за да се отговори на взаимодействието чрез добавяне на нова задача, обратно в <em>job queue</em>. Това е най-основната форма на асинхронно програмиране в JavaScript: кода на манипулатора на събитието не се изпълнява, докато трае ефекта на събитието и когато се изпълни, той е с подходящ контекст. Например:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> button = <span class="code">document</span>.getElementById("my-btn");
+button.onclick = <span class="code">function</span>(event) {
+    console.log("Clicked");
+};
+			</pre></dd>
+		</dl>
+		<p>В този код, <me>console.log("Clicked")</em> няма да се изпълни, докато <em>button</em> е натиснат. Когато <em>button</em> е натиснат, функцията присвоена от <em>onclick</em> се добавя обратно към <em>job queue</em> и ще бъде изпълнена, когато всички други задачи преди нея са изпълнени.</p>
+		<p>Събитията работят добре за прости взаимодействия, като това, но наредени верижно няколко отделни асинхронни събития заедно става сложно, защото вие трябва да следите целта на събитието (<em>button</em> в предишния пример) за всяко събитие. Освен това, трябва да се гарантира, че всички подходящи манипулатори на събития са добавени преди самото възникване на събитието. Например, ако <em>button</em> в предишния пример е натиснат преди <em>onclick</em> да се определи, няма да се случи нищо.</p>
+		<p>Така че, докато събитията са полезни за отговори на потребителски взаимодействия и подобна функционалност, която се проявява рядко, те не са много гъвкави за по-сложни нужди.</p>
+		<h3>Callbacks (обратно извикване)</h3>
+		<p>Когато Node.js е създаден, той укрепва модела на асинхронното програмиране с популяризиране на модела за обратно извикване. Модела на обратното извикване е подобен на модела на събитието, тъй като не изпълнява код, до една по-късна точка във времето, което е различно, защото функцията за извикване е подадена, като аргумент.</p>
+		<dl>
+			<dd><pre class="highlight">
+readFile("example.txt", <span class="code">function</span>(err, contents) {
+    <span class="code">if</span> (err) {
+        <span class="code">throw</span> err;
+    }
+
+    console.log(contents);
+});
+console.log("Hi!");
+			</pre></dd>
+		</dl>
+		<p>Този код използва традиционния Node.js стил за грешка при първо обратно извикване. Функцията <em>readFile()</em> е предназначена да чете от файл на диск (посочен, като първи аргумент) и след това изпълнява обратно извикване (втори аргумент), когато завърши. Ако има грешка, <em>err</em> аргумента на обратното извикване е обекта на грешка, в противен случай, <em>contents</em> аргумента съдържа съдържанието на файла, като <em>string</em>.</p>
+		<p>Използвайки модела на обратното извикване, <em>readFile()</em> започва изпълнението незабавно и спира, когато започва да чете от диска. Това означава, че <em>console.log("Hi!")</em> се извежда веднага след извикването на <em>readFile()</em> (преди <em>console.log(contents)</em>). Когато <em>readFile()</em> е завършил, той добавя нова задача в края на <em>job queue</em> с функцията за обратно извикване и нейните аргументи. Тази работа се извършва след приключване на всички други задачи преди нея.</p>
+		<p>Моделът за обратно извикване е по-гъвкав от събития, защото е по-лесно да се наредят верижно няколко извиквания заедно. Например:</p>
+		<dl>
+			<dd><pre class="highlight">
+readFile("example.txt", <span class="code">function</span>(err, contents) {
+    <span class="code">if</span> (err) {
+        <span class="code">throw</span> err;
+    }
+
+    writeFile("example.txt", <span class="code">function</span>(err) {
+        <span class="code">if</span> (err) {
+            <span class="code">throw</span> err;
+        }
+
+        console.log("File was written!");
+    });
+});
+			</pre></dd>
+		</dl>
+		<p>В този код, успешното извикване на <em>readFile()</em> води до друго асинхронно повикване, този път към <em>writeFile()</em>. Обърнете внимание, че една и съща основна проверка <em>err</em> присъства и в двете функции. Когато <em>readFile()</em> е завършил, той добавя работа в <em>job queue</em>, което води до <em>writeFile()</em>, която се извиква (ако няма грешки). След това, <em>writeFile()</em> добавя работа в <em>job queue</em>, когато тя завърши.</p>
+		<p>Въпреки, че това работи доста добре, можем бързо да влезем в модел, който е известен под името <em>callback hell. Callback hell</em> се случва, когато има твърде много вложени обратни извиквания:</p>
+		<dl>
+			<dd><pre class="highlight">
+method1(<span class="code">function</span>(err, result) {
+
+    <span class="code">if</span> (err) {
+        <span class="code">throw</span> err;
+    }
+
+    method2(<span class="code">function</span>(err, result) {
+
+        <span class="code">if</span> (err) {
+            <span class="code">throw</span> err;
+        }
+
+        method3(<span class="code">function</span>(err, result) {
+
+            <span class="code">if</span> (err) {
+                <span class="code">throw</span> err;
+            }
+
+            method4(<span class="code">function</span>(err, result) {
+
+                <span class="code">if</span> (err) {
+                    <span class="code">throw</span> err;
+                }
+
+                method5(result);
+            });
+
+        });
+
+    });
+
+});
+			</pre></dd>
+		</dl>
+		<p>Влагането на няколко метода на извикване, както в този пример, създава заплетена мрежа от код, който е труден за разбиране и отстраняване на грешки.</p>
+		<p>Обратните извиквания също създават проблеми, когато искаме да постигнем по сложна функционалност. Какво става, ако искаме две асинхронни операции да текат паралелно и да бъдем уведомени, когато и двете са изпълнени? И какво става, ако стартираме две асинхронни операции, но вземаме само първата, която е завършила? В тези случаи се налага да следим няколко обратни извиквания и операциите за почистване. Това е точно там, където обещанията значително подобряват положението.</p>
+		<h3>Обещания основи</h3>
+		<p>Обещанието е контейнер за резултата на асинхронна операция. Вместо да се абонираме за дадено събитие или подадем обратно извикване към функция, функцията може да върне обещание, като:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="comment"><em>// readFile обещава да завърши в някакъв момент в бъдеще</em></span>
+<span class="code">let</span> promise = readFile("example.txt");
+			</pre></dd>
+		</dl>
+		<p>В този код, <em>readFile()</em> всъщност не започва да чете файла незабавно (това ще се случи по-късно). Той връща обект на обещание, който представлява асинхронна операция, така че да може да работи с нея по-късно. Преди да използваме обещание, е важно да се разбере жизнения цикъл на едно обещание и как жизнения цикъл влияе на резутата.</p>
+		<h3>Жизнен цикъл</h3>
+		<p>Всяко обещание преминава през кратък жизнен цикъл, който започва в очакване на състоянието, което е показател, че асинхронната операция все още не е завършила. Обещанието в последния пример е в състояние на изчакване, веднага след като се върне от <em>readFile()</em>. След като асинхронната операция завърши, обещанието се счита за установено и влиза в едно от двете възможни състояния:</p>
+		<dl>
+			<dd>
+				<ul>
+					<li><em>Fulfilled </em>- обещанието на асинхронната операция завършва успешно.</li><br>
+					<li><em>Rejected </em>- обещанието на асинхронната операция не завършва успешно (поради грешка или някаква друга причина).</li>
+				</ul>
+			</dd>
+		</dl>
+		<p>Ние не можем да определим, кое състояние да програмираме на обещанието, но можем да предприемем конкретно действие, когато обещанието променя състоянието с помощта на <em>then()</em> метод.</p>
+		<dl>
+			<dd><div class="info">
+         <img src="./img/info.jpg" alt="info">
+       </div><strong>Има вътрешно [[PromiseState]] свойство, което е настроено на "pending", "fulfilled" или "rejected" (очакване, изпълнение или отхвърляне) за да отрази състоянието на обещанието. Това свойство не е изложено в обекта на обещанието.</strong></dd>
+		</dl>
+		<p>Метода <em>then()</em> е налице за всички обещания и взема два аргумента. Първия аргумент е функция за извикване, когато обещанието е изпълнено. Всички допълнителни данни, свързани с асинхронната операция са подадени в изпълнението на тази функция. Вторият аргумент е функция за извикване, когато обещанието е отхвърлено. Подобно на функцията за изпълнение, във функцията за отхвърляне са подадени всички допълнителни данни, свързани с отхвърлянето.</p>
+		<dl>
+			<dd><div class="info">
+         <img src="./img/info.jpg" alt="info">
+       </div><strong>Всеки обект, който се реализира по този начин след <em>then()</em> метода, се нарича <em>thenable</em>, така че всички обещания са <em>thenables</em>, но не всички <em>thenables</em> са обещания.</strong></dd>
+		</dl>
+		<p>И двата аргумента към <em>then()</em> са по избор, но с тях можем да слушаме всяка комбинация от изпълнението и отхвърлянето. Например:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> promise = readFile("example.txt");
+
+<span class="comment"><em>// слушаме, както за изпълнение, така и за отхвърляне</em></span>
+promise.then(<span class="code">function</span>(contents) {
+    <span class="comment"><em>// изпълнение</em></span>
+    console.log(contents);
+}, <span class="code">function</span>(err) {
+    <span class="comment"><em>// отхвърляне</em></span>
+    console.error(err.message);
+});
+
+<span class="comment"><em>// слушаме само за изпълнение - грешки не се отчитат</em></span>
+promise.then(<span class="code">function</span>(contents) {
+    <span class="comment"><em>// изпълнение</em></span>
+    console.log(contents);
+});
+
+<span class="comment"><em>// слушаме само за отхвърляне - успех не се съобщава</em></span>
+promise.then(<span class="code">null, function</span>(err) {
+    <span class="comment"><em>// отхвърляне</em></span>
+    console.error(err.message);
+});	
+			</pre></dd>
+		</dl>
+		<p>Там има и <em>catch()</em> метод, който се държи също, като <em>then()</em>, само когато се подава към манипулатора за отхвърляне. Например:</p>
+		<dl>
+			<dd><pre class="highlight">
+promise.<span class="code">catch</span>(<span class="code">function</span>(err) {
+    <span class="comment"><em>// отхвърляне</em></span>
+    console.error(err.message);
+});
+
+<span class="comment"><em>// е също като:</em></span>
+
+promise.then(<span class="code">null, function</span>(err) {
+    <span class="comment"><em>// отхвръляне</em></span>
+    console.error(err.message);
+});
+			</pre></dd>
+		</dl>
+		<p>Целта е да се използва комбинацията от <em>then()</em> и <em>catch()</em>, за да се справят правилно с резултата на асинхронните операции. Ползата от тези събития и обратни извиквания е, че става напълно ясно дали операцията е успяла или не. (Събитията не са склонни да се изстрелват, когато има грешка и за това не трябва да забравяме във функцията за обратно извикване, винаги да проверяваме за грешка в аргумента.)</p>
+		<dl>
+			<dd><div class="worning">
+         <img src="./img/worning.jpg" alt="worning">
+       </div><strong>Ако не прикачим манипулатор за отхвърляне към обещанието, всички неуспехи ще се случват мълчаливо. Добра идея е винаги да прикачвате манипулатор за отхвърляне, дори и когато просто се регистрира провала.</strong></dd>
+		</dl>
+		<p>Един от уникалните аспекти на обещанията е, че манипулаторите на изпълнението и отхвърлянето, все пак ще бъдат изпълнени, ако се добавят, след като обещанието вече е определено. Това ни позволява да добавим ново изпълнение и отхвърляне, работещи във всяка точка на времето и сме уверени, че те ще се извикат. Например:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> promise = readFile("example.txt");
+
+<span class="comment"><em>// оригинално изпълнение на манипулатор</em></span>
+promise.then(<span class="code">function</span>(contents) {
+    console.log(contents);
+
+    <span class="comment"><em>// добавяне на друг нов</em></span>
+    promise.then(<span class="code">function</span>(contents) {
+        console.log(contents);
+    });
+});
+			</pre></dd>
+		</dl>
+		<p>В този код, манипулатора за изпълнение добавя друг манипулатор за изпълнение на същото обещание. Обещанието е изпълнено вече в този момент, така че новия манипулатор за изпълнение се добавя в края на <em>job queue</em> и се извиква, когато е готов. Манипулаторите за отхвърляне работят по същия начин, така че и те могат да бъдат добавени във всяка точка и са гарантирани, че ще се извикат.</p>
+		<dl>
+			<dd><div class="info">
+         <img src="./img/info.jpg" alt="info">
+       </div><strong>Всяко извикване към <em>then()</em> или </em>catch()</em> създава нова работа за изпълнение, когато обещанието е разрешено. Въпреки това, тази работа в крайна сметка е в отделен <em>job queue</em>, който е запазен единствено за обещания. Точните подробности за този втори <em>job queue</em> не са толкова важни за разбирането на това как работят обещанията, както и разбирането на това как <em>job queue</em> работят по принцип, като цяло.</strong></dd>
+		</dl>
+		<h3>Създаване на неопределени обещания</h3>
+		<p>Нови обещания се създават с помощта на <em>Promise</em> конструктора. Този конструктор приема един единствен аргумент, който е функция (наречена <em>executor</em>) съдържаща кода за инициализиране на обещанието. На <em>executor</em> се подават две функции, като аргументи <em>resolve()</em> и <em>reject()</em>. Функцията <em>resolve()</em> се извиква, когато <em>executor</em> е приключил успешно, за да сигнализира, че обещанието е готово да бъде <em>resolved</em> (разрешено), докато <em>reject()</em> функцията показва, че <em>executor</em> не е успял. Ето един пример с помощта на обещание в Node.js за изпълнение на <em>readFile()</em> функцията от по-рано в тази глава.</p>
+		<dl>
+			<dd><pre class="highlight-overflow">
+<span class="comment"><em>// Node.js пример</em></span>
+
+<span class="code">let</span> fs = require("fs");
+
+<span class="code">function</span> readFile(filename) {
+    <span class="code">return new</span> Promise(<span class="code">function</span>(resolve, reject) {
+
+        <span class="comment"><em>// задейства асинхронна операция</em></span>
+        fs.readFile(filename, { encoding: "utf8" }, <span class="code">function</span>(err, contents) {
+
+            <span class="comment"><em>// проверява за грешки</em></span>
+            <span class="code">if</span> (err) {
+                reject(err);
+            }
+
+            <span class="comment"><em>// четенето успява</em></span>
+            resolve(contents);
+
+        });
+    });
+}
+
+<span class="code">let</span> promise = readFile("example.txt");
+
+<span class="comment"><em>// слуша, както за изпълнение, така и за отхвърляне</em></span>
+promise.then(<span class="code">function</span>(contents) {
+    <span class="comment"><em> // изпълнение</em></span>
+    console.log(contents);
+}, <span class="code">function</span>(err) {
+    <span class="comment"><em>// отхвръляне</em></span>
+    console.error(err.message);
+});
+			</pre></dd>
+		</dl>
+		<p>В този пример, асинхронното извикване на натуралния <em>Node.js fs.readFile()</em> е увито в едно обещание. <em>Executor</em> (изпълнителя) или подава обект за грешка към <em>reject()</em> или съдържанието на файла към <em>resolve()</em>.</p>
+		<p>Имайте в предвид, че изпълнителя тръгва незабавно, когато се извика <em>readFile()</em>. Когато някое от <em>resolve()</em> или <em>reject()</em> е извикано във вътрешността на изпълнителя, работата се добавя към <em>job queue</em> в поръчка за разрешаване на обещанието. Това се нарича <em>job scheduling</em> (работен график) и ако някога сте използвали <em>setTimeout()</em> или <em>setInterval()</em>, значи сте запознати с тях. Идеята е, новата работа да се добави в <em>job queue</em>, като се каже, “не я изпълнявай точно сега, а я изпълни по-късно". В този случай на <em>setTimeout()</em> и <em>setInterval()</em>, вие уточнявате забавяне преди добавяне на работата към <em>job queue</em>.</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="comment"><em>// добавяне на тази функция към job queue, след като изминат 500ms </em></span>
+setTimeout(<span class="code">function</span>() {
+    console.log("Timeout");
+}, 500)
+
+console.log("Hi!");
+			</pre></dd>
+		</dl>
+		<p>В този пример, кода на графика за работа, се добавя към <em>job queue</em> след 500ms. Това води до следния резултат:</p>
+		<dl>
+			<dd><pre class="highlight">
+				<p>Hi!<br>Timeout</p>
+			</pre>
+			</dd>
+		</dl>
+		<p>Можем да кажем от изхода, че функцията подадена към <em>setTimeout()</em> е била изпълнена след <em>console.log("Hi!")</em>. Обещанията работят по същия начин.</p>
+		<p><em>Executor</em> на обещанието се изпълнява незабавно, което означава, че той ще се изпълни преди всичко, което се появява в изходния код. Например:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> promise = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    console.log("Promise");
+    resolve();
+});
+
+console.log("Hi!");
+			</pre></dd>
+		</dl>
+		<p>Изхода на този пример е:</p>
+        <dl>
+			<dd>
+				<pre class="highlight">
+				<p>Promise <br>Hi!</p>
+			</pre>
+			</dd>
+		</dl>
+		<p>Когато се извика <em>resolve()</em>, той задейства асинхронната операция. Функции подадени към <em>then()</em> и <em>catch()</em> се използват асинхронно, тъй като ще бъдат добавени към края на <em>job queue</em>. Ето един пример:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> promise = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    console.log("Promise");
+    resolve();
+});
+
+promise.then(<span class="code">function</span>() {
+    console.log("Resolved.");
+});
+
+console.log("Hi!");
+			</pre></dd>
+		</dl>
+		<p>Изхода на този пример е:</p>
+        <dl>
+			<dd>
+				<pre class="highlight">
+				<p>Promise <br>Hi!<br>Resolved</p>
+			</pre>
+			</dd>
+		</dl>
+		<p>Обърнете внимание, че въпреки извикването на <em>then()</em> се появява преди <em>console.log("Hi!")</em>, то всъщност не се изпълнява до по-късно (за разлика от <em>executor</em>). Това е, защото манипулаторите за изпълнение и отхвърляне, винаги се добавят към края на <em>job queue</em>, след като <em>executor</em> е завършил.</p>
+		<h3>Създаване на определени обещания</h3>
+		<p><em>Promise</em> конструктора е най-добрият начин за създаване на неопределени обещания, поради динамичния характер на това, което прави изпълнителя на обещания. Все пак ако искате обещанието да представлява една известна стойност, тогава няма смисъл да минава през работния график за работа, като просто се подава стойност към <em>resolve()</em>. Вместо това има два метода, които създават постоянни обещания с конкретна стойност.</p>
+		<p><em>Promise.resolve()</em> метода приема един единствен аргумент и връща обещание в изпълненото състояние. Това означава, че няма работен график, който да се изпълни и трябва просто да добавим един или повече манипулатори за изпълняване на обещанието, за извличане на стойноста. Например:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> promise = Promise.resolve(42);
+
+promise.then(<span class="code">function</span>(value) {
+    console.log(value);         // 42
+});
+			</pre></dd>
+		</dl>
+		<p>Този код създава изпълнено обещание, така че изпълняващия манипулатор получава стойност 42. Ако се добави манипулатор за отхвърляне към това обещание, той никога няма да се извика, защото обещанието никога няма да бъде в състояние на отхвърляне. </p>
+		<p>Можем също да създадем отхвърлени обещания с помощта на <em>Promise.reject()</em> метода. Това работи по същия начин, както <em>Promise.resolve()</em> с изключение, на това, че създаденото обещание е в състояние на отхвърляне.  Това означава, че всички допълнителни манипулатори за отхвърляне добавени към обещанието ще бъдат извикани, но няма да манипулират изпълнението.</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> promise = Promise.reject(42);
+
+promise.<span class="code">catch</span>(<span class="code">function</span>(value) {
+    console.log(value);         // 42
+});
+			</pre></dd>
+		</dl>
+		<dl>
+			<dd><div class="info">
+         <img src="./img/info.jpg" alt="info">
+       </div><strong>Ако подадем обещание на <em>Promise.resolve()</em> или <em>Promise.reject()</em>, обещанието се връща без промяна.</strong></dd>
+		</dl>
+		<p>И двата, <em>Promise.resolve()</em> и <em>Promise.reject()</em> също приемат без обещание <em>thenables</em>, като аргументи и ще създадат ново обещание, което се извиква след <em>then()</em>. Без обещание <em>thenable</em> се създава, когато един обект има <em>then()</em> метод, който приема два аргумента: <em>resolve</em> и <em>reject</em>. Например:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> thenable = {
+    then: <span class="code">function</span>(resolve, reject) {
+        resolve(42);
+    }
+};
+			</pre></dd>
+		</dl>
+		<p>Обекта <em>thenable</em> в този пример, има характеристики свързани с обещание, различни от <em>then()</em> метода. Той може да бъде превърнат в изпълнено обещание, с помощта на <em>Promise.resolve</em>():</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> thenable = {
+    then: <span class="code">function</span>(resolve, reject) {
+        resolve(42);
+    }
+};
+
+<span class="code">let</span> p1 = Promise.resolve(thenable);
+p1.then(<span class="code">function</span>(value) {
+    console.log(value);     // 42
+});
+			</pre></dd>
+		</dl>
+		<p>В този пример, <em>Promise.resolve()</em> извиква <em>thenable.then()</em>, така че състоянието на обещанието да може да се определи. Тъй като, този код произвежда <em>resolve(42)</em>, състоянието на обещанието за <em>thenable</em> е изпълнено. Ново обещание е създадено при изпълнение на състоянието със стойността, подадена от <em>thenable (42)</em>, така че манипулатора за изпълнението на p1 получава 42, като стойност. Същия процес може да се използва за <em>Promise.reject()</em>, за да създаде отхвърляне на обещание от <em>thenable</em>:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> thenable = {
+    then: <span class="code">function</span>(resolve, reject) {
+        reject(42);
+    }
+};
+
+<span class="code">let</span> p1 = Promise.reject(thenable);
+p1.catch(<span class="code">function</span>(value) {
+    console.log(value);     // 42
+});
+			</pre></dd>
+		</dl>
+		<p>Този пример е подобен на последния с изключение на това, че <em>Promise.reject()</em> се използва на <em>thenable</em>. По този начин се изпълнява <em>thenable.then()</em> и се създава ново обещание с отхвърляне на състоянието на стойност 42. Тази стойност след това преминава към манипулатора за отхвърляне на p1.</p>
+		<p>И двата <em>Promise.resolve()</em> и <em>Promise.reject()</em> работят по този начин за да може лесно да се работи без обещания <em>thenables</em>. Когато не сме сигурни дали един обект е обещание, подаването на обекта през <em>Promise.resolve()</em> или <em>Promise.reject()</em> (в зависимост от очаквания резултат) е най-добрия подход, тъй като обещанията се подават през тях, без никаква промяна.</p>
+        <h3>Изпълняване на грешки</h3>
+		<p>Ако се хвърли грешка вътре в изпълнителя, след това се извиква манипулатора за отхвърляне на обещанието. Например:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> promise = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    <span class="code">throw new Error</span>("Explosion!");
+});
+
+promise.<span class="code">catch</span>(<span class="code">function</span>(error) {
+    console.log(error.message);     // "Explosion!"
+});		
+			</pre></dd>
+		</dl>
+		<p>В този код, изпълнителя умишлено хвърля грешка. Във всеки изпълнител има имплициран <em>try-catch</em>, така че грешката  се улавя и след това се подава на манипулатора за отхвърляне. В този смисъл. предишния пример е еквивалентен на този:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="comment"><em>// еквивалентно на предишния пример</em></span>
+<span class="code">let</span> promise = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    <span class="code">try</span> {
+        <span class="code">throw new Error</span>("Explosion!");
+    } <span class="code">catch</span> (ex) {
+        reject(ex);
+    }
+});
+
+promise.<span class="code">catch</span>(<span class="code">function</span>(error) {
+    console.log(error.message);     // "Explosion!"
+});		
+			</pre></dd>
+		</dl>
+		<p>Изпълнителя държи улавянето на всички хвърлени грешки, за да се опрости този случай на обща употреба. Въпреки това, той има уговорката, че хвърлена грешка в изпълнителя се съобщава, само когато е налице манипулатор за отхвърляне, в противен случай грешката не се съобщава. Това стана проблем за разработчиците в началото на използването на обещания, така че в JavaScript средите решиха да се справят с него, чрез използване на куки за улов на отхвърлени обещания.</p>
+		<h3>Global Promise Rejection Handling</h3>
+		<p>Един от най-спорните аспекти на обещанията е мълчаливия отказ, който се случва, когато едно обещание се отхвърли и не разполага с манипулатор за отхвърляне. Някои смятат, че това е най-големия недостатък в спецификацията, като това е единствената част на езика JavaScript , която очевидно не прави грешки, когато те се появят.</p>
+		<p>Определяне дали отхвърленото обещание е обработено, не е ясно поради естеството на обещанията. Обещание може да бъде отхвърлено и обработено само в по-късен момент от време, например:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> rejected = Promise.reject(42);
+
+<span class="comment"><em>// в този момент, отхвърлянето не е обработено</em></span>
+
+<span class="comment"><em>// известно време по-късно...</em></span>
+rejected.<span class="code">catch</span>(<span class="code">function</span>(value) {
+    <span class="comment"><em>// сега отхвърлянето е обработено</em></span>
+    console.log(value);
+});
+			</pre></dd>
+		</dl>
+		<p>Понеже може да се извика <em>then()</em> или <em>catch()</em> във всеки един момент от време и да го обработи правилно, независимо от това дали обещанието е постоянно или не, е трудно да се каже точно кога обещанието ще бъде обработено. </p>
+		<p>Въпреки, че е възможно следващата версия на ECMAScript да се справи с този проблем, браузърите и Node.js са приложили промени за справяне с този проблем. Имайте в предвид, че те не са част от спецификацията на  ECMAScript 6, но са ценен инструмент при използването на обещания.</p>
+		<h3>Node.js Rejection Handling</h3>
+		<p>В Node.js, има две събития в <em>process</em> обекта, свързани с обработката на отхвърлени обещания.</p>	
+		<dl>
+			<dd><ul>
+				<li><em>unhandledRejection</em>- излъчва при отхвърлено обещание и няма манипулатор за отхвърляне, извикан в рамките на един контур на цилъл за събитие</li><br>
+				<li><em>rejectionHandled</em>- излъчва при отхвърлено обещание и има манипулатор за отхвърляне, извикано в рамките на един контур на цикъл за събитие</li>
+			</ul></dd>
+		</dl>
+		<p>Тези две събития са проектирани да работят заедно, за подпомагане на идентифициране на обещания, които са отхвърлени и не се обработват.</p>
+		<p>На манипулатора на събитието <em>unhandledRejection</em> се подават два аргумента: причина за отхвърлянето (често обекта на грешка) и обещанието, което е отхвърлено. Ето един прост пример:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> rejected;
+
+process.on("unhandledRejection", <span class="code">function</span>(reason, promise) {
+    console.log(reason.message);            // "Explosion!"
+    console.log(rejected === promise);      // true
+});
+
+rejected = Promise.reject(<span class="code">new Error</span>("Explosion!"));	
+			</pre></dd>
+		</dl>
+		<p>Този пример, създава отхвърлено обещание с обекта на грешка и слуша за <em>unhandledRejection</em> събитието. Манипулатора на събитието получава обект на грешка, като първи аргумент и обещанието, като втори.</p>
+		<p>Манипулатора на събитието <em>rejectionHandled</em> получава само един аргумент, който е обещанието, което е отхвърлено. Например:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> rejected;
+
+process.on("rejectionHandled", <span class="code">function</span>(promise) {
+    console.log(rejected === promise);              // true
+});
+
+rejected = Promise.reject(<span class="code">new Error</span>("Explosion!"));
+
+<span class="comment"><em>// изчаква добавяне на манипулатора за отхвърляне</em></span>
+setTimeout(<span class="code">function</span>() {
+    rejected.<span class="code">catch</span>(<span class="code">function</span>(value) {
+        console.log(value.message);     // "Explosion!"
+    });
+}, 1000);			
+			</pre></dd>
+		</dl>
+		<p>Тука, <em>rejectionHandled</em> събитието се излъчва, когато манипулатора за отхвърляне е извикан накрая. Ако манипулатора за отхвърляне е прикрепен директно към <em>rejected</em> след създаването му, събитието нямаше да бъде излъчено, защото манипулатора за отхвърляне е бил извикан по същото време на контура на цикъла на събитието, в което <em>rejected</em> е създаден.</p>
+		<p>За правилно проследяване на потенциално необработени отхвърляния, трябва да използваме двете събития, за да поддържаме списъка на потенциално необработените отхвърляния и след това да изчакат известен период от време, за да се запознаят със списъка. Например:</p>
+		<dl>
+			<dd><pre class="highlight-overflow">
+<span class="code">let</span> possiblyUnhandledRejections = <span class="code">new</span> Map();
+
+<span class="comment"><em>// когато, отхвърлянето е необработено го добавяме в map</em></span>
+process.on("unhandledRejection", <span class="code">function</span>(reason, promise) {
+    possiblyUnhandledRejections.set(promise, reason);
+});
+
+process.on("rejectionHandled", <span class="code">function</span>(promise) {
+    possiblyUnhandledRejections.delete(promise);
+});
+
+setInterval(<span class="code">function</span>() {
+
+    possiblyUnhandledRejections.forEach(<span class="code">function</span>(reason, promise) {
+        console.log(reason.message ? reason.message : reason);
+
+        <span class="comment"><em>// направи нещо за да се справят с тези отхвърляния</em></span>
+        handleRejection(promise, reason);
+    });
+
+    possiblyUnhandledRejections.clear();
+
+}, 60000);
+			</pre></dd>
+		</dl>
+		<p>Този код е просто необработено отхвърляне на <em>tracker</em>. Той използва <em>map</em> за съхраняване на обещания и причините за тяхното отхвърляне, където обещанието е ключът и причината за тази стойност. Всеки път, когато <em>unhandledRejection</em> излъчва, обещанието и неговата причина за отхвърляне, се добавят към map. Всеки път, когато <em>rejectionHandled</em> излъчва, обещанието се отстранява от <em>map</em>. В резултат на това, <em>possiblyUnhandledRejections</em> продължава да расте и да се свива, при всяко извикване на събитие.</p>
+		<p>Извикването на <em>setInterval()</em> периодично проверява всеки списък с възможните необработени отхвърляния и извежда информацията на конзолата (в действителност, вероятно искате да направите нещо друго, да влезете или по някакъв друг начин да се справите с отхвърлянето). В този пример използваме <em>map</em> вместо <em>weak map</em>, защото трябва да се запознаят с <em>map</em> периодично и да видят кои обещания са налице, което не е възможно с <em>weak map</em>.</p>
+		<p>Докато този пример е специфичен за Node.js, браузърите също прилагат подобен механизъм за съобщаване на разработчиците за необработени отхвърляния.</p>
+		<h3>Browser Rejection Handling</h3>
+		<p>Браузърите също излъчват две събития, за подпомагане на идентифицирането на необработени отхвърляния. Тези събития се излъчват от <em>window</em> обекта и са ефективно същите еквиваленти, като на Node.js:</p>
+		<dl>
+			<dd>
+				<ul>
+					<li><em>unhandledrejection</em>- излъчва при отхвърлено обещание и няма манипулатор за отхвърляне, извикан в рамките на един контур на циклъл за събитие</li><br>
+					<li><em>rejectionhandled</em>- излъчва при отхвърлено обещание и има манипулатор за отхвърляне, извикано в рамките на един контур на цикъл за събитие</li>
+				</ul>
+			</dd>
+		</dl>
+		<p>Манипулатора на събитие за тези събития получава обект на събитие със следните свойства:</p>
+		<dl>
+			<dd>
+				<ul>
+					<li><em>type</em> - името на събитието ("unhandledrejection" или "rejectionhandled")</li><br>
+					<li><em>promise</em> - обекта на обещание, който е бил отхвърлен</li><br>
+					<li><em>reason</em> - отхвърлената стойност от обещанието</li>
+				</ul>
+			</dd>
+		</dl>
+		<p>Освен използването на обекта на събитието, вместо индивидуални параметри в манипулатора на събитието, друга разлика в изпълнението на браузъра е, че стойността на отхвърляне (причината) е достъпна за двете събития. Например:</p>
+		<dl>
+			<dd><pre class="highlight-overflow">
+<span class="code">let</span> rejected;
+
+<span class="code">window</span>.onunhandledrejection = <span class="code">function</span>(event) {
+    console.log(event.type);                    // "unhandledrejection"
+    console.log(event.reason.message);          // "Explosion!"
+    console.log(rejected === event.promise);    // true
+};
+
+<span class="code">window</span>.onrejectionhandled = <span class="code">function</span>(event) {
+    console.log(event.type);                    // "rejectionhandled"
+    console.log(event.reason.message);          // "Explosion!"
+    console.log(rejected === event.promise);    // true
+};
+
+rejected = Promise.reject(<span class="code">new Error</span>("Explosion!"));			
+		    </pre></dd>
+		</dl>
+		<p>Този код определя двата манипулатора на събития да използват DOM Level 0 нотация на <em>onunhandledrejection</em> и <em>onrejectionhandled</em> (можете също да използвате <em>addEventListener</em>("unhandledrejection") и <em>addEventListener</em>("rejectionhandled") ако предпочитате). Всеки манипулатор получава обект на събитие, съдържащ информация за отхвърлените обещания. Всички три свойства <em>type, promise</em> и <em>reason</em>, са на разположение в двата манипулатора на събития.</p>
+		<p>Кода, който следи за необработени отхвърляния в браузъра е много подобен на кода в Node.js:</p>
+		<dl>
+		    <dd><pre class="highlight-overflow">
+<span class="code">let</span> possiblyUnhandledRejections = <span class="code">new</span> Map();
+
+<span class="comment"><em>// когато отхвърлянето е необработено, го добавяме в map</em></span>
+<span class="code">window</span>.onunhandledrejection = <span class="code">function</span>(event) {
+    possiblyUnhandledRejections.set(event.promise, event.reason);
+};
+
+<span class="code">window</span>.onrejectionhandled = <span class="code">function</span>(event) {
+    possiblyUnhandledRejections.<span class="code">delete</span>(event.promise);
+};
+
+setInterval(<span class="code">function</span>() {
+
+    possiblyUnhandledRejections.forEach(<span class="code">function</span>(reason, promise) {
+        console.log(reason.message ? reason.message : reason);
+
+        <span class="comment"><em>// направи нещо за да се справят с тези отхвърляния</em></span>
+        handleRejection(promise, reason);
+    });
+
+    possiblyUnhandledRejections.clear();
+
+}, 60000);	
+		    </pre></dd>
+	    </dl>
+	    <p>Това изпълнение е почти точно същото, като изпълнението в Node.js, единствената реална разлика е, когато информацията се извлича от манипулаторите на събитието. Иначе, използва същия подход на съхраняване на обещания и техните стойности за отхвърляне в <em>map</em> и след това ги инспектира по-късно.</p>
+		<p>Обработката на отхвърлени обещания може да бъде трудна, но е само сложно понятие, включващо обещания. Току що започнахте да виждате, колко мощни наистина могат да бъдат обещанията и е време да предприемем следващата стъпка - верига от няколко обещания заедно.</p>
+		<h3>Верижни обещания</h3>
+		<p>До този момент обещанията може да изглеждат, като малко повече от частично подобрение с помощта на някаква комбинация от извикване и <em>setTimeout()</em>, но има много повече обещания, от колкото виждаме. По-специално има редица начини за верига от обещания заедно, за постигане на по-сложно асинхронно поведение.</p>
+		<p>Всяко извикване на <em>then()</em> или <em>catch()</em> всъщност създава и връща друго обещание. Това второ обещание е разрешено само, след като първото е изпълнено или отхвърлено. Например:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> p1 = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    resolve(42);
+});
+
+p1.then(<span class="code">function</span>(value) {
+    console.log(value);
+}).then(<span class="code">function</span>() {
+    console.log("Finished");
+});
+			</pre></dd>
+		</dl>
+		<p>Резултата от този пример е:</p>
+		<dl>
+			<dd><pre class="highlight">
+				<p>42 <br>Finished</p>
+			</pre>
+			</dd>
+		</dl>
+		<p>Извикването към <em>p1.then()</em> връща второ обещание, на което се извиква <em>then()</em>. Манипулатора за изпълнение на втория <em>then()</em> се извиква само, след като първото обещание е разрешено. Ако се освободим от този пример, това изглежда така:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> p1 = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    resolve(42);
+});
+
+<span class="comment"><em>// също като</em></span>
+
+<span class="code">let</span> p2 = p1.then(<span class="code">function</span>(value) {
+    console.log(value);
+})
+
+p2.then(<span class="code">function</span>() {
+    console.log("Finished");
+}); 
+        </pre></dd>
+		</dl>
+		<p>Както може би се досещате, <em>p2.then()</em> също връща обещание, но не се използва в този пример.</p>
+		<h3>Прихващане на грешки</h3>
+		<p>Верижните обещания ни позволяват да улавяме грешки, които могат да възникнат по време на изпълнението или манипулатора на отхвърляне от предишното обещание. Например:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> p1 = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    resolve(42);
+});
+
+p1.then(<span class="code">function</span>(value) {
+    throw new Error("Boom!");
+}).catch(<span class="code">function</span>(error) {
+    console.log(error.message);     // "Boom!"
+});
+			</pre></dd>
+		</dl>
+		<p>В този пример, манипулатора на изпълнение за p1 хвърля грешка. Верижното извикване към <em>catch()</em>, който е във второто обещание, може да получи тази грешка, чрез манипулатора за отхвърляне. Същото важи и ако един манипулатор за отхвърляне хвърли грешка:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> p1 = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    <span class="code">throw new Error</span>("Explosion!");
+});
+
+p1.<span class="code">catch</span>(<span class="code">function</span>(error) {
+    console.log(error.message);     // "Explosion!"
+    <span class="code">throw new Error</span>("Boom!");
+}).<span class="code">catch</span>(<span class="code">function</span>(error) {
+    console.log(error.message);     // "Boom!"
+});
+			</pre></dd>
+		</dl>
+		<p>Тука, изпълнителя хвърля грешка, след това задейства манипулатора за отхвърляне на p1. Този манипулатор после хвърля друга грешка, която е уловена от манипулатора на второто отхвърлено обещание. По този начин оковани извикванията на обещанията могат да бъдат информирани за грешки в други обещания по веригата.</p>
+		<dl>
+			<dd><div class="info">
+         <img src="./img/info.jpg" alt="info">
+       </div><strong>Препоръчително е винаги да имате манипулатор за отхвърляне в края на веригата от обещания, за да се гарантира, че могат правилно да се справят с всички грешки, които могат да възникнат.</strong></dd>
+		</dl>
+		<h3>Връщане на стойност във веригата от обещания</h3>
+		<p>Друг важен аспект на веригите от обещания е способноста да се подават данни от едно обещание към следващото. Вече видяхме, че стойността подадена към манипулатора <em>resolve()</em> вътре в изпълнителя, се подава към манипулатора за изпълнение на това обещание. Можете да продължите подаването на данни, заедно с посочване на стойността върната от манипулатора за изпълнение. Например:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> p1 = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    resolve(42);
+});
+
+p1.then(<span class="code">function</span>(value) {
+    console.log(value);         // "42"
+    <span class="code">return</span> value + 1;
+}).then(<span class="code">function</span>(value) {
+    console.log(value);         // "43"
+});
+			</pre></dd>
+		</dl>
+		<p>В този пример, манипулатора за изпълнение на p1 връща стойност (value + 1). Тъй като стойността е 42 (от изпълнителя) след това манипулатора за изпълнение връща 43. Тази стойност след това се подава към манипулатора за изпълнение на второто обещание, което да го подаде към конзолата.</p>
+		<p>Същото нещо е възможно с помощта на манипулатора за отхвърляне. Когато един манипулатор за отхвърляне се извика, той има възможност да върне тази стойност. Тази стойност след това се използва, за да изпълни следващото обещание във веригата. Например:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> p1 = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    reject(42);
+});
+
+p1.<span class="code">catch</span>(<span class="code">function</span>(value) {
+    <span class="comment"><em>// първи манипулатор за изпълнение</em></span>
+    console.log(value);         // "42"
+    <span class="code">return</span> value + 1;
+}).then(<span class="code">function</span>(value) {
+    <span class="comment"><em>// втори манипулатор за изпълнение</em></span>
+    console.log(value);         // "43"
+});
+			</pre></dd>
+		</dl>
+		<p>Тука, изпълнителя извиква <em>reject()</em> с 42. Тази стойност се подава в манипулатора за отхвърляне на обещанието, където се връща <em>value + 1</em>. Въпреки, че тази върната стойност идва от манипулатора за отхвърляне, тя все още може да се използва в манипулатора за изпълнение на следващото обещание във веригата. Това дава възможност на провала на едно обещание да позволи възстановяване на цялата верига при необходимост.</p>
+		<h3>Връщане на обещания от вериги с обещания</h3>
+		<p>Връщането на примитивни стойности от манипулатора за изпълнение и отхвърляне, позволява прехвърляне на данни между обещанията, но какво става ако върне обект?  Ако обекта е обещание, има една допълнителна стъпка, която трябва да вземем, за да се определи, как да се процедира. Да разгледаме следния пример:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> p1 = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    resolve(42);
+});
+
+<span class="code">let</span> p2 = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    resolve(43);
+});
+
+p1.then(<span class="code">function</span>(value) {
+    <span class="comment"><em>// първи манипулатор за изпълнение</em></span>
+    console.log(value);     // 42
+    <span class="code">return</span> p2;
+}).then(<span class="code">function</span>(value) {
+    <span class="comment"><em>// втори манипулатор за изпълнение</em></span>
+    console.log(value);     // 43
+});
+			</pre></dd>
+		</dl>
+		<p>В този код, p1 работния график разрешава 42. Манипулатора за изпълнение на p1 връща p2, обещанието вече е в разрешено състояние. Втория манипулатор за изпълнение се извиква, защото p2 е бил изпълнен. Ако p2 се отхвърли, втория манипулатор за изпълнение няма да бъде извикан и вместо това, ще се извика манипулатор за отхвърляне (ако има такъв).</p>
+		<p>Важно е да се признае за този модел, че втория манипулатор за изпълнение не се добавя към p2, а по-скоро към трето обещание. Предишния пример е еквивалентен на това:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> p1 = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    resolve(42);
+});
+
+<span class="code">let</span> p2 = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    resolve(43);
+});
+
+<span class="code">let</span> p3 = p1.then(<span class="code">function</span>(value) {
+    <span class="comment"><em>// първи манипулатор за изпълнение</em></span>
+    console.log(value);     // 42
+    <span class="code">return</span> p2;
+});
+
+p3.then(<span class="code">function</span>(value) {
+    <span class="comment"><em>// втори манипулатор за изпълнение</em></span>
+
+    console.log(value);     // 43
+});
+			</pre></dd>
+		</dl>
+		<p>От това става ясно, че втория манипулатор за изпълнение е приложен към p3, а не към p2. Това е малка, но важна разлика, тъй като манипулатора за изпълнение не се извиква, ако p2 е отхвърлено. Например:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> p1 = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    resolve(42);
+});
+
+<span class="code">let</span> p2 = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    reject(43);
+});
+
+p1.then(<span class="code">function</span>(value) {
+    <span class="comment"><em>// първи манипулатор за изпълнение</em></span>
+    console.log(value);     // 42
+    <span class="code">return</span> p2;
+}).then(<span class="code">function</span>(value) {
+        <span class="comment"><em>// втори манипулатор за изпълнение</em></span>
+
+    console.log(value);     <span class="comment"><em>// никога не се извиква</em></span>
+});
+			</pre></dd>
+		</dl>
+		<p>В този пример, втория манипулатор за изпълнение никога не се извиква, защото p2 се отхвърля. Може обаче да се добави манипулатор за отхвърляне, вместо него:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> p1 = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    resolve(42);
+});
+
+<span class="code">let</span> p2 = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    reject(43);
+});
+
+p1.then(<span class="code">function</span>(value) {
+    <span class="comment"><em>// първи манипулатор за изпълнение</em></span>
+    console.log(value);     // 42
+    <span class="code">return</span> p2;
+}).<span class="code">catch</span>(<span class="code">function</span>(value) {
+    <span class="comment"><em>// манипулатор за отхвърляне</em></span>
+    console.log(value);     // 43
+});
+			</pre></dd>
+		</dl>
+		<p>Тука, манипулатора за отхвърляне се извиква в резултат на отхвърлянето на p2. Отхвърлената стойност 43 от p2 е подадена в манипулатора за отхвърляне.</p>
+		<p>Върнатата <em>thenables</em> от манипулатора за изпълнение и отхвърляне не се променя, когато се изпълняват изпълнителите на обещанието. Първото дефинирано обещание ще изпълни своя изпълнител първо, последван от втори и т.н. Върнатите <em>thenables</em> просто ви позволяват допълнителни отговори. Може да се отложи изпълнението на манипулатора за изпълнение, чрез създаване на ново обещание в манипулатора за изпълнение. Например:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> p1 = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    resolve(42);
+});
+
+p1.then(<span class="code">function</span>(value) {
+    console.log(value);     // 42
+
+    <span class="comment"><em>// създаване на ново обещание</em></span>
+    <span class="code">let</span> p2 = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+        resolve(43);
+    });
+
+    <span class="code">return</span> p2
+}).then(<span class="code">function</span>(value) {
+    console.log(value);     // 43
+});
+			</pre></dd>
+		</dl>
+		<p>В този пример, е създадено ново обещание в рамките на манипулатора за изпълнение на p1. Това означава, че манипулатора на второто изпълнение няма да бъде изпълнен, докато p2 не е изпълнено. Този модел е полезен, когато искате да изчакате предното обещание да се уреди, преди да задействате друго обещание.</p>
+		<h3>Отговор на множество обещания</h3>
+		<p>До този момент, всеки пример тази глава се е занимавал с отговора на едно обещание в даден момент. Има моменти обаче, когато вие ще искате да следите развитието на множество обещания, за да се определи следващото действие. ECMAScript 6 предвижда два метода, които да следят множество обещания: <em>Promise.all()</em> и <em>Promise.race()</em>.</p>
+		<h3>Promise.all()</h3>
+		<p>Метода <em>Promise.all()</em> приема един аргумент, който е <em>iterable</em> (също като масив) на обещания за наблюдение и връща обещание, което е разрешено само, когато всяко обещание в <em>iterable</em> е разрешено. Върнатото обещание  е изпълнено, когато е изпълнено всяко обещание в <em>iterable</em>, например:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> p1 = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    resolve(42);
+});
+
+<span class="code">let</span> p2 = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    resolve(43);
+});
+
+<span class="code">let</span> p3 = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    resolve(44);
+});
+
+<span class="code">let</span> p4 = Promise.all([p1, p2, p3]);
+
+p4.then(<span class="code">function</span>(value) {
+    console.log(<span class="code">Array</span>.isArray(value));  // true
+    console.log(value[0]);              // 42
+    console.log(value[1]);              // 43
+    console.log(value[2]);              // 44
+});
+			</pre></dd>
+		</dl>
+		<p>Всяко от обещанията в този пример се решава с номер. Извикването на <em>Promise.all()</em> създава ново обещание, p4, което в крайна сметка е изпълнено, когато всички обещания са изпълнени. Резултата, подава за изпълнение на p4 масив, съдържащ всички разрешени стойности: 42, 43 и 44. По този начин, могат да се сравнят резултатите на обещанието с обещанията, които ги решават.</p>
+		<p>Ако някое от обещанията подадени към <em>Promise.all()</em> е отхвърлено, върнатото обещание се отхвърля незабавно, без да чака другите обещания да завършат:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> p1 = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    resolve(42);
+});
+
+<span class="code">let</span> p2 = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    reject(43);
+});
+
+<span class="code">let</span> p3 = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    resolve(44);
+});
+
+<span class="code">let</span> p4 = Promise.all([p1, p2, p3]);
+
+p4.<span class="code">catch</span>(<span class="code">function</span>(value) {
+    console.log(<span class="code">Array</span>.isArray(value))   // false
+    console.log(value);                 // 43
+});
+			</pre></dd>
+		</dl>
+		<p>В този пример, p2 се отхвърля със стойност 43. Манипулатора за отхвърляне на p4 се извиква веднага, без да чака p1 или p3 да завършат изпълнението (те все още завършват изпълнението, просто p4 не чака). Манипулатора за отхвърляне подава 43, за да отрази отхвърлянето от p2. Манипулатора за отхвърляне винаги получава една стойност, а не масива, стойността е стойността на отхвърляне от обещанието, което е отхвърлено.</p>
+		<h3>Promise.race()</h3>
+		<p>Метода <em>Promise.race()</em> осигурява малко по-различен поглед върху наблюдението на множество обещания. Този метод също приема <em>iterable</em> на обещанията за наблюдение и връща обещание, обаче, върнатото обещание е установено веднага, след като е установено първото обещание. Така че, вместо да чака всички обещания да бъдат изпълнени, както в <em>Promise.all()</em>, върнатото обещание се изпълнява веднага, след като някое от обещанията е изпълнено. Например:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> p1 = Promise.resolve(42);
+
+<span class="code">let</span> p2 = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    resolve(43);
+});
+
+<span class="code">let</span> p3 = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    resolve(44);
+});
+
+<span class="code">let</span> p4 = Promise.race([p1, p2, p3]);
+
+p4.then(<span class="code">function</span>(value) {
+    console.log(value);     // 42
+});
+			</pre></dd>
+		</dl>
+		<p>В този код, p1 е създадено, като изпълнено обещание, докато другите са в работния график. Манипулатора за изпълнение на p4 се извиква после със стойност 42 и игнорира останалите обещания напълно. Обещанията подадени към <em>Promise.race()</em> наистина участват в състезанието, за да видим, кое е установено първо. Ако  е изпълнено първото обещание за установяване, после върнатото обещание е изпълнено. Ако първото обещание за установяване е отхвърлено, тогава върнатото обещание се отхвърля. Ето един пример с отхвърляне:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> p1 = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    resolve(42);
+});
+
+<span class="code">let</span> p2 = Promise.reject(43);
+
+<span class="code">let</span> p3 = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    resolve(44);
+});
+
+<span class="code">let</span> p4 = Promise.race([p1, p2, p3]);
+
+p4.<span class="code">catch</span>(<span class="code">function</span>(value) {
+    console.log(value);     // 43
+});
+			</pre></dd>
+		</dl>
+		<p>Тука, p4 се отхвърля, защото p2 е вече в отхвърлено състояние, когато <em>Promise.race()</em> се извиква. Въпреки, че p1 и p3 са изпълнени, техните резултати са игнорирани, тъй като те се появяват, след като p2 се отхвърли.</p>
+		<h3>Asynchronous Task Running</h3>
+		<p>Обратно в <a href="08_iterators_and_generators.html #asynchron">Глава 8</a> , където учихме за генератори и как те могат да бъдат използвани за работа с асинхронни задачи, като следното:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> fs = require("fs");
+
+<span class="code">function</span> run(taskDef) {
+
+    <span class="comment"><em>// създаване на итератор, предоставен на друго място</em></span>
+    <span class="code">let</span> task = taskDef();
+
+    <span class="comment"><em>// начало на задачата</em></span>
+    <span class="code">let</span> result = task.next();
+
+    <span class="comment"><em>// рекурсивна функция, която държи извикванията към next()</em></span>
+    <span class="code">function</span> step() {
+
+        <span class="comment"><em>// ако има още нещо за правене</em></span>
+        <span class="code">if</span> (!result.done) {
+            <span class="code">if</span> (<span class="code">typeof</span> result.value === "function") {
+                result.value(<span class="code">function</span>(err, data) {
+                    <span class="code">if</span> (err) {
+                        result = task.<span class="code">throw</span>(err);
+                        <span class="code">return</span>;
+                    }
+
+                    result = task.next(data);
+                    step();
+                });
+            } <span class="code">else</span> {
+                result = task.next(result.value);
+                step();
+            }
+
+        }
+    }
+
+    <span class="comment"><em>// стартиране на процеса</em></span>
+    step();
+
+}
+
+<span class="comment"><em>// Дефиниране на функция за използване на task runner</em></span>
+
+<span class="code">function</span> readFile(filename) {
+    <span class="code">return function</span>(callback) {
+        fs.readFile(filename, callback);
+    };
+}
+
+<span class="comment"><em>// Пускане на задачата</em></span>
+
+run(<span class="code">function</span>*() {
+    <span class="code">let</span> contents = <span class="code">yield</span> readFile("config.json");
+    doSomethingWith(contents);
+    console.log("Done");
+});
+			</pre></dd>
+		</dl>
+		<p>Има някои болни точки в това изпълнение. Първо, опаковането на всяка функция във функция, която връща функция е малко объркващо (дори това изречение е объркващо). Второ, няма начин да се направи разлика между функцията, върната като стойност предназначена за обраното извикване на <em>task runner</em> и тази, която не е. С обещания, може значително да се опрости и обобщи този процес, като се гарантира, че всяка асинхронна операция връща обещание. Този общ интерфейс означава, че може значително да се опрости асинхронния код:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> fs = require("fs");
+
+<span class="code">function</span> run(taskDef) {
+
+    <span class="comment"><em>// създаване на итератор</em></span>
+    <span class="code">let</span> task = taskDef();
+
+    <span class="comment"><em>// начало на задачата</em></span>
+    <span class="code">let</span> result = task.next();
+
+    <span class="comment"><em>// рекурсивна функция за обхождане</em></span>
+    (<span class="code">function</span> step() {
+
+        <span class="comment"><em>// ако има още нещо за правене</em></span>
+        <span class="code">if</span> (!result.done) {
+
+            <span class="comment"><em>// разрешаване на обещание за лесно правене</em></span>
+            <span class="code">let</span> promise = Promise.resolve(result.value);
+            promise.then(<span class="code">function</span>(value) {
+                result = task.next(value);
+                step();
+            }).<span class="code">catch</span>(<span class="code">function</span>(error) {
+                result = task.<span class="code">throw</span>(error);
+                step();
+            });
+        }
+    }());
+}
+
+<span class="comment"><em>// Дефиниране на функция за използване на task runner</em></span>
+
+<span class="code">function</span> readFile(filename) {
+    <span class="code">return new</span> Promise(<span class="code">function</span>(resolve, reject) {
+        fs.readFile(filename, <span class="code">function</span>(err, contents) {
+            <span class="code">if</span> (err) {
+                reject(err);
+            } <span class="code">else</span> {
+                resolve(contents);
+            }
+        });
+    });
+}
+
+<span class="comment"><em>// Стартиране на задачата</em></span>
+
+run(<span class="code">function</span>*() {
+    <span class="code">let</span> contents = <span class="code">yield</span> readFile("config.json");
+    doSomethingWith(contents);
+    console.log("Done");
+});
+			</pre></dd>
+		</dl>
+		<p>В тази версия на кода, общата функция <em>run()</em> се използва за изпълнение на генератор. Функцията <em>run()</em> изпълнява генератор за създаване на итератор, задачата започва с извикване на <em>task.next()</em> и след това рекурсивно извиква <em>step()</em> докато итератора завърши. Вътре в <em>step()</em>, ако има още работа за вършене, <em>result.done</em> е <em>false</em>. В този момент <em>result.value</em> трябва да бъде обещание, но <em>Promise.resolve()</em> се използва само в случай, че въпросната функция не върне обещание (не забравяйте, че <em>Promise.resolve()</em> само ще премине през всяко обещание, което и е подадено и ще обвие всяко не-обещание в обещание). После, се добавя манипулатор за изпълнение, който извлича стойността от обещанието и я подава обратно към итератора. След това, <em>result</em> присвоява следващия добит резултат преди извикването на <em>step()</em>. Добавя се също манипулатор за отхвърляне, който поема всички отхвърлени резултати в обект за грешки. Този обект за грешки се подава обратно в итератора с помощта на <em>task.throw()</em> и <em>result</em> присвоява следващия добит резултат, ако грешката е уловена в задачата и след това се извиква <em>step()</em> за да продължи.</p>
+		<p>Тази функция <em>run()</em> може да се използва за изпълнение на всеки генератор, който използва <em>yield</em>, като начин за използване на асинхронен код без да показва обещания (или обратни извиквания) на програмиста. В действителност всяка функция може да се използва със всяка върната стойност, защото резултата винаги се превръща в обещание. Това означава, че можем да използваме синхронни и асинхронни методи, които да работят правилно, когато са извикани посредством <em>yield</em> и ние никога не трябва да проверяваме дали върнатата стойност е обещание. Единствената грижа е да се гарантира, че асинхронни функции, като <em>readFile()</em>, връщайки обещание, правилно индентифицират състоянието му. В случай на вградени методи на Node.js, означава, че трябва да се конвертират тези методи, за да връщат обещания, вместо да използват обратни извиквания.</p>
+		<h3>Наследяване от обещания</h3>
+		<p>Също като другите вградени типове, обещанията могат да се използват, като основа, върху която може да се създаде извлечен клас. Това ни позволява да определим свой вариант на обещания за разширяване, на това което вградените обещания могат да направят. Да предположим, че искаме да създадем едно обещание, което използва <em>success()</em> and <em>failure()</em> в допълнение към <em>then()</em> и <em>catch()</em>. Можем да го направим, както следва:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">class</span> MyPromise <span class="code">extends</span> Promise {
+
+    <span class="comment"><em>// използване на конструктор по подразбиране</em></span>
+
+    success(resolve, reject) {
+        <span class="code">return this</span>.then(resolve, reject);
+    }
+
+    failure(reject) {
+        <span class="code">return this.catch</span>(reject);
+    }
+
+}
+
+<span class="code">let</span> promise = <span class="code">new</span> MyPromise(<span class="code">function</span>(resolve, reject) {
+    resolve(42);
+});
+
+promise.success(<span class="code">function</span>(value) {
+    console.log(value);             // 42
+}).failure(<span class="code">function</span>(value) {
+    console.log(value);
+});
+			</pre></dd>
+		</dl>
+		<p>В този пример, <em>MyPromise</em> произлиза от <em>Promise</em> и се добавят два допълнителни метода. И двата, <em>success()</em> и <em>failure()</em> използват <em>this</em> за извикване на подходящ метод, който да се имитира. Създадените функции обещания са също, като вградената версия, с изключение на това, че сега могат да използват <em>success()</em> и <em>failure()</em> в допълнение към <em>then()</em> и <em>catch()</em>.</p>
+		<p>Тъй като, статичните методи могат да се наследяват, това означава, че <em>MyPromise.resolve(), MyPromise.reject(), MyPromise.race()</em> и <em>MyPromise.all()</em> също присъстват. Докато последните два се държат също, като вградени методи, първите два са леко различни.</p>
+		<p>И двата <em>MyPromise.resolve()</em> и <em>MyPromise.reject()</em> ще върнат инстанция на <em>MyPromise</em> независимо от подадената стойност, защото използват <em>Symbol.species</em> свойството (виж <a href="09_classes.html #species">Глава 9</a>) за да определят вида на обещанието за връщане. Така, че ако вграденото обещание се подава на всеки, то ще бъде разрешено или отхвърлено и върнато в нов <em>MyPromise</em>, така че да може да се присвои от манипулатора на изпълнение и отхвърляне. Например:</p>
+		<dl>
+			<dd><pre class="highlight">
+<span class="code">let</span> p1 = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {
+    resolve(42);
+});
+
+<span class="code">let</span> p2 = MyPromise.resolve(p1);
+p2.success(<span class="code">function</span>(value) {
+    console.log(value);         // 42
+});
+
+console.log(p2 <span class="code">instanceof</span> MyPromise);   // true
+			</pre></dd>
+		</dl>
+		<p>Тука, p1 е вградено обещание, което се подава на <em>MyPromise.resolve()</em>. Резултата p2, е инстанция на <em>MyPromise</em>, където стойността разрешена от p1 е подадена в манипулатора за изпълнение.</p>
+		<p>Ако една инстанция на <em>MyPromise</em> се подаде на <em>MyPromise.resolve()</em> или <em>MyPromise.reject()</em>, тя просто ще бъде върната директно без да бъде разрешена. Във всички други случаи, тези два метода се държат също, като <em>Promise.resolve()</em> и <em>Promise.reject()</em>.</p>
+	</article>
+	<footer>
+		<h3>Обобщение</h3>
+		<p>Обещанията са предназначени за подобряване на асинхронното програмиране в JavaScript. Като се има в предвид, че събитията и обратните извиквания имат няколко ограничения, достъпни чрез пермутации на обещания, означава повече контрол и компонентност над асинхронните операции. Това се постига чрез планиране на проекти, които да бъдат добавени към JavaScript машината в <em>job queue</em> за по-късно изпълнение. Втория <em>job queue</em> следи манипулатора за изпълнение и отхвърляне, за да гарантира правилното изпълнение.</p>
+		<p>Обещанията имат три състояния: <em>pending, fulfilled</em> и <em>rejected</em>. Обещанието започва в състояние на изчакване и се изпълнява с успех (<em>success</em>) или отхвърляне (<em>failure</em>). И в двата случая могат да се добавят манипулатори за уведомяване, когато обещанието е установено. Метода <em>then()</em> позволява присвояване на манипулатор за изпълнение и отхвърляне, а <em>catch()</em> метода позволява присвояване само на манипулатора за отхвърляне.</p>
+		<p>Можем да наредим верижно обещания заедно по най-различни начини и да предаваме информация между тях.  Всяко извикване на <em>then()</em> създава и връща ново обещание, което е разрешено, когато и предното е разрешено. Тези вериги могат да бъдат използвани за да предизвикат отговори от поредица на асинхронни събития. Можем също да използваме <em>Promise.race()</em> и <em>Promise.all()</em> за наблюдаване на множество обещания и отговорите съответно.</p>
+		<p><em>Asynchronous task running</em>  се прави по-лесно с помощта на генератори в допълнение към обещанията, като обещанията дават общ интерфейс, който асинхронните операции могат да върнат. Можем да използваме генератори и оператора <em>yield</em> за изчакване на асинхронните отговори, за да реагират по адекватен начин.</p>
+		<p>Повечето нови уеб <em>APIs</em> се строят на върха на обещанията и можем да очакваме още много други да последват примера им в бъдеще.</p>
+	</footer>
+	<nav>
+	<a href="10_array.html" title="previous chapter">◀</a>
+  <a href="./index.html" title="cover">◆</a>
+  <a href="./12_proxies_and_reflection.html" title="next chapter">▶</a>
+</nav>
+</body>
+</html>

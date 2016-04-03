@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Funciton :: Understanding ECMAScript 6</title>
+	<link rel="stylesheet" href="font.css">
+</head>
+<body>
+	<nav>
+  <a href="./02_strings.html" title="previous chapter">◀</a>
+  <a href="./index.html" title="cover">◆</a>
+  <a href="./04_object_function.html" title="next chapter">▶</a>
+</nav>
+	
+	<header id="header" class="">
+	    <h1><div class="head-num">Глава 3</div>Функции</h1>
+	    <p>Функциите са важна част от всеки език за програмиране, преди ECMAScript 6 функциите в JavaScript не са се променили много, от както е създаден езика. Това остави нерешени проблеми и поведение, които лесно правят грешки и често изискват повече код, само за постигане на основно поведение.</p>
+	    <p>В ECMAScript 6 функциите правят голяма крачка напред, като се вземат в предвид годините на жалби и молби от разработчиците на JavaScript. Резултата е редица постепенни подобрения върху ECMAScript 5 функциите, които правят програмирането на  JavaScript с по-малко грешки и по мощно.</p>
+	</header><!-- /header -->
+	<article>
+		<h3 id="defaut">Функции със стойности по подразбиране на параметрите</h3>
+		<p>Функциите в JavaScript са уникални с това, че позволяват произволен брой подадени параметри, независимо от броя на параметрите обявени в дефиницията на функцията. Това позволява да се дефинират функции, които могат да се справят с различни номера на параметри, често само с попълване на стойности по подразбиране, когато параметри не са предвидени. В този раздел се обяснява, как параметрите по подразбиране работят преди и след ECMAScript 6, заедно с важна информация относно обекта на аргументите, използвайки изрази, като параметри и друга TDZ.</p>
+		<h3>Симулиране на стойности по подразбиране на параметрите в ECMAScript 5</h3>
+		<p>В ECMAScript 5 и по-рано, най-вероятно се е използвал следният модел за създаване на функции със стойности по подразбиране на параметрите:</p>
+		<dl>
+			<dd>
+				<pre class="highlight">
+<span class="code">function</span> makeRequest(url, timeout, callback) {				
+    timeout = timeout || 2000;
+    callback = callback || <span class="code">function</span>() {};
+    <span class="comment"><em>// останалата част от функцията</em></span>
+}
+                </pre>
+            </dd>
+		</dl>
+		<p>В този пример, <em>timeout</em> и <em>callback</em> са всъщност по избор, тъй като са им дадени стойности по подразбиране, ако не е предвиден параметър. Логическия оператор или (||) винаги се връща на втория операнд, когато първия е <em>falsе</em>. Тъй наречените функционални параметри, които не са изрично предвидени, са настроени на <em>undefined</em>, логическия оператор или (||), често се използва за осигуряване на стойности по подразбиране за липсващи параметри. Има един недостатък на този подход, обаче, в който валидна стойност за <em>timeout</em> може да е 0,  което ще се замести с 2000, защото 0 е <em>falsе</em>.</p>
+		<p>В този случай, по-безопасно е да се провери вида на аргумента, използвайки <em>typeof</em>, като в примера:</p>
+		<dl>
+		<dd>
+			<pre class="highlight-overflow">
+<span class="code">function</span> makeRequest(url, timeout, callback) {
+  timeout = (<span class="code">typeof</span> timeout !== "undefined") ? timeout : 2000;
+  callback = (<span class="code">typeof</span> callback !== "undefined") ? callback : function() {};
+    <span class="comment"><em>// останалата част от функцията</em></span>
+}
+            </pre>
+        </dd>
+	</dl>
+		<p>Макар, че този подход е по-безопасен, той все още изисква доста допълнителен код за много основни операции. Популярни JavaScript библиотеки са пълни с подобни модели, понеже това представлява общ модел.</p>
+		<h3>Стойности по подразбиране на параметрите в ECMAScript 6</h3>
+		<p>ECMAScript 6 прави по-лесно осигуряването на стойности за параметрите чрез предоставяне на инициализации, които се използват, когато параметъра не е официално подаден. Например:</p>
+		<dl>
+			<dd>
+				<pre class="highlight">
+<span class="code">function</span> makeRequest(url, timeout = 2000, 
+callback = <span class="code">function</span>() {}) {
+    <span class="comment"><em>// останалата част от функцията</em></span>
+}		
+				</pre>
+			</dd>
+		</dl>
+		<p>Тази функция само очаква първия параметър винаги да бъде приет. Другите два параметъра имат стойности по подразбиране, което прави тялото на функцията, много по-малко, защото не е нужно да се добавя всеки код за проверка на липсващата стойност.</p>
+		<p>Когато <em>makeRequest()</em> се извиква с всичките три параметъра, те не се използват по подразбиране. Например:</p>
+		<dl>
+			<dd>
+				<pre class="highlight">
+<span class="comment"><em>// използва по подразбиране timeout и callback</em></span>
+makeRequest("/foo");
+
+<span class="comment"><em>// използва по подразбиране callback</em></span>
+makeRequest("/foo", 500);
+
+<span class="comment"><em>// не използва по подразбиране</em></span>
+makeRequest("/foo", 500, <span class="code">function</span>(body) {
+    doSomething(body);
+});			
+				</pre>
+			</dd>
+		</dl>
+		<p>ECMAScript 6 счита <em>url</em> за задължителен, ето защо "/foo" е подаден във всички три извиквания на <em>makeRequest()</em>. Двата параметъра със стойности по подразбиране не се считат за задължителни.</p>
+		<p>Възможно е да се определят стойности по подразбиране за всички аргументи, включително и тези, които се появяват преди аргументите без стойности по подразбиране в декларацията на функцията. Например, това е добре:</p>
+		<dl>
+			<dd>
+				<pre class="highlight">
+<span class="code">function</span> makeRequest(url, timeout = 2000, callback) {
+    <span class="comment"><em>// останалата част от функцията</em></span>
+}		
+				</pre>
+			</dd>
+		</dl>
+		<p>В този случай, стойността по подразбиране за <em>timeout</em> ще бъде използвана само в случай ако няма втори аргумент или ако втория аргумент е изрично приет, като <em>undefined</em>, както в този пример:</p>
+		<dl>
+			<dd>
+				<pre class="highlight">
+<span class="comment"><em>// използва по подразбиране  timeout</em></span>
+makeRequest("/foo", <span class="code">undefined</span>, <span class="code">function</span>(body) {
+    doSomething(body);
+});
+
+<span class="comment"><em>// използва по подразбиране  timeout</em></span>
+makeRequest("/foo");
+
+<span class="comment"><em>// не използва по подразбиране  timeout</em></span>
+makeRequest("/foo", <span class="code">null</span>, <span class="code">function</span>(body) {
+    doSomething(body);
+});			
+				</pre>
+			</dd>
+		</dl>
+		<p>В случай на стойности по подразбиране за параметрите, стойност от <em>null</em>, се счита за валидна, което означава, че при третото извикване на <em>makeRequest()</em>, стойността по подразбиране на <em>timeout</em> няма да се използва.</p>
+		<h3>Как стойностите по подразбиране за параметрите се отразяват на обекта на аргументите</h3>
+		<p>Само имайте в предвид, че поведението на обекта на аргументите е различно, когато са налице стойности по подразбиране на параметрите. В ECMAScript 5 при <em>nonstrict mode</em>, обекта на аргументите се отразява на промените в обявените параметри на функцията. Ето част от код, който илюстрира как работи това:</p>
+		<dl>
+			<dd>
+				<pre class="highlight">
+<span class="code">function</span> mixArgs(first, second) {
+    console.log(first === arguments[0]);
+    console.log(second === arguments[1]);
+    first = "c";
+    second = "d";
+    console.log(first === arguments[0]);
+    console.log(second === arguments[1]);
+}
+mixArgs("a", "b");
+				</pre>
+			</dd>
+		</dl>
+		<p>Това е изхода:</p>
+		<dl>
+			<dd>
+				<pre class="highlight">
+			<p>true<br>true <br>true<br>true</p>
+			    </pre>
+			</dd>
+		</dl>
+		<p>В обекта на аргументите винаги се актуализира <em>nonstrict mode</em> за да отрази промените в обявените параметри. По този начин, на <em>first</em> и <em>second</em> са възложени нови стойности, <em>arguments[0]</em> и <em>arguments[1]</em> се актуализират съответно, което кара всички  ===  сравнения да решат вярно.</p>
+		<p>В ECMAScript 5 при <em>strict mode</em>, обаче, се елиминира този объркващ аспект на обекта на аргументите. В <em>strict mode</em>, обекта на аргументите не отразява промените в обявените параметри. Ето отново <em>mixArgs()</em> функцията, но в <em>strict mode</em>:</p>
+		<dl>
+		    <dd>
+				<pre class="highlight">
+<span class="code">function</span> mixArgs(first, second) {
+    "use strict";
+    console.log(first === arguments[0]);
+    console.log(second === arguments[1]);
+    first = "c";
+    second = "d"
+    console.log(first === arguments[0]);
+    console.log(second === arguments[1]);
+}
+mixArgs("a", "b");
+				</pre>
+			</dd>
+		</dl>
+		<p>Извикването на <em>mixArgs()</em> извежда:</p>
+		<dl>
+			<dd>
+				<pre class="highlight">
+			<p>true<br>true <br>falsе<br>falsе</p>
+			    </pre>
+			</dd>
+		</dl>
+		<p>Този път смяната на <em>first</em> и <em>second</em> няма ефект върху аргументите, така че продукцията се държи нормално, както сме очаквали.</p>
+		<p>Обекта на аргументите във функция използваща ECMAScript 6, стойностите по подразбиране на параметрите, обаче, винаги се държат по същия начин, както ECMAScript 5 в <em>strict mode</em>, независимо дали функцията работи в <em>strict mode</em>. Наличието на стойности по подразбиране на параметрите задейства обекта на аргументите да остане откъснат от обявените параметри. Това е малка но важна подробност, защото е начин, по който обекта на аргументите може да се използва. Помислете за следното:</p>
+		<dl>
+			<dd>
+				<pre class="highlight">
+<span class="comment"><em>// не е в strict mode</em></span>
+<span class="code">function</span> mixArgs(first, second = "b") {
+    console.log(arguments.length);
+    console.log(first === arguments[0]);
+    console.log(second === arguments[1]);
+    first = "c";
+    second = "d"
+    console.log(first === arguments[0]);
+    console.log(second === arguments[1]);
+}
+mixArgs("a");	
+			    </pre>
+		    </dd>
+		</dl>
+		<p>Това е изхода:</p>
+			<dl>
+			<dd>
+				<pre class="highlight">
+			<p>1<br>true <br>falsе<br>falsе<br>falsе</p>
+			    </pre>
+			</dd>
+		</dl>
+		<p>В този пример, <em>arguments.length</em> е 1 защото само един аргумент е подаден в <em>mixArgs()</em>. Това също означава, че <em>arguments[1]</em> е <em>undefined</em>, което е най-очакваното поведение, когато само един аргумент е подаден към функцията. Това означава, че <em>first</em> е равен на <em>arguments[0]</em>, което е добре. Промяната на <em>first</em> и <em>second</em> няма никакъв ефект върху аргументите. Това се случва и при <em>nonstrict</em> и при <em>strict mode</em>, така че, може да разчитате аргументите да отразяват винаги първоначалното състояние на повикване.</p>
+		<h3>По подразбиране параметър Expressions</h3>
+		<p>Може би най-интересната особеност на стойностите по подразбиране на параметрите, е че стойността по подразбиране не е необходимо да бъде примитивна стойност. Можете, например, да изпълните функция за извличане на стойност по подразбиране от параметъра, като тази:</p>
+		<dl>
+			<dd>
+				<pre class="highlight">
+<span class="code">function</span> getValue() {
+    <span class="code">return</span> 5;
+}
+<span class="code">function</span> add(first, second = getValue()) {
+    <span class="code">return</span> first + second;
+}
+console.log(add(1, 1));     // 2
+console.log(add(1));        // 6	
+				</pre>
+			</dd>
+		</dl>
+		<p>Тук, ако последният аргумент не е предвиден, се извиква функцията <em>getValue()</em> за да изтеглим правилната стойност по подразбиране. Имайте в предвид, че <em>getValue()</em> се извиква само, когато <em>add()</em> се извиква без втори параметър, но не и когато декларацията на функцията е първия разбор. Това означава, че ако <em>getValue()</em> е написана по различен начин, може потенциално да върне различна стойност. Например:</p>
+		<dl>
+			<dd>
+				<pre class="highlight">
+<span class="code">let</span> value = 5;
+<span class="code">function</span> getValue() {
+    <span class="code">return</span> value++;
+}
+<span class="code">function</span> add(first, second = getValue()) {
+    <span class="code">return</span> first + second;
+}
+console.log(add(1, 1));     // 2
+console.log(add(1));        // 6
+console.log(add(1));        // 7	
+				</pre>
+			</dd>
+		</dl>
+		<p>В този пример, стойността започва, като пет и постепенно се увеличава всеки път, когато <em>getValue()</em> се извиква. Първото извикване на <em>add(1)</em> връща 6, второто извикване на <em>add(1)</em> връща 7, защото стойността се увеличава. Тъй като, стойността по подразбиране за <em>second</em> се изчислява само, когато функцията се извика, промени на тази стойност могат да се направят по всяко време.</p>
+		<dl>
+			<dd><div class="worning">
+         <img src="./img/worning.jpg" alt="worning">
+       </div><strong>Бъдете внимателни, когато използвате функция извикана, като стойност по подразбиране на параметри. Ако сте пропуснали скобите, като <em>second = getValue</em> в последния пример, вие подавате референция към функцията, а не резултата от нейното извикване.</strong>
+			</dd>
+		</dl>
+		<p>Това поведение довежда до друга интересна възможност. Можем да използваме предшестващият параметър по подразбиране, като по-късен параметър. Ето един пример:</p>
+		<dl>
+			<dd>
+				<pre class="highlight">
+<span class="code">function</span> add(first, second = first) {
+    <span class="code">return</span> first + second;
+}
+console.log(add(1, 1));     // 2
+console.log(add(1));        // 2				
+				</pre>
+			</dd>
+		</dl>
+		<p>В този код, на параметъра <em>second</em> е дадена стойност по подразбиране на <em>first</em>, което означава, че се подава само един аргумент, давайки на двата аргумента една и съща стойност. Така <em>add(1, 1)</em> ще връща 2 само, когато <em>add(1)</em> връща 2. Вземайки тази крачка на пред, може да се подаде <em>first</em>, за да получим стойността на <em>second</em>, както следва:</p>
+		<dl>
+			<dd>
+				<pre class="highlight">
+<span class="code">function</span> getValue(value) {
+    <span class="code">return</span> value + 5;
+}
+<span class="code">function</span> add(first, second = getValue(first)) {
+    <span class="code">return</span> first + second;
+}
+console.log(add(1, 1));     // 2
+console.log(add(1));        // 7	
+				</pre>
+			</dd>
+		</dl>
+		<p>Този пример, определя на <em>second</em> да е равно на стойността върната от <em>getValue(first)</em>, така че докато <em>add(1, 1)</em> все още връща 2, <em>add(1)</em> връща 7 (1 + 6).</p>
+		<p>Способноста за референтни параметри от параметри по подразбиране работи само за предшестващите аргументи, така че по-ранните аргументи нямат достъп до по-късните аргументи. Например:</p>
+		<dl>
+			<dd>
+				<pre class="highlight">
+<span class="code">function</span> add(first = second, second) {
+    <span class="code">return</span> first + second;
+}
+console.log(add(1, 1));     // 2
+console.log(add(1));        <span class="comment"><em>// хвърля грешка</em></span>	
+				</pre>
+			</dd>
+		</dl>
+		<p>Извикването на <em>add(1)</em> хвърля грешка, защото <em>second</em> е дефиниран след <em>first</em> и следователно е недостъпна стойност по подразбиране. За да се разбере, защо това се случва е важно да се преразгледат темпоралните мъртви зони.</p>
+		<h3>Стойности по подразбиране на параметрите в темпоралните мъртви зони</h3>
+		<p><a href="./01_block.html">Глава 1</a> въведе темпоралните мъртви зони (<a href="./01_block.html #TDZ">TDZ</a>), тъй като се отнасят до <em>let</em> и <em>const</em> и стойностите по подразбиране на параметрите също имат TDZ, където параметрите не могат да бъдат достъпни. Подобно на <em>let</em> декларацията, всеки параметър създава нов идентификатор на свързване, който не може да бъде ползван преди инициализацията без да хвърля грешка. Инициализацията на параметъра се случва, когато се извиква функцията със подаване на стойност за параметъра или с помощта на стойността по подразбиране на параметъра.</p>
+		<p>За да получим стойност по подразбиране на параметъра в TDZ, нека отново помислим върху този пример от “Default Parameter Expressions”:</p>
+		<dl>
+			<dd>
+				<pre class="highlight">
+<span class="code">function</span> getValue(value) {  
+    <span class="code">return</span> value + 5;
+}
+<span class="code">function</span> add(first, second = getValue(first)) {
+    <span class="code">return</span> first + second;
+}
+console.log(add(1, 1));     // 2
+console.log(add(1));        // 7	
+				</pre>
+			</dd>
+		</dl>
+		<p>С извикването на <em>add(1, 1)</em> и <em>add(1)</em> ефективно се изпълнява следния код за създаване на <em>first</em> и <em>second</em> стойности на параметрите:</p>
+		<dl>
+			<dd>
+				<pre class="highlight">
+<span class="comment"><em>// JavaScript representation of call to add(1, 1)</em></span>
+<span class="code">let</span> first = 1;
+<span class="code">let</span> second = 1;
+<span class="comment"><em>// JavaScript representation of call to add(1)</em></span>
+<span class="code">let</span> first = 1;
+<span class="code">let</span> second = getValue(first);
+				</pre>
+			</dd>
+		</dl>
+		<p>Когато <em>add()</em> се изпълнява за първи път, обвързването на <em>first</em> и <em>second</em> се добавя към специфични параметри на TDZ (подобно на това, както се държи <em>let</em>). Така, че <em>second</em> може да се инициализира със стойността на <em>first</em>, защото <em>first</em> винаги се инициализира по това време, обратното не е вярно. Сега помислете за тази пренаписана <em>add()</em> функция:</p>
+		<dl>
+			<dd>
+				<pre class="highlight">
+<span class="code">function</span> add(first = second, second) {
+    <span class="code">return</span> first + second;
+}
+console.log(add(1, 1));         // 2
+console.log(add(<span class="code">undefined</span>, 1)); <span class="comment"><em>// хвърля грешка</em></span>	
+				</pre>
+			</dd>
+		</dl>
+		<p>Извикванията на <em>add(1, 1)</em> и <em>add(undefined, 1)</em> в този пример, ще разгледаме зад кулисите на кода:</p>
+		<dl>
+			<dd>
+				<pre class="highlight">
+<span class="comment"><em>// JavaScript representation of call to add(1, 1)</em></span>
+<span class="code">let</span> first = 1;
+<span class="code">let</span> second = 1;
+<span class="comment"><em>// JavaScript representation of call to add(undefined, 1)</em></span>
+<span class="code">let</span> first = second;
+<span class="code">let</span> second = 1;
+				</pre>
+			</dd>
+		</dl>
+		<p>В този пример, извикването на <em>add(undefined, 1)</em> хвърля грешка, защото <em>second</em> все още не е инициализиран, когато <em>first</em> се инициализира. В този момент, <em>second</em> е в TDZ и всички препратки към <em>second</em> хвърлят грешка. Това отразява поведението на <em>let</em> обвързванията в <a href="./01_block.html">Глава 1</a>.</p>
+		<dl>
+			<dd><div class="info">
+         <img src="./img/info.jpg" alt="info">
+       </div><strong>Параметрите на функции имат свой собствен символ и тяхна собствена TDZ , която е отделно от обхвата на тялото на функцията. Това означава, че стойността по подразбиране на параметъра не може да получи достъп до всички променливи, декларирани във вътрешността на функцията.</strong>
+			</dd>
+		</dl>
+		<h3>Работа с анонимни параметри</h3>
+		<p>До сега параметрите в тази глава са само гарантираните параметри, които са посочени в дефиницията на функцията. Обаче, функциите в JavaScript не ограничават броя на параметрите, които могат да бъдат подадени спрямо броя на определените параметри. Винаги може да се мине с по-малко или повече параметри, от колкото официално е определено. Стойностите по подразбиране на параметрите правят ясно, кога дадена функция може да приеме по-малко параметри и  ECMAScript 6 иска да оправи проблема с подаване на повече параметри от определените.</p>
+		<h3>Анонимни параметри в ECMAScript 5</h3>
+		<p>В началото, JavaScript предоставя на обекта на аргументите начин да се инспектират, за да се представят всички параметри на функциите, които са подадени без непременно определяне на всеки параметър по отделно . Докато инспектирането на аргументите работи добре в повечето случаи, този обект може да работи малко по-тромаво. Например, да разгледаме този код, който инспектира аргументите на обекта:</p>
+		<dl>
+			<dd>
+				<pre class="highlight">
+<span class="code">function</span> pick(object) {
+    <span class="code">let</span> result = <span class="code">Object</span>.create(<span class="code">null</span>);
+    <span class="comment"><em>// започва от втория</em></span>
+    <span class="code">for</span> (<span class="code">let</span> i = 1, len = arguments.length; i < len; i++) {
+        result[arguments[i]] = object[arguments[i]];
+    }
+    <span class="code">return</span> result;
+}
+<span class="code">let</span> book = {
+    title: "Understanding ECMAScript 6",
+    author: "Nicholas C. Zakas",
+    year: 2015
+};
+<span class="code">let</span> bookData = pick(book, "author", "year");
+console.log(bookData.author);   // "Nicholas C. Zakas"
+console.log(bookData.year);     // 2015	
+				</pre>
+			</dd>
+			</dl>
+			<p>Тази функция имитира <em>pick()</em> метода от Underscore.js библиотеката, която връща копие на даден обект с някои свойства на определени под-множества от оригиналния текст. Този пример дефинира само един аргумент и очаква първият аргумент да бъде обект, от който се копират свойства. Всеки друг аргумент е името на свойство, което трябва да се копира в резултата.</p>
+			<p>Има няколко неща, които трябва да се отбележат за тази <em>pick()</em> функция. Първо, никак не е ясно, че функцията може да се справи с повече от един параметър. Може да се дефинират още няколко параметъра, но те винаги ще се оказват недостатъчни да покажат, че тази функция може да взема произволен брой параметри. Второ, защо първият параметър е кръстен и се използва директно, когато търсим свойства за копиране, които трябва да започват в обекта на аргументите от индекс 1 вместо от 0. Спомнете си за използването на подходящи индекси за аргументи, не е задължително да са трудни, но това ще е още едно нещо за следене.</p>
+			<p>ECMAScript 6 въвежда <em>rest</em> (останали) параметри за да ви помогне с тези въпроси.</p>
+			<h3 id="rest">Rest параметри</h3>
+			<p><em>Rest</em> параметрите са отбелязани с три точки (...) предшестващи името на параметъра. Това име става масив съдържащ останалата част от параметрите, подадени на функцията, която е мястото, от където името “res" параметри произлиза. Например, <em>pick()</em> може да бъде пренаписана с използването на <em>rest</em> параметри, като тези:</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">function</span> pick(object, ...keys) {
+    <span class="code">let</span> result = <span class="code">Object</span>.create(<span class="code">null</span>);
+    <span class="code">for</span> (<span class="code">let</span> i = 0, len = keys.length; i < len; i++) {
+        <span class="code">return</span>[keys[i]] = object[keys[i]];
+    }
+    <span class="code">return</span> result;
+}	
+				</pre></dd>
+			</dl>
+			<p>В тази версия на функцията, <em>keys</em> е <em>rest</em> параметър, който съдържа всички параметри, подадени след обекта (за разлика от аргументите, които съдържат всички параметри включително и първия). Това означава, че можете да обхождате <em>keys</em> от началото до края без да се притеснявате. Като бонус, можете да кажете на разглежданата функция да се справи с произволен брой параметри</p>
+			<dl>
+				<dd><div class="info">
+         <img src="./img/info.jpg" alt="info">
+       </div><strong><em>Rest</em> параметрите не влияят на дължината на свойствата на функция, която показва броя на имената на параметрите за функцията. Стойността за дължината на <em>pick()</em> в този пример е 1, защото само един обект е от значение за постигането на тази стойност.</strong></dd>
+			</dl>
+			<h3>Ограничения на Rest параметрите </h3>
+			<p>Има две ограничения за <em>rest</em>  параметрите. Първото ограничение е, че не може да има само един <em>rest</em> параметър и <em>rest</em>  параметъра трябва да бъде последен. Например, този код не работи:</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="comment"><em>// Syntax error:Не може да има параметър след rest параметъра</em></span>
+<span class="code">function</span> pick(object, ...keys, last) {
+    <span class="code">let</span> result = <span class="code">Object</span>.create(<span class="code">null</span>);
+    <span class="code">for</span> (<span class="code">let</span> i = 0, len = keys.length; i < len; i++) {
+        result[keys[i]] = object[keys[i]];
+    }
+    <span class="code">return</span> result;
+}	
+				</pre></dd>
+			</dl>
+			<p>Тука параметъра <em>last</em> е след <em>rest</em> параметъра <em>keys</em>, което е причина за синтактична грешка.</p>
+			<p>Второто ограничение е, че <em>rest</em> параметрите не могат да се използват в  обекти, като буквални <em>setter</em>. Това означава, че този код също ще предизвика синтактична грешка.</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">let</span> object = {
+    <span class="comment"><em>// Syntax error: Не може да се използва rest параметър в setter</em></span>
+    set(...value) {
+        <span class="comment"><em>// направи нещо</em></span>
+    }
+};	
+				</pre></dd>
+			</dl>
+			<p>Това ограничение съществува, защото <em>literal setters</em> на обектите са ограничени до един аргумент. <em>Rest</em> параметрите по дефиниция са безкраен брой аргументи, така че не се допускат в този контекст.</p>
+			<h3>Как  Rest параметрите влияят на аргументите на обекта</h3>
+			<p><em>Rest</em> параметрите са предназначени да заменят аргументите в ECMAScript. Първоначално ECMAScript 4 премахва аргументите и добавя <em>rest</em> параметри, за да даде възможност за неограничен брой аргументи да бъдат подадени във функция. ECMAScript 4 никога не се появи, но тази идея се съдържа и въвежда отново в  ECMAScript 6 въпреки, че аргументите не са отстранени от езика.</p>
+			<p>Обекта на аргументите, работи заедно с <em>rest</em> параметрите чрез отразяване на аргументите, които са подадени на функцията, когато се извиква, както е показано в тази програма:</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">function</span> checkArgs(...args) {
+    console.log(args.length);
+    console.log(arguments.length);
+    console.log(args[0], arguments[0]);
+    console.log(args[1], arguments[1]);
+}
+checkArgs("a", "b");	
+				</pre></dd>
+			</dl>
+			<p>Извикването на <em>checkArgs()</em> извежда:</p>
+			<dl>
+			<dd>
+				<pre class="highlight">
+			<p>2<br>2<br>a a<br>b b</p>
+			    </pre>
+			</dd>
+		</dl>
+			<p>Обекта на аргументите винаги правилно отразява параметрите, които са подадени в една функция, независимо дали се отнася до <em>rest</em> параметри.</p>
+			<p>Това е всичко, което трябва да знаете за <em>rest</em> параметрите за да започнете да ги използвате. Следващия раздел продължава с обсъждане на оператор за разпространение на параметрите, който е тясно свързан с <em>rest</em> параметрите.</p>
+			<h3>Повишени възможности на  Function конструктора</h3>
+			<p><em>Function</em> конструктора е най-рядко използваната част от  JavaScript която ни позволява динамично да създаваме нова функция. Аргументите на конструктора са параметри и тяло на функцията, всички като <em>strings</em>. Ето един пример:</p>
+			<dl>
+				<dd><pre class="highlight-overflow"><span class="code">var</span> add = <span class="code">new Function</span>("first", "second", "return first + second");
+
+console.log(add(1, 1));     // 2
+					
+				</pre></dd>
+			</dl>
+			<p>ECMAScript 6 увеличава възможностите на <em>Function</em> конструктора да позволява параметри по подразбиране и на останалите параметри. Вие трябва само да добавите знак за равенство и стойност до имената на параметрите, както следва:</p>
+			<dl>
+				<dd><pre class="highlight-overflow">
+<span class="code">var</span> add = <span class="code">new Function</span>("first", "second = first", "return first + second");
+console.log(add(1, 1));     // 2
+console.log(add(1));        // 2	
+				</pre></dd>
+			</dl>
+			<p>В този пример, на втория параметър се дава стойността на първия, когато се подава само един параметър. Синтаксиса е същия, като при декларации на функция, която не използва <em>Function</em> конструктор.</p>
+			<p>За <em>rest</em> параметрите просто добавете три точки ...  преди последния параметър, като този:</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">var</span> pickFirst = <span class="code">new Function</span>("...args", "return args[0]");
+console.log(pickFirst(1, 2));   // 1
+				</pre></dd>
+			</dl>
+			<p>Този код създава функция, която използва само един единствен <em>rest</em> параметър и връща първия аргумент, който е подаден вътре.</p>
+			<p>Добавянето на параметри по подразбиране и <em>rest</em> параметри гарантира, че <em>Function</em> конструктора има същите възможности, както и формата за деклариране на функция при създаването на функция.</p>
+			<h3 id="spread">Оператора  Spread (разпростиране)</h3>
+			<p>Тясно свързан с <em>rest</em> параметрите е оператора <em>spread</em>. Докато <em>rest</em> параметрите ни позволяват да уточним множество независими аргументи, които трябва да бъдат комбинирани в един масив, оператора <em>spread</em> (разпростиране) ни позволява да определим масив, който трябва да се раздели и неговите елементи да се подадат, като отделни аргументи към функция. Помислете за <em>Math.max()</em> метода, който приема произволен брой аргументи и връща този с най-голяма стойност. Ето един прост случай на употреба на този метод:</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">let</span> value1 = 25,
+    value2 = 50;
+console.log(<span class="code">Math</span>.max(value1, value2));      // 50	
+				</pre></dd>
+			</dl>
+			<p>Когато имаш работа само с две стойности, както в този пример, <em>Math.max()</em> е много лесен за употреба. Двете стойности са преминали през него и по-голямата стойност се връща. Но ако трябва да проследяваме стойности на масив и искаме да намерим най-голямата стойност. Метода <em>Math.max()</em> не позволява преминаване през масив, така че в ECMAScript 5 и по-рано, трябваше  да се залепи търсачка за масива или да използва метода <em>apply()</em>, както следва:</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">let</span> values = [25, 50, 75, 100]
+console.log(<span class="code">Math</span>.max.apply(<span class="code">Math</span>, values));  // 100	
+				</pre></dd>
+			</dl>
+			<p>Това решение работи, но използването на <em>apply()</em> по този начин е малко объркващо. То всъщност изглежда, че обърква истинското значение на кода с допълнителния синтаксис.</p>
+			<p>ECMAScript 6 с оператора <em>spread</em> прави този случай много прост. Вместо извикване на <em>apply()</em>, той подава масива на <em>Math.max()</em> директно и префикс със същия модел ... използван при <em>rest</em> параметрите. Машината JavaScript разделя масива на отделни аргументи и ги подава по начин подобен на този:</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">let</span> values = [25, 50, 75, 100]
+<span class="comment"><em>// еквивалентно на</em></span>
+<span class="comment"><em>// console.log(Math.max(25, 50, 75, 100));</em></span>
+console.log(<span class="code">Math</span>.max(...values));           // 100			
+				</pre></dd>
+			</dl>
+			<p>Сега извикването на <em>Math.max()</em> изглежда малко по-конвенционално и избягва сложността за уточняване на свързващия <em>this</em> (първият аргумент на <em>Math.max.apply()</em> в предишния пример) за една проста математическа операция.</p>
+			<p>Можете да смесвате и съчетавате оператора <em>spread</em> с други аргументи, като избор. Да предположим, че искате най-малкия номер върнат от <em>Math.max()</em> да е  0 (за всеки случай поставяме отрицателни числа в масива). Можете да подадете този аргумент отделно и да използвате оператора <em>spread</em> върху другите аргументи, както следва:</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">let</span> values = [-25, -50, -75, -100]
+console.log(<span class="code">Math</span>.max(...values, 0));        // 0
+				</pre></dd>
+			</dl>
+			<p>В този пример последният аргумент подаден към <em>Math.max()</em> е 0, който идва след другите аргументи, които са подадени за използване към оператора <em>spread</em>.</p>
+			<p>Оператора <em>spread</em> за подаден аргумент, прави използването на масиви с аргументи на функция много по-лесно. Най-вероятно ще откриете това при търсене на подходящ заместител на метода <em>apply()</em> в повечето случаи.</p>
+			<p>В допълнение на употребата, която сме виждали по подразбиране и <em>rest</em> параметрите до сега в ECMAScript 6, можете също така да прилагате двата типа на параметрите в JavaScript Function конструктора.</p>
+			<h3>Името на свойство в ECMAScript 6</h3>
+			<p>Идентифициране на функции може да бъде предизвикателство в  JavaScript, като се има в предвид различните начини, по които функциите могат да бъдат определени. Освен това разпространяването на анонимни функции прави дебъгването на грешки малко по-трудно, често води до следи в стека, които са трудни за четене и разчитане. Поради тази причина, ECMAScript 6 добави <em>name property</em> (име свойство) за всички функции.</p>
+			<h3>Избор на подходящи имена</h3>
+			<p>Всички функции в една ECMAScript 6 програма ще имат подходяща стойност за свойство на името. За да видите това в действие, погледнете следния пример, който показва функция и израз на функция, и отпечатване на свойството за име на двете.</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">function</span> doSomething() {
+    // ...
+}
+<span class="code">var</span> doAnotherThing = <span class="code">function</span>() {
+    // ...
+};
+console.log(doSomething.name);          // "doSomething"
+console.log(doAnotherThing.name);       // "doAnotherThing"	
+				</pre></dd>
+			</dl>
+			<p>В този код <em>doSomething()</em> има свойство на името, равно на <em>"doSomething"</em>, защото това е декларация на функция. Анонимната функция <em>doAnotherThing()</em> има име <em>"doAnotherThing"</em>, защото това е името на променливата, за която е предназначена.</p>
+			<h3>Особени случаи на свойството на името</h3>
+			<p>Докато подходящи имена за декларации на функции и изрази на функции са лесни за намиране, ECMAScript 6 отива по-далеч, като гарантира, че всички функции са с подходящи имена. За да се убедите в това, да разгледаме следната програма:</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">var</span> doSomething = <span class="code">function</span> doSomethingElse() {
+    // ...
+};
+<span class="code">var</span> person = {
+    get firstName() {
+        <span class="code">return</span> "Nicholas"
+    },
+    sayName: <span class="code">function</span>() {
+       console.log(<span class="code">this</span>.name);
+    }
+}
+console.log(doSomething.name);      // "doSomethingElse"
+console.log(person.sayName.name);   // "sayName"
+console.log(person.firstName.name); // "get firstName"	
+				</pre></dd>
+			</dl>
+			<p>В този пример <em>doSomething.name</em> е <em>"doSomethingElse"</em>, защото самият израз на функцията има име и това име е с приоритет пред променливата, на която е възложена функцията. В свойството <em>person.sayName()</em> името е <em>"sayName"</em>, като стойността се тълкува от обекта буквално. По същия начин, <em>person.firstName</em> е всъщност функция на <em>getter</em>, така че името и е <em>"get firstName"</em> за да покаже тази разлика. <em>Setter</em> функциите са с префикс <em>"set"</em>.</p>
+			<p>Има няколко други специални случаи за имена на функции, също. На функции създадени с помощта на <em>bind()</em> имената им ще започват с префикс <em>"bound"</em> и функции създадени с помощта на <em>Function</em> конструктор ще имат име <em>"anonymous"</em>, както в този пример:</p>
+			<dl>
+				<dd><pre class="highlight">
+<span class="code">var</span> doSomething = <span class="code">function</span>() {
+    // ...
+};
+console.log(doSomething.bind().name);   // "bound doSomething"
+console.log((<span class="code">new Function</span>()).name);     // "anonymous"	
+				</pre></dd>
+			</dl>
+			<p>Името на свързващата функция винаги ще бъде обвързано с префикс <em>string "bound"</em>, така че обвързаната версия на <em>doSomething()</em> е <em>"bound doSomething"</em>.</p>
+			<p>Имайте в предвид, че стойността на името за всяка функция, не е задължително да се отнася до променлива със същото име. Свойството на името е писано да бъде информативно, за да помогне с отстраняването на грешки, така че няма начин да се използва стойността името за да получите препратка към функцията.</p>
+			<h3 id="izqsnqwane">Изясняване на двойната цел за функции</h3>
+		    <p>В ECMAScript 5 и по-рано, функциите които служат за двойна цел са със или без <em>new</em>. Когато се използват с <em>new</em>, стойността вътре във функцията е нов обект и този нов обект се връща, както е показано в следващия пример:</p>
+		    <dl>
+		    	<dd><pre class="highlight">
+<span class="code">function</span> Person(name) {
+    <span class="code">this</span>.name = name;
+}
+<span class="code">var</span> person = new Person("Nicholas");
+<span class="code">var</span> notAPerson = Person("Nicholas");
+console.log(person);        // "[Object object]"
+console.log(notAPerson);    // "undefined"	
+		    	</pre></dd>
+		    </dl>
+		    <p>Когато създаваме <em>notAPerson</em>, извиквайки <em>Person()</em> без <em>new</em> резултата е <em>undefined</em> (и задава име от глобалния обект в режим <em>nonstrict</em>). Капитализацията на <em>Person</em> е единственият реален показател, че функцията е писана да  бъде извикана използвайки <em>new</em>, както е обичайно в програми на JavaScript. Това объркване на двойната роля на функциите доведе до промени в ECMAScript 6.</p>
+		    <p>JavaScript има два различни вътрешни метода за функции: [[Call]] и [[Construct]]. Когато дадена функция се извиква без <em>new</em>, се изпълнява метода [[Call]], който изпълнява тялото на функцията, както е посочено в кода. Когато дадена функция се извиква с <em>new</em>, се извиква метода [[Construct]]. Метода [[Construct]] е отговорен за създаването на нов обект, наречен <em>new target</em>, и след това изпълнява тялото на функцията с този нов комплект за новата цел. Функциите, които имат [[Construct]] метод се наричат конструктори.</p>
+		    <dl>
+		    	<dd><div class="info">
+         <img src="./img/info.jpg" alt="info">
+       </div><strong> Имайте в предвид, че не всички функции имат [[Construct]] и по тази причина не всички функции могат да бъдат извикани с <em>new</em>. Функциите стрела, обсъдени в “Раздел Име” на <a href="./03_function.html#arrow">страница xx</a>, нямат [[Construct]] метод.</strong>
+		    	</dd>
+		    </dl>
+		    <h3>Определяне на начина, по който се извиква функция в ECMAScript 5</h3>
+		    <p>Най-популярният начин за определяне дали функцията е извикана с <em>new</em> (и по този начин дали е конструктор) в ECMAScript 5 е с използването на <em>instanceof</em>, на пример:</p>
+		    <dl>
+		    	<dd><pre class="highlight">
+<span class="code">function</span> Person(name) {
+    <span class="code">if</span> (<span class="code">this instanceof</span> Person) {
+        <span class="code">this</span>.name = name;   <span class="comment"><em>// използва new</em></span>
+    } <span class="code">else</span> {
+       <span class="code">throw new Error</span>("You must use new with Person.")
+    }
+}
+<span class="code">var</span> person = <span class="code">new</span> Person("Nicholas");
+<span class="code">var</span> notAPerson = Person("Nicholas");  <span class="comment"><em>// хвърля грешка</em></span>
+		    	</pre>
+		        </dd>
+		    </dl>
+		    <p>Тука тази стойност се проверява, за да се види дали това е случай на конструктора и ако е така изпълнението продължава нормално. Ако <em>this</em> не е инстанция на <em>Person</em>, хвърля грешка. Това работи, защото метода [[Construct]] създава нова инстанция на <em>Person</em> и я възлага на <em>this</em>. За съжаление този подход не е напълно надежден, защото <em>this</em> може да бъде инстанция на <em>Person</em> без да използва <em>new</em>, както в този пример:</p>
+		    <dl>
+		    	<dd><pre class="highlight">
+<span class="code">function</span> Person(name) {
+    <span class="code">if</span> (<span class="code">this</span> instanceof Person) {
+        <span class="code">this</span>.name = name;   <span class="comment"><em>// използва new</em></span>
+    } <span class="code">else</span> {
+        <span class="code">throw new Error</span>("You must use new with Person.")
+    }
+}
+var person = new Person("Nicholas");
+var notAPerson = Person.call(person, "Michael");    <span class="comment"><em>// работи!</em></span>	
+		    	</pre></dd>
+		    </dl>
+		    <p>Извикването на <em>Person.call()</em> подава променливата <em>person</em>, като първи аргумент, което означава, че <em>this</em> е настроена на <em>person</em> вътре във  <em>Person</em> функцията. Функцията няма начин да разграничи <em>this</em> да се извика с <em>new</em>.</p>
+		    <h3 id="target">The new.target MetaProperty</h3>
+		    <p>За да реши този проблем, ECMAScript 6 въвежда <em>new.target metaproperty. Metaproperty</em> е свойство на  не-обект, което предоставя допълнителна информация свързана с целта (като <em>new</em>). Когато на дадена функция е извикан [[Construct]] метода, <em>new.target</em> се изпълнява с целта на <em>new</em> оператора. Тази цел обикновено е инстанция на конструктора на ново-създадения обект, която ще се превърне в <em>this</em> във вътрешността на функцията. Ако се изпълни [[Call]], тогава <em>new.target</em> е <em>undefined</em>.</p>
+		    <p>Това ново <em>metaproperty</em> позволява, безопасно да се открие, ако дадена функция се изпълнява с <em>new</em>, като провери дали <em>new.target</em> е дефинирана, както следва:</p>
+		    <dl>
+		    	<dd><pre class="highlight">
+<span class="code">function</span> Person(name) {
+    <span class="code">if</span> (<span class="code">typeof new</span>.target !== "undefined") {
+        <span class="code">this</span>.name = name;   <span class="comment"><em>// използва new</em></span>
+    } <span class="code">else</span> {
+        <span class="code">throw new Error</span>("You must use new with Person.")
+    }
+}
+<span class="code">var</span> person = <span class="code">new</span> Person("Nicholas");
+<span class="code">var</span> notAPerson = Person.call(person, "Michael");    <span class="comment"><em>// грешка!</em></span>	
+		    	</pre></dd>
+		    </dl>
+		    <p>Използването на <em>new.target</em> вместо <em>this instanceof Person, Person</em> конструктора вече правилно хвърля грешка, когато се използва без  <em>new</em>.</p>
+		    <p>Можете също така да проверите, дали <em>new.target</em> се извиква с определен конструктор. Например, вижте следния пример:</p>
+		    <dl>
+		    	<dd><pre class="highlight">
+<span class="code">function</span> Person(name) {
+    <span class="code">if</span> (<span class="code">typeof new</span>.target === Person) {
+        <span class="code">this</span>.name = name;   <span class="comment"><em>// използва new</em></span>
+    } <span class="code">else</span> {
+        <span class="code">throw new Error</span>("You must use new with Person.")
+    }
+}
+<span class="code">function</span> AnotherPerson(name) {
+    Person.call(<span class="code">this</span>, name);
+}
+<span class="code">var</span> person = <span class="code">new</span> Person("Nicholas");
+<span class="code">var</span> anotherPerson = <span class="code">new</span> AnotherPerson("Nicholas");  <span class="comment"><em>// грешка!</em></span>	
+		    	</pre></dd>
+		    </dl>
+		    <p>В този код, <em>new.target</em> трябва да е <em>Person</em> за да работи правилно. Когато <em>new AnotherPerson("Nicholas")</em> е извикан, <em>new.target</em> е настроен на <em>AnotherPerson</em>, така че последното извикване на <em>Person.call(this, name)</em> ще хвърли грешка въпреки, че <em>new.target</em> е определен.</p>
+		    <dl>
+		    	<dd><div class="worning">
+         <img src="./img/worning.jpg" alt="worning">
+       </div><strong>Внимание: Използването на <em>new.target</em> извън функция е синтактична грешка.</strong></dd>
+		    </dl>
+		    <p>Чрез добавяне на <em>new.target</em>, ECMAScript 6 помага да се изяснят някои неясноти около извикванията на функции. Следвайки тази тема, ECMAScript 6 се обръща също и към друга по-рано двусмислена част от езика: обявяване на функции вътре в блока.</p>
+		    <h3>Block-Level Functions</h3>
+		    <p>В  ECMAScript 3 и по-рано, декларации на функции срещани във вътрешността на блок (<em>block-level function</em>) е техническа синтактична грешка, но всички браузъри го поддържат все още. За съжаление, всеки браузър, който позволява прояви на синтаксиса по-малко по-различен начин се счита за най-добра практика за избягване на декларации на функции вътре в блоковете (най-добрата алтернатива е да се използва функция израз).</p>
+		    <p>В опит на силно влияние в това несъвместимо поведение, ECMAScript 5 <em>strict mode</em> въведе грешка, когато декларация на функция се използва в рамките на един блок, по този начин: </p>
+		    <dl>
+		    	<dd><pre class="highlight">
+"use strict";
+<span class="code">if</span> (<span class="code">true</span>) {
+    <span class="comment"><em>// Хвърля синтактична грешка в ES5, но не и в ES6</em></span>
+    <span class="code">function</span> doSomething() {
+        // ...
+    }
+}	
+		    	</pre></dd>
+		    </dl>
+		    <p>В ECMAScript 5, този код хвърля синтактична грешка. В ECMAScript 6, <em>doSomething()</em> функцията се счита за блокова декларация и може да бъде достъпна и извикана в рамките на същия блок, в който е била определена. Например:</p>
+		    <dl>
+		    	<dd><pre class="highlight">
+"use strict";
+<span class="code">if</span> (<span class="code">true</span>) {
+    console.log(<span class="code">typeof</span> doSomething);        // "function"
+    <span class="code">function</span> doSomething() {
+        // ...
+    }
+    doSomething();
+}
+console.log(<span class="code">typeof</span> doSomething);            // "undefined"	
+		    	</pre></dd>
+		    </dl>
+		    <p><em>Block level</em> функциите се издигат до върха на блока в който са дефинирани, така <em>typeof doSomething</em>  връща <em>"function"</em> въпреки, че тя се появява преди декларацията на функцията в кода. След като <em>if</em> блока е свършил изпълнението, <em>doSomething()</em> вече не съществува.</p>
+		    <h3>Вземане на решение, кога да се ползват Block-Level функциите</h3>
+		    <p><em>Block level</em> функциите са сходни с <em>let</em> функциите-изрази по това, че дефиницията на функцията се отстранява след изпълнение на потока на блока, в който е дефинирана. Основната разлика е, че <em>block level</em> функциите се издигат до върха на съдържащия ги блок. Функциите израз, които използват <em>let</em> не се издигат, както този пример илюстрира:</p>
+		    <dl>
+		    	<dd><pre class="highlight">
+"use strict";
+<span class="code">if</span> (<span class="code">true</span>) {
+    console.log(<span class="code">typeof</span>doSomething);        <span class="comment"><em>// хвърля грешка</em></span>
+    let doSomething = <span class="code">function</span> () {
+        // ...
+    }
+    doSomething();
+}
+console.log(<span class="code">typeof</span> doSomething);
+		    		</pre></dd>
+		    </dl>
+		    <p>Тука, изпълнението на кода спира, когато се изпълни <em>typeof doSomething</em>, защото <em>let</em> твърдението не е изпълнено все още, оставяйки <em>doSomething()</em> в TDZ. Знаейки тази разлика може да изберете дали да ползвате <em>block level</em> функции или <em>let</em> изрази въз основа на това дали искате или не издигащо се поведение.</p>
+		    <h3>Block-Level функции в Nonstrict режим</h3>
+		    <p>ECMAScript 6 също така позволява блокови функции в <em>nonstrict</em> режим, но поведението им е малко по различно. Тези декларации вместо да се издигат до върха на блока, се издигат по целия път до съдържащата ги функция или глобалната среда. Например:</p>
+		    <dl>
+		    	<dd><pre class="highlight">
+<span class="comment"><em>// ECMAScript 6 поведение</em></span>
+<span class="code">if</span> (<span class="code">true</span>) {
+    console.log(typeof doSomething);        // "function"
+    <span class="code">function</span> doSomething() {
+        // ...
+    }
+    doSomething();
+}
+console.log(<span class="code">typeof</span> doSomething);            // "function"
+		    		
+		    	</pre></dd>
+		    </dl>
+		    <p>В този пример <em>doSomething()</em> е издигната в глобалния обхват, така че ще съществува извън <em>if</em> блока. ECMAScript 6 стандартизира това поведение, за да се отстрани несъвместимо поведение с браузъра, което преди това съществуваше, така че всички ECMAScript 6 работещи автономно трябва да се държат по същия начин.</p>
+		    <p>Разрешаването на блокови функции подобрява способноста да се декларират функции в JavaScript, но ECMAScript 6 същевременно въвежда изцяло нов начин за деклариране на функции.</p>
+		    <h3><a name="arrow"></a>Arrow Functions (стрела функции)</h3>
+		    <p>Една от най-интересните нови части на ECMAScript 6 е <em>arrow function</em>. Стрела функциите, както подсказва името, са функции определени с нов вид синтаксис, който използва “стрела” (=>). Но стрела функциите се държат по различно в сравнение с традиционните функции в JavaScript, по редица важни начина:</p>
+		    <dl>
+		    	<dd><strong><ul><li>
+		    	Няма <em>this, super, arguments</em> и <em>new.target</em> обвързвания</strong> - Стойността на <em>this, super, arguments</em> и <em>new.target</em> вътре във функцията е най-близката съдържаща се <em>nonarrow</em> функция. (<em><a href="./04_object_funciton.html #super">super</a></em> е разгледан в <a href="./04_object_funciton.html">Глава 4</a>.)</li>
+		    	<li><strong>Не може да се извика с <em>new</em></strong> - Стрела функциите нямат [[Construct]] метод и следователно не могат да бъдат използвани, като конструктори. Стрела функциите хвърлят грешка ако се използват с <em>new</em>.</li>
+		    	<li><strong>Няма прототип </strong> - Тъй като не може да използвате <em>new</em> върху стрела функцията, няма нужда от прототип. Прототип свойство на стрела функцията не съществува.</li>
+		    	<li><strong>Не може да променя <em>this</em></strong> - Стойността на <em>this</em> вътре във функцията не може да бъде променяна. Тя остава една и съща през целия жизнен цикъл на функцията.</li>
+		    	<li><strong>Няма обект на аргументите</strong> - Тъй като стрела функциите са без обвързващи аргументи, трябва да разчитат на име и останалите параметри за достъп до аргументите на функцията.</li>
+		    	<li><strong>Няма дублиране на имена на аргументи</strong> - Стрела функциите  не могат да имат дублиращи се имена на аргументи в <em>strict</em> или <em>nonstrict</em> режим, за разлика от обикновените функции, които не могат да имат дублиращи имена само в <em>strict mode</em>.</li></ul>
+		    </dl>
+		    <p>Има няколко причини за тези разлики. На първо място <em>this</em> обвързване с общ източник на грешки в JavaScript. Така е много лесно да се загубят следите на тази стойност вътре във функцията, което може да доведе до непредвидено програмно поведение, стрела функциите елиминират това объркване. Второ, чрез ограничаване на стрела функциите до просто изпълнение на код с една <em>this</em> стойност, JavaScript машината по-лесно ще оптимизира тези операции, за разлика от редовните функции, които могат да се използват, като конструктор или да бъдат модифицирани по някакъв друг начин.</p>
+		    <p>Останалата част от различията също са насочени към отстраняване на грешки и неясноти във вътрешността на стрела функцията.  По този начин, JavaScript машината е способна да оптимизира изпълнението на стрела функцията.</p>
+		    <dl>
+		    	<dd><div class="info">
+         <img src="./img/info.jpg" alt="info">
+       </div><strong>Забележка. Стрела функциите също имат <em>name</em> свойство, което следва същото правило, както и другите функции.</strong></dd>
+		    </dl>
+		    <h3>Синтаксис на стрела функциите</h3>
+		    <p>Синтаксиса на стрела функциите идва с много нюанси в зависимост от това, което се опитвате да постигнете. Всички промени започват с аргументите на функцията, следвани от стрелка, следвана от тялото на функцията. И аргументите и тялото могат да приемат различни форми в зависимост от употребата. Например, следната стрела функция приема един аргумент и просто го връща:</p>
+		    <dl>
+		    	<dd><pre class="highlight">
+<span class="code">var</span> reflect = value => value;
+<span class="comment"><em>// ефективно еквивалентен на:</em></span>
+<span class="code">var</span> reflect = <span class="code">function</span>(value) {
+    <span class="code">return</span> value;
+};	
+		    	</pre></dd>
+		    </dl>
+		    <p>Когато има само един аргумент за стрела функцията, тя може да се използва директно без допълнителен синтаксис. Стрелата идва на следващо място и израза от дясно на стрелата се оценява и връща. Въпреки, че няма изрично <em>return</em> изявление, тази стрела функция ще върне първия аргумент, който и е подаден.</p>
+		    <p>Ако се подадат повече от един аргумент, тогава трябва да се включат скоби около тези аргументи, като това:</p>
+		    <dl>
+		    	<dd><pre class="highlight">
+<span class="code">var</span> sum = (num1, num2) => num1 + num2;
+<span class="comment"><em>// ефективно еквивалентен на:</em></span>
+<span class="code">var</span> sum = <span class="code">function</span>(num1, num2) {
+    <span class="code">return</span> num1 + num2;
+};	
+		    	</pre></dd>
+		    </dl>
+		    <p>Функцията <em>sum()</em> просто добавя два аргумента заедно и връща резултата. Единствената разлика между стрела функцията и <em>reflect()</em> функцията е, че аргументите са затворени в скоби с отделяща ги запетая (като традициионите функции).</p>
+		    <p>Ако няма аргументи на функцията, тогава трябва да се включат празен набор от скоби в декларацията, както следва:</p>
+		    <dl>
+		    	<dd><pre class="highlight">
+<span class="code">var</span> getName = () => "Nicholas";
+<span class="comment"><em>// ефективно еквивалентен на:</em></span>
+<span class="code">var</span> getName = <span class="code">function</span>() {
+    <span class="code">return</span> "Nicholas";
+};	
+		    	</pre></dd>
+		    </dl>
+		    <p>Когато искате да осигурите едно по-традиционно тяло на функция, може би състоящо се от повече от един израз, тогава трябва да увиете тялото на функцията във фигурни скоби и определите изрично <em>return</em> за връщане на стойност, както в тази версия на <em>sum()</em>:</p>
+		    <dl>
+		    	<dd><pre class="highlight">
+<span class="code">var</span> sum = (num1, num2) => {
+    <span class="code">return</span> num1 + num2;
+};
+<span class="comment"><em>// ефективно еквивалентен на:</em></span>
+<span class="code">var</span> sum = <span class="code">function</span>(num1, num2) {
+    <span class="code">return</span> num1 + num2;
+};	
+		    	</pre></dd>
+		    </dl>
+		    <p>Можете повече или по-малко да третирате същността на вътрешността на фигурните скоби да прилича на, както бихте го направили в традиционна функция с изключение на това, че аргументите не са в наличност.</p>
+		    <p>Ако искате да създадете функция, която не прави нищо, тогава ще трябва да се включат фигурни скоби, като това:</p>
+		    <dl>
+		    	<dd><pre class="highlight">
+<span class="code">var</span> doNothing = () => {};
+<span class="comment"><em>// ефективно еквивалентен на:</em></span>
+<span class="code">var</span> doNothing = <span class="code">function</span>() {};
+		    	</pre></dd>
+		    </dl>
+		    <p>Фигурните скоби се използват за означаване на тялото на функцията, което работи добре в случаите, които сме виждали до сега. Но ако една стрела функция иска да се върне на обект извън тялото на функцията, трябва да я увиете в скоби. Например:</p>
+		    <dl>
+		    	<dd><pre class="highlight">
+<span class="code">var</span> getTempItem = id => ({ id: id, name: "Temp" });
+<span class="comment"><em>// ефективно еквивалентен на:</em></span>
+<span class="code">var</span> getTempItem = <span class="code">function</span>(id) {
+   <span class="code">return</span> {
+        id: id,
+        name: "Temp"
+    };
+};
+		    	</pre></dd>
+		    </dl>
+		    <p>Опаковането на обекта в скоби сигнализира, че скобите са обект вместо тяло на функцията.</p>
+		    <h3>Създаване на незабавно използван израз на функция</h3>
+		    <p>Едно популярно използване на функции в JavaScript е създаване на незабавно използване на израз на функция (IIFEs). IIFEs ви позволява да дефинирате анонимна функция и да я извикате веднага, без да записвате препратка. Този модел е по-удобен, когато искате да създадете обхват, който е защитен от останалата част на програмата. Например:</p>
+		    <dl>
+		    	<dd><pre class="highlight">
+<span class="code">let</span> person = function(name) {
+    <span class="code">return</span> {
+        getName: <span class="code">function</span>() {
+            <span class="code">return</span> name;
+        }
+    };
+}("Nicholas");
+console.log(person.getName());      // "Nicholas"
+		    	</pre></dd>
+		    </dl>
+		    <p>В този код IIFE се използва за създаване на обект с <em>getName()</em> метода. Метода използва <em>name</em> аргумент, като върната стойност, ефективно правейки <em>name</em> защитена (<em>private</em>) част на върнатия обект.</p>
+		    <p>Можете да постигнете същото използвайки стрела функция стига да увиете стрела функцията в скоби:</p>
+		    <dl>
+		    	<dd><pre class="highlight">
+<span class="code">let</span> person = ((name) => {
+    <span class="code">return</span> {
+        getName: <span class="code">function</span>() {
+            <span class="code">return</span> name;
+        }
+    };
+})("Nicholas");
+console.log(person.getName());      // "Nicholas"
+		    	</pre></dd>
+		    </dl>
+		    <p>Имайте в предвид, че скобите са само около дефиницията на стрела функцията, а не около ("Nicholas"). Това е различно от нормална функция, където скобите могат да бъдат поставени отвън на подадените параметри, както и само около дефиницията на функцията. </p>
+		    <h3>Не на this обвързването</h3>
+		     <p>Една от най-общите грешки в JavaScript е обвързването на <em>this</em> във функции. Тъй като стойността на <em>this</em> може да се промени в една функция в зависимост от контекста, с който функцията се извиква, е възможно да се отрази по погрешка на един обект, когато е трябвало да повлияе на друг. Да разгледаме следния пример:</p>
+		     <dl>
+		     	<dd><pre class="highlight">
+<span class="code">var</span> PageHandler = {
+    id: "123456",
+    init: <span class="code">function</span>() {
+        <span class="code">document</span>.addEventListener("click", <span class="code">function</span>(event) {
+            <span class="code">this</span>.doSomething(event.type);     // error
+        }, <span class="code">false</span>);
+    },
+    doSomething: <span class="code">function</span>(type) {
+        console.log("Handling " + type  + " for " + <span class="code">this</span>.id);
+    }
+};
+                 </pre></dd>
+		     </dl>
+		     <p>В този код, обекта <em>PageHandler</em> е проектиран да обработва взаимодействия на страницата. Метода <em>init()</em> се извиква да създаде взаимодействие и също определя манипулатор на събитие, който да извика <em>this.doSomething()</em>. Въпреки това този код не работи точно, както е предвиден.</p>
+		     <p>Извикването на <em>this.doSomething()</em> е счупено, защото <em>this</em> е препратка към обекта, който е целта на събитието (в този случай документа) вместо да бъде обвързано с <em>PageHandler</em>. Ако сте опитали да пуснете този код, ще получите съобщение за грешка, когато се създаде ефекта на манипулатора на събитието, защото <em>this</em>.<em>doSomething()</em> не съществува в целевия обект на документа.</p>
+		     <p>Може да го оправите, като свържете стойността на <em>this</em> с <em>PageHandler</em> изрично използвайки <em>bind()</em> метод на функцията, както това: </p>
+		     <dl>
+		     	<dd><pre class="highlight">
+<span class="code">var</span> PageHandler = {
+    id: "123456",
+    init: <span class="code">function</span>() {
+        <span class="code">document</span>.addEventListener("click", (<span class="code">function</span>(event) {
+            <span class="code">this</span>.doSomething(event.type);     // no error
+        }).bind(<span class="code">this</span>), <span class="code">false</span>);
+    },
+    doSomething: <span class="code">function</span>(type) {
+        console.log("Handling " + type  + " for " + <span class="code">this</span>.id);
+    }
+};	
+		     	</pre></dd>
+		     </dl>
+		     <p>Сега кодът работи, както се очаква, но изглежда малко странно. С извикването на <em>bind(this)</em>, вие всъщност създавате нова функция, чиято <em>this</em> се обвързва с текущото <em>this</em>, което е <em>PageHandler</em>. За да избегнете създаването на допълнителна функция, по добър начин за определяне на този код е използването на функция стрела.</p>
+		     <p>Стрела функциите нямат <em>this</em> обвързване, което означава, че стойността на <em>this</em> вътре във функцията стрела може да се определи само, като се потърси в обхвата на веригата. Ако стрела функцията се съдържа в рамките на <em>nonarrow</em> функция, <em>this</em> ще бъде същата, както в съдържащата функция. В противен случай, <em>this</em> е <em>undefined</em>. Ето един начин, по който може да напишете този код с помощта на функция стрела:</p>
+		     <dl>
+		     	<dd><pre class="highlight-overflow">
+<span class="code">var</span> PageHandler = {
+    id: "123456",
+    init: function() {
+        <span class="code">document</span>.addEventListener("click", event => <span class="code">this</span>.doSomething(event.type), <span class="code">false</span>);
+    },
+    doSomething: <span class="code">function</span>(type) {
+        console.log("Handling " + type  + " for " + <span class="code">this</span>.id);
+    }
+};		
+		     	</pre></dd>
+		     </dl>
+		     <p>Манипулатора на събитие в този пример е стрела функцията, която извиква <em>this.doSomething()</em>. Стойността на <em>this</em> е същата, както в <em>init()</em>, така че тази версия работи подобно на използване на <em>bind(this)</em>. Въпреки, че метода <em>doSomething()</em> не връща стойност, тя все още е единственото изявление изпълнено в тялото на функцията, така че няма нужда от включване на фигурни скоби.</p>
+		     <p>Стрела функциите са проектирани да бъдат за “еднократна употреба”, така че не могат да бъдат ползвани за определяне на видове. Това е ясно от липсващото прототип свойство, което редовните функции имат. Ако се опитате да използвате оператора <em>new</em> с функция стрела, ще получите съобщение за грешка, както в този пример:</p>
+		     <dl>
+		     	<dd><pre class="highlight">
+<span class="code">var</span> MyType = () => {},
+    object = <span class="code">new</span> MyType(); 
+<span class="comment"><em>// грешка - не може да използвате стрела функция с new</em></span>	
+		     	</pre></dd>
+		     </dl>
+		     <p>В този код, поканата за <em>new MyType()</em> не успява, защото <em>MyType</em> е функция стрела и за това няма [[Construct]] поведение. Знаейки, че стрела функциите не могат да бъдат използвани с <em>new</em>, позволява на JavaScript машината по нататъшно оптимизиране на поведението им.</p>
+		     <p>Също така, тъй като <em>this</em> се определя от съдържащата функция, в която стрелата функция е дефинирана, не може да промените стойността на <em>tish</em> използвайки <em>call(), apply()</em> или <em>bind()</em>.</p>
+		     <h3>Стела функции и масиви</h3>
+		     <p>Краткия синтаксис на функциите стрела ги прави идеални за използване при обработка на масиви. Например, ако искате да сортирате масив, използвайки потребителско сравнение, може би бихте написали нещо такова:</p>
+		     <dl>
+		     	<dd><pre class="highlight">
+<span class="code">var</span> result = values.sort(<span class="code">function</span>(a, b) {
+    <span class="code">return</span> a - b;
+});
+		     	</pre></dd>
+		     </dl>
+		     <p>Това е много синтаксис за една проста процедура. Сравнете това с по изразителната версия на стрела функция:</p>
+		     <dl>
+		     	<dd><pre class="highlight">
+<span class="code">var</span> result = values.sort((a, b) => a - b);		     		
+		     	</pre></dd>
+		     </dl>
+		     <p>Методите на масива, които приемат функции за обратно извикване, като <em>sort(), map()</em> и <em>reduce()</em> могат да се възползват от по-простия синтаксис на стрела функцията, която променя привидно сложни процеси в по-прост код.</p>
+		     <h3>Нямат обвързващи аргументи</h3>
+		     <p>Макар, че стрела функциите не разполагат със собствен обект на аргументи е възможно да имат достъп до обекта на аргументите от съдържащата функция.</p>
+		     <dl>
+		     	<dd><pre class="highlight">
+<span class="code">function</span> createArrowFunctionReturningFirstArg() {
+    <span class="code">return</span> () => arguments[0];
+}
+<span class="code">var</span> arrowFunction = createArrowFunctionReturningFirstArg(5);
+console.log(arrowFunction());       // 5
+		     	</pre></dd>
+		     </dl>
+		     <p>Вътре в <em>createArrowFunctionReturningFirstArg()</em>, елемента <em>arguments[0]</em> е посочен от създадената функция стрела. Тази препратка съдържа първият аргумент подаден на <em>createArrowFunctionReturningFirstArg()</em> функцията. Когато се изпълни стрела функцията по-късно тя връща 5, който е първият аргумент подаден на <em>createArrowFunctionReturningFirstArg()</em>. Въпреки, че функцията стрела не е в обхвата на функцията, която я е създала, аргумента остава достъпен поради разрешения обхват на веригата за идентификатор на аргументите.</p>
+		     <h3>Идентифициране на функции стрели</h3>
+		     <p>Въпреки различния синтаксис, функциите стрели са все още функции и са обозначени, като такива. Да разгледаме следния код:</p>
+		     <dl>
+		     	<dd><pre class="highlight">
+<span class="code">var</span> comparator = (a, b) => a - b;
+console.log(<span class="code">typeof</span> comparator);                 // "function"
+console.log(comparator <span class="code">instanceof Function</span>);    // true	
+		     	</pre></dd>
+		     </dl>
+		     <p>На изхода <em>console.log()</em> показва, че и двете, <em>typeof</em> и <em>instanceof</em> се държат еднакво с функциите стрели, както го правят с други функции.</p>
+		     <p>Също, както другите функции, може да използвате <em>call(), apply()</em> и </em>bind()</em> върху стрела функциите въпреки, че <em>this</em> обвързването няма да се отрази на функцията. Ето някои примери:</p>
+		     <dl>
+		     	<dd><pre class="highlight">
+<span class="code">var</span> sum = (num1, num2) => num1 + num2;
+console.log(sum.call(<span class="code">null</span>, 1, 2));      // 3
+console.log(sum.apply(<span class="code">null</span>, [1, 2]));   // 3
+<span class="code">var</span> boundSum = sum.bind(<span class="code">null</span>, 1, 2);
+console.log(boundSum());                // 3
+		     	</pre></dd>
+		     </dl>
+		     <p>Функцията <em>sum()</em> се извиква използвайки <em>call()</em> и <em>apply()</em> за подаване на аргументи, както бихме направили с всяка функция. Метода <em>bind()</em> се използва за създаване на <em>boundSum()</em>, който разполага с два свои аргумента, свързани с 1 и 2 , така че те не трябва да се подават директно.</p>
+		     <p>Стрела функциите са подходящи за използване на всякъде, където в момента се използват анонимни функции изрази, като например с обратно извикване. Следващия раздел обхваща друг основен аспект на развитие в ECMAScript 6, но всичко е вътрешно и не е нов синтаксис.</p>
+		     <h3>Оптимизацията Tail Call</h3>
+		     <p>Може би най-интересната промяна на функциите в  ECMAScript 6 е оптимизация на двигателя, който променя системата на <em>tail call</em> (опашката на извикване). <em>Tail call</em> е, когато дадена функция се извиква, като последно изявление на друга функция, като тази:</p>
+		     <dl>
+		     	<dd><pre class="highlight">
+<span class="code">function</span> doSomething() {
+    <span class="code">return</span> doSomethingElse();   // tail call
+}
+		     	</pre></dd>
+		     </dl>
+		     <p><em>Tail calls</em>, от както е въведена в ECMAScript 5 машината се обработва, както всяка друга извикана функция: създава се нова стек рамка и се вкарва в стека за извикване, за да представлява извиканата функция. Това означава, че всяка предишна стек рамка се запазва в паметта, което е проблемно, когато стека за извикване стане твърде голям.</p>
+		     <h3>Какво е различното?</h3>
+		     <p>ECMAScript 6 има за цел да намали размера на стека за определени <em>tail calls</em> в <em>strict mode</em> (в <em>nonstrict mode tail calls</em> са оставени непроменени). С тази промяна вместо да създаде нова стек рамка за <em>tail call</em>, текущата стек рамка се изчиства и се използва повторно толкова дълго, колкото са изпълнени следните условия:</p>
+		     <dl>
+		     	<dd><strong><ol>
+		     		<li>Повикването на <em>tail call</em> не изисква достъп до променливите в текущата стек рамка (което означава, че функцията не е закриваща).</li>
+		     		<li>Функцията правеща <em>tail call</em> няма допълнителна работа за вършене след връщането на <em>tail call</em>.</li>
+		     		<li>Резултата от <em>tail call</em> се връща, като стойност на функцията.</li>
+		     	</ol></strong></dd>
+		     </dl>
+		     <p>Като пример този код може лесно да бъде оптимизиран, тъй като се вписва във всичките три критерия:</p>
+		     <dl>
+		     	<dd><pre class="highlight">
+"use strict";
+<span class="code">function</span> doSomething() {
+    // optimized
+    <span class="code">return</span> doSomethingElse();
+}
+		     	</pre></dd>
+		     </dl>
+		     <p>Тази функция прави <em>tail call</em> към <em>doSomethingElse()</em>, връща резултата незабавно и няма достъп до променливите в местния обхват. Една малка промяна, не връща резултат и води до неоптимизирана функция:</p>
+		     <dl>
+		     	<dd><pre class="highlight">
+"use strict";
+<span class="code">function</span> doSomething() {
+    <span class="comment"><em>// не оптимизирана- няма return</em></span>
+    doSomethingElse();
+}	     		
+		     	</pre></dd>
+		     </dl>
+		     <p>По същия начин, ако имате функция, която изпълнява една операция след завръщането си от <em>tail call</em>, тя след това не може да бъде оптимизирана:</p>
+		     <dl>
+		     	<dd><pre class="highlight">
+"use strict";
+<span class="code">function</span> doSomething() {
+  <span class="comment"><em>// не оптимизирана - трябва да се добави след завръщането</em></span>
+    <span class="code">return</span> 1 + doSomethingElse();
+}
+</pre>
+</dd>
+		     </dl>
+		     <p>Този пример добавя 1 към резултата от <em>doSomethingElse()</em> преди да се върне стойността и това е достатъчно за да се изключи оптимизацията.</p>
+		     <p>Друг често срещан начин за невнимателно изключване на оптимизацията е да се съхранява резултата от извикването на функцията в променлива и след това да се върне променливата на резултата, като този пример:</p>
+		     <dl>
+		     	<dd><pre class="highlight">
+"use strict";
+<span class="code">function</span> doSomething() {
+     <span class="comment"><em>// не оптимизирана- извикването не е в tail позиция</em></span>
+    var result = doSomethingElse();
+    return result;
+}	
+		     	</pre></dd>
+		     </dl>
+		     <p>Този пример не може да бъде оптимизиран, тъй като стойността на <em>doSomethingElse()</em> не се връща незабавно.</p>
+		     <p>Може би най-трудната ситуация е да се избегне в използването на закриване. Понеже закриването има достъп до променливите в съдържащия обхват, <em>tail call</em> може да бъде изключена. Например:</p>
+		     <dl>
+		     	<dd><pre class="highlight">
+"use strict";
+<span class="code">function</span> doSomething() {
+    <span class="code">var</span> num = 1,
+        func = () => num;
+    <span class="comment"><em>// не оптимизирана - функцията е закриваща</em></span>
+    <span class="code">return</span> func();
+}
+		     	</pre></dd>
+		     </dl>
+		     <p>Закриващата <em>func()</em> има достъп до локалната променлива <em>num</em> в този пример. Въпреки, че извикването към <em>func()</em> незабавно връща резултата, оптимизацията не може да се дължи на отнасяне към променливата <em>num</em>.</p>
+		     <h3>Как да впрегнем оптимизацията Tail Call</h3>
+		     <p>На практика, <em>tail call</em> оптимизацията се случва зад кулисите, така че не трябва да се мисли за това освен, ако не се опитвате да оптимизирате функция. Случаите за употреба на <em>tail call</em> оптимизация е в рекурсивни функции, тъй като това е мястото, където оптимизацията има най-голям ефект. Помислете за тази функция, която изчислява факториал:</p>
+		     <dl>
+		     	<dd><pre class="highlight">
+<span class="code">function</span> factorial(n) {
+    <span class="code">if</span> (n <= 1) {
+        <span class="code">return</span> 1;
+    } <span class="code">else</span> {
+    <span class="comment"><em>// не оптимизирана - трябва да се умножават след завръщането</em></span>
+        <span class="code">return</span> n * factorial(n - 1);
+    }
+}
+		     	</pre></dd>
+		     </dl>
+		     <p>Тази версия на функция не може да бъде оптимизирана, защото умножението трябва да се случи след рекурсивното извикване на <em>factorial()</em>. Ако <em>n</em> е много голям номер, размера на стека за извикване ще расте и може потенциално да доведе до препълване на стека.</p>
+		     <p>С цел оптимизиране на функцията, трябва да се гарантира, че умножението не се случва след извикването на последната функция. За да направим това, можем да използваме параметър по подразбиране да преместим операцията за умножение извън <em>return</em> изявлението. Получената функция носи временен резултат до следващата итерация, създадената на функция, която работи по същия начин може да бъде оптимизирана ECMAScript 6 машината. Ето новия код:</p>
+		     <dl>
+		     	<dd><pre class="highlight">
+<span class="code">function</span> factorial(n, p = 1) {
+    <span class="code">if</span> (n <= 1) {
+        <span class="code">return</span> 1 * p;
+    } <span class="code">else</span> {
+        <span class="code">let</span> result = n * p;
+        <span class="comment"><em>// оптимизирана</em></span>
+        <span class="code">return</span> factorial(n - 1, result);
+    }
+}
+                  </pre></dd>
+		     </dl>
+		     <p>В тази пренаписана версия на <em>factorial()</em>, вторият аргумент <em>p</em> е добавен, като параметър със стойност по подразбиране 1. Параметъра <em>p</em> държи предишния резултат от умножението, така че следващия резултат може да бъде изчислен, без друга извикваща функция. Когато <em>n</em> е по-голямо от 1, се извършва първо умножението и след това се подава, като втори аргумент на <em>factorial()</em>. Това позволява на ECMAScript 6 машината да оптимизира рекурсивните извиквания.</p>
+		     <p><em>Tail call</em> оптимизацията е нещо, за което трябва да се мисли, когато пишете рекурсивни функции, тъй като тя може да осигури значително подобрение в производителноста, особено когато се прилага в изчисляването на по-скъпа функция. </p>
+		     </article>
+		     <footer>
+		     <h3>Обобщение</h3>
+		     <p>Функциите не са претърпели огромна промяна в ECMAScript 6, а по-скоро серия от постепенни промени, които ги правят по-лесни за работа.</p>
+		     <p>Параметрите по подразбиране на функциите ни позволяват лесно да уточним, каква стойност да се използва, когато не е подаден аргумент. Преди ECMAScript 6, това щеше да изисква допълнителен код във вътршноста на функцията, който да провери за наличието на аргументи и зададе друга стойност</p>
+		     <p><em>Rest</em> параметрите позволяват да определим масив, в който да се поставят всички останали параметри. Използвайки реален масив, който ни позволява да посочим кои параметри да включва, прави <em>rest</em> параметрите много по-гъвкаво решение от аргументи.</p>
+		     <p>Оператора <em>spread</em> е спътник на <em>rest</em> параметрите, който ни позволява да пренаредим масива на отделни параметри при извикване на функция. Преди ECMAScript 6, имаше само два начина за подаване на индивидуални параметри съдържащи се в масив: чрез ръчно уточняване или използвайки <em>apply()</em>. С оператора <em>spread</em> можем лесно да подадем масив на всяка функция, без да се притесняваме за <em>this</em> свързване на функцията.</p>
+		     <p>Добавянето на <em>name</em> свойство ще ни помогне за по-лесно идентифициране на функции с цел на отстраняване на грешки и оценяване . Освен това, ECMAScript 6 официално определя поведението на блокови функции, така че вече не са синтактична грешка в строг режим.</p>
+		     <p>В ECMAScript 6, поведението на една функция се определя от  [[Call]] при нормално изпълнение на функция и [[Construct]], когато една функция се извиква с <em>new</em>. <em>The new.target metaproperty</em> също така ни позволява да определим дали дадена функция се извиква с <em>new</em> или не.</p>
+		     <p>Най-голямата промяна на функци в ECMAScript 6 е добавянето на стрели функции. Стрели функциите са предназначени за използване вместо анонимните функции изрази. Функциите стрели имат по-кратък синтаксис, задължително <em>this</em> обвързване и нямат обект на аргументите. Освен това функциите стрели не могат да променят своето <em>this</em> обвързване и така не могат да се използват, като конструктори.</p>
+		     <p><em>Tail call</em> оптимизацията позволява някои извикани функции да бъдат оптимизирани, за да се запази по-малък стека на извикване, използвайки по-малко памет и предотвратяване на грешки от препълване на стека. Тази оптимизация се прилага автоматично, разбира се когато това е безопасно да се направи, ако решите можете да пренапишете рекурсивни функции, за да се възползвате от тази оптимизация.</p>
+</footer>
+<nav>
+  <a href="./02_strings.html" title="previous chapter">◀</a>
+  <a href="./index.html" title="cover">◆</a>
+  <a href="./04_object_function.html" title="next chapter">▶</a>
+</nav>
+</body>
+</html>
