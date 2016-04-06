@@ -167,15 +167,6 @@ text-align: center;
   font-size: 1.2em;
 }
 
-.aside-overfolw{
-  overflow:scroll;
-  border-style: solid;
-    border-color: #cbcbcb;
-    border-width: thin;
-    margin: 1em;
-    padding: 1em 1.5em;
-
-}
  .aside{
 
     border-style: solid;
