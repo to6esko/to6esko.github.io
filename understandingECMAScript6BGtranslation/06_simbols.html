@@ -29,7 +29,6 @@
 
 person[firstName] = "Nicholas";
 console.log(person[firstName]);     // "Nicholas"
-	 			
 	 		</pre></dd>
 	 	</dl>
 	 	<p>В този пример символа <em>firstName</em> е създаден и се използва за присвояване от новото свойство <em>person</em>. Този символ трябва да се използва всеки път, когато искате да получите достъп до същото свойство. Това е добра идея да назовем променливата на символа подходящо, така че лесно да разберем какво представлява символа.</p>
@@ -49,7 +48,6 @@ person[firstName] = "Nicholas";
 console.log("first name" in person);    // false
 console.log(person[firstName]);         // "Nicholas"
 console.log(firstName);                 // "Symbol(first name)"
-	 			
 	 		</pre></dd>
 	 	</dl>
 	 	<p>Описанието на символа се съхранява във вътрешно свойство, наречено [[Description]]. Това свойство се чете, когато метода <em>toString()</em> за символи се извика пряко или косвено (както в този пример). Няма друг възможен начин за достъп до [[Description]] директно с код. За това е препоръчително винаги да се предостави описание за четене на символа, така грешките се отстраняват по лесно.</p>
@@ -86,7 +84,6 @@ console.log(<span class="code">typeof</span> symbol);    // "symbol"
 
 console.log(person[firstName]);     // "Nicholas"
 console.log(person[lastName]);      // "Zakas"
-	 			
 	 		</pre></dd>
 	 	</dl>
 	    <p>Този пример използва изчисляване на свойство за обект литерал, за създаване на <em>firstName</em> символ свойство. Свойството е създадено не номерирано, за разлика от изчислените свойства създадени с помощта на <em>nonsymbol</em> имена. Следващия ред, прави свойството само за четене. По-късно, свойството на символа само за четене <em>lastName</em> е създадено с помощта на <em>Object.defineProperties()</em>. Изчисляването на свойство за обект литерал се използва отново, само че този път е част от втория аргумент на <em>Object.defineProperties()</em>.</p>
@@ -103,7 +100,6 @@ object[uid] = "12345";
 
 console.log(object[uid]);       // "12345"
 console.log(uid);               // "Symbol(uid)"
-	    		
 	    	</pre></dd>
 	    </dl>
 	    <p>Метода <em>Symbol.for()</em> първо търси в глобален регистър за символи, за да види дали символ с ключ "uid" съществува. Ако е така, след това се връща на вече съществуващия символ. Ако няма съществуващ такъв символ, тогава създава нов символ и го регистрира в глобалния регистър за символи, използвайки указания ключ. След това новия символ се връща. Това означава, че следващите извиквания на <em>Symbol.for()</em> ще използват един и същи ключ за връщане на същия символ:</p>
@@ -123,7 +119,6 @@ console.log(uid);               // "Symbol(uid)"
 console.log(uid === uid2);      // true
 console.log(object[uid2]);      // "12345"
 console.log(uid2);              // "Symbol(uid)"
-	    			
 	    		</pre>
 	    	</dd>
 	    </dl>
@@ -139,7 +134,6 @@ console.log(Symbol.keyFor(uid2));   // "uid"
 
 <span class="code">var</span> uid3 = Symbol("uid");
 console.log(Symbol.keyFor(uid3));   // undefined
-	    		
 	    	</pre></dd>
 	    </dl>
 	    <p>Забележете, че и двете <em>uid</em> и <em>uid2</em> връщат ключ "uid". Символа <em>uid3</em> не съществува в регистъра за глобални символи, така че няма ключ свързан с него и <em>Symbol.keyFor()</em> връща <em>undefined</em>.</p>
@@ -149,7 +143,7 @@ console.log(Symbol.keyFor(uid3));   // undefined
        </div><strong>Регистърът за глобални символи е споделена среда, точно както глобалния обхват. Така че, не могат да се правят предположения, какво присъства или не в тази среда. Вие трябва да използвате пространството на имена за ключове на символи, за да се намали вероятноста от съвпадения при използване на компонентите от трета страна. Например, jQuery да има префикс за всички ключове "jquery.", като "jquery.element".</strong></dd>
 	    </dl>
 	    <h3>Символ коригиране на типа</h3>
-	    <p>Коригирането на типа е значителна част от JavaScript и има много гъвкаво отношение към способноста на езика да коригира един тип данни в друг. Символите, обаче не са толкова гъвкави, когато става въпрос за коригиране, защото не съществува логическа еквивалентност на символ в другите типове. По-конкретно, символите не могат да бъдат коригирани в <em>strings</em> или номера, така че не могат случайно да се използват, като свойства, които в противен случай се очакват да се държат, като символи.</p>
+	    <p>Коригирането на типа е значителна част от JavaScript и има много гъвкаво отношение към способноста на езика да коригира един тип данни в друг. Символите, обаче не са толкова гъвкави, когато става въпрос за коригиране, защото не съществува логическа еквивалентност на символ в другите типове. По-конкретно, символите не могат да бъдат коригирани в <em>strings</em> или <em>numbers</em>, така че не могат случайно да се използват, като свойства, които в противен случай се очакват да се държат, като символи.</p>
 	    <p>Примерите в тази глава използват <em>console.log()</em> за да покажат на изхода, че символа работи, защото <em>console.log()</em> извиква <em>String()</em> върху своите аргументи. Можете да използвате <em>String()</em> директно за да получите същия резултат. Например:</p>
 	    <dl>
 	    	<dd><pre class="highlight">
@@ -157,7 +151,6 @@ console.log(Symbol.keyFor(uid3));   // undefined
     desc = <span class="code">String</span>(uid);
 
 console.log(desc);              // "Symbol(uid)"
-	    		
 	    	</pre></dd>
 	    </dl>
 	    <p>Функцията <em>String()</em> извиква <em>uid.toString()</em> и връща описанието на символ <em>string</em>. Ако се опитаме да свържем директно символа със <em>string</em>, ще бъде хвърлена грешка:</p>
@@ -165,7 +158,6 @@ console.log(desc);              // "Symbol(uid)"
 	    	<dd><pre class="highlight">
 <span class="code">var</span> uid = Symbol.<span class="code">for</span>("uid"),
     desc = uid + "";            // error!
-	    		
 	    	</pre></dd>
 	    </dl>
 	    <p>Конкатенацията на <em>uid</em> с празен <em>string</em> изисква, първо <em>uid</em> да се коригира в <em>string</em>. Грешка се хвърля, когато е открито коригиране, предотвратявайки използването му по този начин.</p>
@@ -174,7 +166,6 @@ console.log(desc);              // "Symbol(uid)"
 	    	<dd><pre class="highlight">
 <span class="code">var</span> uid = Symbol.<span class="code">for</span>("uid"),
     sum = uid / 1;            // error!
-	    		
 	    	</pre></dd>
 	    </dl>
 	    <p>Този пример се опитва да раздели символ с 1, което води до грешка. Грешка се хвърля независимо от използвания математически оператор (логическите оператори не хвърлят грешка, защото всички символи се считат за еквивалент на <em>true</em>, точно както всяка друга не празна стойност в JavaScript).</p>
@@ -194,7 +185,6 @@ console.log(desc);              // "Symbol(uid)"
 console.log(symbols.length);        // 1
 console.log(symbols[0]);            // "Symbol(uid)"
 console.log(object[symbols[0]]);    // "12345"
-	    		
 	    	</pre></dd>
 	    </dl>
 	    <p>В този код, <em>object</em> има едно единствено свойство символ <em>uid</em>. Масивът върнат от <em>Object.getOwnPropertySymbols()</em> е масив съдържащ само този символ.</p>
@@ -215,7 +205,7 @@ console.log(object[symbols[0]]);    // "12345"
 	    		<li><strong>Symbol.split </strong> - метод използван от <em>String.prototype.split()</em> за разделяне на <em>strings</em>.</li>
 	    		<li><strong>Symbol.toPrimitive </strong> - метод който връща представянето на примитивни стойности в обекта.</li>
 	    		<li><strong>Symbol.toStringTag</strong> - <em>string</em> използван от <em>Object.prototype.toString()</em> за създаване на описание на обект.</li>
-	    		<li><strong>Symbol.unscopables</strong> - обект, чиито свойства са имената на свойствата на обекта, които не трябва да бъдат включени в обект декларацията.</li>
+	    		<li><strong>Symbol.unscopables</strong> - обект, чиито свойства са имената на свойствата на обекта, които не трябва да бъдат включени в <em>with</em> изявлентие.</li>
 	    	</ul></dd>
 	    </dl>
 	    <p>Някои от най-известните символи са обсъдени  по-долу , а други са разгледани в книгата, за да ги държи в правилния контекст.</p>
@@ -230,13 +220,12 @@ console.log(object[symbols[0]]);    // "12345"
 	    <dl>
 	    	<dd><pre class="highlight">
 obj <span class="code">instanceof Array</span>;
-
 	    	</pre></dd>
 	    </dl>
 	    <p>Този код е еквивалентен на:</p>
 	    <dl>
 	    	<dd><pre class="highlight">
-<span class="code">Array</span>[Symbol.hasInstance](obj);	    		
+<span class="code">Array</span>[Symbol.hasInstance](obj);
 	    	</pre></dd>
 	    </dl>
 	    <p>По същество, ECMAScript 6 предефинира <em>instanceof</em> оператора, като кратък запис на синтаксиса за извикване на този метод. И сега имаме участващ извикан метод, всъщност можем да променим начина на работа на <em>instanceof</em>.</p>
@@ -256,7 +245,6 @@ obj <span class="code">instanceof Array</span>;
 <span class="code">var</span> obj = <span class="code">new</span> MyObject();
 
 console.log(obj <span class="code">instanceof</span> MyObject);       // false
-	    		
 	    	</pre></dd>
 	    </dl>
 	    <p>Този пример използва <em>Object.defineProperty()</em>, за да презапише метода  <em>Symbol.hasInstance</em> с новата функция. (Трябва да използвате <em>Object.defineProperty()</em> за презаписване на <em>nonwritable</em> свойство.) Функцията винаги ще връща <em>false</em>, въпреки, че <em>obj</em> всъщност е инстанция на <em>MyObject</em>, защото оператора <em>instanceof</em> връща <em>false</em>.</p>
@@ -278,7 +266,6 @@ console.log(obj <span class="code">instanceof</span> MyObject);       // false
 
 console.log(two <span class="code">instanceof</span> SpecialNumber);    // true
 console.log(zero <span class="code">instanceof</span> SpecialNumber);   // false
-
 	    	</pre></dd>
 	    </dl>
 	    <p>Този код дефинира <em>Symbol.hasInstance</em> метод и връща <em>true</em> ако стойността е инстанция на <em>Number</em> и също има стойност между 1 и  100.  Имайте в предвид, че левият операнд на <em>instanceof</em> трябва да бъде обект, за да задейства извикването към <em>Symbol.hasInstance</em>, докато <em>nonobjects</em> причинява <em>instanceof</em> просто да връща <em>false</em> през цялото време. Този код позволява на <em>SpecialNumber</em> да претендира, че <em>two</em> е инстанция на число въпреки, че няма пряка връзка между тях.</p>
@@ -296,7 +283,6 @@ console.log(zero <span class="code">instanceof</span> SpecialNumber);   // false
 
 console.log(colors2.length);    // 4
 console.log(colors2);        // ["red","green","blue","black"]
-	    		
 	    	</pre></dd>
 	    </dl>
 	    <p>Този код конкатенира нов масив от края на <em>colors1</em> и създава <em>colors2</em>, в единичен масив с всички елементи от двата масива. Обаче, <em>concat()</em> може да приема <em>nonarray</em> аргументи и в този случай тези аргументи просто се добавят към края на масива. Например:</p>
@@ -307,7 +293,6 @@ console.log(colors2);        // ["red","green","blue","black"]
 
 console.log(colors2.length);    // 5
 console.log(colors2);           // ["red","green","blue","black","brown"]
-	    		
 	    	</pre></dd>
 	    </dl>
 	    <p>Тука, допълнителния аргумент "brown" се подава на <em>concat()</em> и  се превръща в петия елемент на <em>colors2</em>. Защо масив от аргументи се третира по различен начин от <em>string</em> аргументи? Спецификацията казва, че масивите автоматично се разделят на техните отделни елементи, а всички други типове не. Преди ECMAScript 6, нямаше начин да се коригира това поведение.</p>
@@ -325,7 +310,6 @@ console.log(colors2);           // ["red","green","blue","black","brown"]
 
 console.log(messages.length);    // 3
 console.log(messages);           // ["hi","Hello","world"]
-	    		
 	    	</pre></dd>
 	    </dl>
 	    <p>Обекта <em>collection</em> в този пример, е настроен да изглежда, като масив: тoй има <em>length</em> свойство и два цифрови ключа. Свойството <em>Symbol.isConcatSpreadable</em> е определено на <em>true</em> за да покаже, че стойностите на свойствата трябва  да се добавят, като отделни елементи на масив. Когато <em>collection</em> се подаде на <em>concat()</em>, резултата е масив, който има "Hello" и "world", като отделни позиции след "hi".</p>
@@ -404,7 +388,6 @@ console.log(search2);           // 0
 
 console.log(split1);            // ["Hello world"]
 console.log(split2);            // ["", ""]
-	   		
 	   	</pre></dd>
 	   </dl>
 	   <p>Тука, <em>hasLengthOf10</em> е обект, предназначен да работи, като регулярен израз, който съвпада, когато дължината (<em>length</em>) на <em>string</em> е точно 10. Всеки от четирите метода се осъществява чрез използване на съответните символи и след това се извикват съответните методи на двата <em>strings</em>. Първия  <em>string, message1</em>, има 11 знака и така няма да съвпадне; втория <em>string, message2</em>, има 10 знака и така ще съвпадне. Въпреки, че не е регулярен израз <em>hasLengthOf10</em> се подава на всеки <em>string</em> метод и се използва правилно поради допълнителните методи.</p>
@@ -473,7 +456,6 @@ Temperature.prototype[Symbol.toPrimitive] = <span class="code">function</span>(h
 console.log(freezing + "!");            // "32 degrees!"
 console.log(freezing / 2);              // 16
 console.log(<span class="code">String</span>(freezing));          // "32째"
-	   		
 	   	</pre></dd>
 	   </dl>
 	   <p>Този пример дефинира <em>Temperature</em> конструктор и заменя метода по подразбиране на <em>Symbol.toPrimitive</em> прототипа. Различна стойност се връща в зависимост от <em>hint</em>, където <em>string</em> режима връща температура с Unicode символа за градус, <em>number</em> режима връща само цифрова стойност и режима по подразбиране и добавя думата “degrees” след цифрите. Всяко от изявленията в <em>swich</em> води до различен режим : оператора + задейства режим по подразбиране, оператора / задейства номер режим и <em>String()</em> функцията задейства <em>string</em> режим. Въпреки че е възможно да върне различни стойности за всичките три режима, много по-често използвано е да настроите режима на по подразбиране да е същия, като за <em>string</em> или номер режим.</p>
@@ -489,7 +471,6 @@ console.log(<span class="code">String</span>(freezing));          // "32째"
 }
 
 console.log(isArray([]));   // true
-	   		
 	   	</pre></dd>
 	   </dl>
 	   <p>Това може да изглежда малко, като кръгово движение, но в действителност е установено, че това работи добре във всички браузъри. Метода <em>toString()</em> за масиви не е много полезен за тази цел, тъй като връща <em>string</em> от елементите, които съдържа. Метода <em>toString()</em> на <em>Object.prototype</em>, обаче, има тази идея, където са включени няколко вътрешно дефинирани имена в резултата. Чрез използване на този метод на обект, можем да изтеглим това, което околната среда на JavaScript смята за тип на данните.</p>
@@ -501,7 +482,6 @@ console.log(isArray([]));   // true
     <span class="code">return typeof</span> JSON !== "undefined" &&
       <span class="code">Object</span>.prototype.toString.call(JSON) === "[object JSON]";
 }
-	   		
 	   	</pre></dd>
 	   </dl>
 	   <p>Тука, е същата характеристика, която позволява на програмистите да идентифицират масиви в границите на вградената рамка и също предоставя начин да се разбере дали JSON е местен или не. Не-местен JSON обект ще върне [object Object], докато местния обект ще върне [object JSON]. От този момент на татък този подход се превърна в стандарт за идентифициране на местни обекти.</p>
@@ -519,7 +499,6 @@ Person.prototype[Symbol.toStringTag] = "Person";
 
 console.log(me.toString());                         // "[object Person]"
 console.log(<span class="code">Object</span>.prototype.toString.call(me));    // "[object Person]"
-	   		
 	   	</pre></dd>
 	   </dl>
 	   <p>В този пример, свойството <em>Symbol.toStringTag</em> се дефинира в <em>Person.prototype</em> за да осигури поведението по подразбиране за създаване на <em>string</em> представяне. Тъй като, <em>Person.prototype</em> наследява <em>Object.prototype.toString()</em>, стойността върната от <em>Symbol.toStringTag</em> се използва също, като извикване на <em>me.toString()</em>. Обаче, все още не можем да определим свой <em>toString()</em> метод, който осигурява различно поведение, без да засяга използването на <em>Object.prototype.toString.call()</em> метода. Ето как може да изглежда това:</p>
@@ -539,7 +518,6 @@ Person.prototype.toString = <span class="code">function</span>() {
 
 console.log(me.toString());                         // "Nicholas"
 console.log(<span class="code">Object</span>.prototype.toString.call(me));    // "[object Person]"
-	   		
 	   	</pre></dd>
 	   </dl>
 	   <p>Този контекст дефинира <em>Person.prototype.toString()</em> да връща стойността на <em>name</em> свойството. Тъй като <em>Person</em> инстанцията вече не се наследява от <em>Object.prototype.toString()</em>, извиквайки <em>me.toString()</em> проявява различно поведение.</p>
@@ -565,7 +543,6 @@ Person.prototype.toString = <span class="code">function</span>() {
 
 console.log(me.toString());                         // "Nicholas"
 console.log(<span class="code">Object</span>.prototype.toString.call(me));    // "[object Array]"
-	   		
 	   	</pre></dd>
 	   </dl>
 	   <p>Тука, резултата от извикването на <em>Object.prototype.toString()</em> е "[object Array]", което е същото, като което ще получим от действителен масив. Това подчертава факта, че  <em>Object.prototype.toString()</em> вече не е напълно надежден начин за идентифициране на типа на даден обект.</p>
@@ -577,7 +554,6 @@ console.log(<span class="code">Object</span>.prototype.toString.call(me));    //
 <span class="code">var</span> values = [];
 
 console.log(<span class="code">Object</span>.prototype.toString.call(values));    // "[object Magic]"
-	   		
 	   	</pre></dd>
 	   </dl>
 	   <p>Въпреки, че <em>Symbol.toStringTag</em> се презаписва за масивa в този пример, извикването на <em>Object.prototype.toString()</em> води до "[object Magic]". Въпреки, че не се препоръчва да се променят вградени обекти по този начин, няма нищо в езика, което да го забранява.</p>
@@ -597,7 +573,6 @@ console.log(<span class="code">Object</span>.prototype.toString.call(values));  
 }
 
 console.log(colors);    // ["red", "green", "blue", "black", 1, 2, 3]
-	   		
 	   	</pre></dd>
 	   </dl>
 	   <p>В този пример, двете извиквания на <em>push()</em> вътре в <em>with</em> изявлението, са еквивалентни на <em>colors.push()</em>, защото <em>with</em> изявлението добавя <em>puhs</em> в локалното обвързване. Препратката към <em>color</em> се отнася до променливата, създадена извън <em>whit</em>, което прави <em>values</em> референтна.</p>
@@ -615,7 +590,6 @@ console.log(colors);    // ["red", "green", "blue", "black", 1, 2, 3]
     keys: <span class="code">true</span>,
     values: <span class="code">true</span>
 });
-	   		
 	   	</pre></dd>
 	   </dl>
 	   <p>Обекта <em>Symbol.unscopables</em> има <em>null</em> прототип (създаден от <em>Object.create(null)</em>) и съдържа всички нови методи за масиви в  ECMAScript 6 (тези методи са разгледани подробно в <a href="08_iterators_and_generators.html #values">Глава 8</a> - Iterators и Generators и в <a href="10_array.html #new-metods">Глава 10</a> - Масиви). Обвързванията за тези методи не са създадени вътре в <em>with</em> изявлението, което позволява на стария код да продължи да работи без никакъв проблем.</p>
