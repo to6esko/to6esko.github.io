@@ -341,7 +341,7 @@ data.set("format", "ebook");
 				</dd>
 			</dl>
 			<p>В този случай, използвайки <em>values()</em> връща точните данни, съдържащи се в колекцията без никаква информация за тяхното местонахождение.</p>
-			<p>Итератора <em>keys()</em> връща всеки ключ присъстващ в колекцията. За масиви, това е само цифровия ключ (той никога не връща други собствени свойства на масива). За <em>sets</em>, ключовете винаги са същите, като стойностите и така <em>keys()</em> и <em>values()</em> връщат също итератор. За maps, това е всеки уникален ключ. Ето един пример:</p>
+			<p>Итератора <em>keys()</em> връща всеки ключ присъстващ в колекцията. За масиви, това е само цифровия ключ (той никога не връща други собствени свойства на масива). За <em>sets</em>, ключовете винаги са същите, като стойностите и така <em>keys()</em> и <em>values()</em> връщат също итератор. За <em>maps</em>, това е всеки уникален ключ. Ето един пример:</p>
 			<dl>
 				<dd><pre class="highlight">
 <span class="code">let</span> colors = [ "red", "green", "blue" ];
@@ -720,7 +720,7 @@ console.log(iterator.next());           // "{ value: undefined, done: true }"
 }
 
 <span class="code">function</span> *createCombinedIterator() {
-    <span class="code">let</span>result = <span class="code">yield</span> *createNumberIterator();
+    <span class="code">let</span> result = <span class="code">yield</span> *createNumberIterator();
     <span class="code">yield</span> result;
     <span class="code">yield</span> *createRepeatingIterator(result);
 }
