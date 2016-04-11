@@ -658,7 +658,7 @@ console.log(x.getArea());               // 9
 console.log(x <span class="code">instanceof</span> Rectangle);    // true
 			</pre></dd>
 		</dl>
-		<p>Този пример определя <me>Rectangle</em>, като в ECMAScript 5 стил на конструктора, до като <em>Square</em> е клас. Тъй като <em>Rectangle</em> има [[Construct]] и прототип, класа може да наследява директно от него.</p>
+		<p>Този пример определя <em>Rectangle</em> в ECMAScript 5 стил на конструктора, до като <em>Square</em> е клас. Тъй като <em>Rectangle</em> има [[Construct]] и прототип, класа може да наследява директно от него.</p>
 		<p>Приемане на всякакъв тип на израз след <em>extends</em> позволява някои мощни възможности, като например, динамично определяне, какво се наследява. Например:</p>
 		<dl>
 			<dd><pre class="highlight">
@@ -843,7 +843,7 @@ console.log(subitems <span class="code">instanceof</span> MyArray);   // true
 }
 			</pre></dd>
 		</dl>
-		<p>В този пример, <em>well-known Symbol.species</em> се използва за да зададем статично свойство за достъп до <em>MyClass</em>. Имайте в предвид, че има само едни <em>getter</em> без <em>setter</em>, защото не е възможно да се промени вида на един клас. Всяко извикване на <em>this.constructor[Symbol.species]</em> връща <em>MyClass. Метода clone()</em> използва това определение, за да върне нова инстанция, вместо директно използване на <em>MyClass</em>, което позволява на производните класове да заменят тази стойност. Например:</p>
+		<p>В този пример, <em>well-known Symbol.species</em> се използва за да зададем статично свойство за достъп до <em>MyClass</em>. Имайте в предвид, че има само едни <em>getter</em> без <em>setter</em>, защото не е възможно да се промени вида на един клас. Всяко извикване на <em>this.constructor[Symbol.species]</em> връща <em>MyClass</em>. Метода <em>clone()</em> използва това определение, за да върне нова инстанция, вместо директно използване на <em>MyClass</em>, което позволява на производните класове да заменят тази стойност. Например:</p>
 		<dl>
 			<dd><pre class="highlight">
 <span class="code">class</span> MyClass {
