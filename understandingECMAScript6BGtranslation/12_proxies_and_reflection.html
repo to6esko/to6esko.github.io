@@ -44,11 +44,10 @@ console.log(colors.length);         // 2
 console.log(colors[3]);             // undefined
 console.log(colors[2]);             // undefined
 console.log(colors[1]);             // "green"
-  				
   			</pre>
   		</dd>
   	</dl>
-  	<p>Тука, масива <em>colors</em> започва с три елемента. Привояването на <em>colors[3]</em> автоматично увеличава стойността на <em>length</em> свойството на четири. Определянето на <em>length</em> свойството обратно на две, премахва последните два елемента в масива, оставяйки само първите два елемента. Няма нищо в ECMAScript 5, което да позволява на разработчиците да постигнат същото поведение. Ето защо са създадени <em>proxies</em>.</p>
+  	<p>Тука, масива <em>colors</em> започва с три елемента. Присвояването на <em>colors[3]</em> автоматично увеличава стойността на <em>length</em> свойството на четири. Определянето на <em>length</em> свойството обратно на две, премахва последните два елемента в масива, оставяйки само първите два елемента. Няма нищо в ECMAScript 5, което да позволява на разработчиците да постигнат същото поведение. Ето защо са създадени <em>proxies</em>.</p>
   	<h3>Какво са Proxies и Reflection?</h3>
   	<p><em>Proxy</em>, създаден с помощта на <em>new Proxy()</em>, е обект, който може да се използва вместо друг обект (наречен <em>target</em>). <em>Proxy</em> визуализира мишената, което означава, че <em>proxy</em> и <em>target</em> изглежда са един и същи обект на функционалност използвана от <em>proxy</em>. <em>Proxies</em>, обаче позволява да се намесим в операции от ниско ниво, които иначе са вътрешни за JavaScript машината. Тези операции от ниско ниво са засечени с помощта на <em>trap</em>, който е функция, която отговаря за конкретна операция.</p>
   	<p><em>Reflection API</em>, представлявана от <em>Reflect object</em>, е колекция от методи, които дават поведение по подразбиране за същите операции от ниско ниво, които <em>proxies</em> могат да отменят. Има <em>Reflect</em> метод за всеки <em>proxy trap</em> и този метод има същото име и му се подават същите аргументи, както на неговия съответен <em>proxy trap</em>. Таблицата по-долу съдържа всички <em>proxy traps</em>.</p>
@@ -392,7 +391,7 @@ console.log("name" <span class="code">in</span> proxy);       // false
         </pre>
       </dd>
     </dl>
-    <p>Този код е много подобен на <em>has trap</em> примера в това, че <em>deleteProperty trap</em> проверява да види дали <em>key</em> е "value" и ако е така връща <em>false</em>. В противен случай се използва поведението по подразбиране, като се извиква <em>Reflect.deleteProperty()</em>. Свойството <em>value</em> не може да бъде изтрито през <em>proxy</em>, защото операцията е в <em>trapped</em>, докато свойството <em>value</em> се премахва, както се очаква. Този подход е особено полезен, когато искаме да защитим свойства от премахване, без да предизвиква грешка в <em>strict mode</em> режим.</p>
+    <p>Този код е много подобен на <em>has trap</em> примера в това, че <em>deleteProperty trap</em> проверява да види дали <em>key</em> е "value" и ако е така връща <em>false</em>. В противен случай се използва поведението по подразбиране, като се извиква <em>Reflect.deleteProperty()</em>. Свойството <em>value</em> не може да бъде изтрито през <em>proxy</em>, защото операцията е в <em>trapped</em>, докато свойството <em>name</em> се премахва, както се очаква. Този подход е особено полезен, когато искаме да защитим свойства от премахване, без да предизвиква грешка в <em>strict mode</em> режим.</p>
     <h3>Prototype Proxy Traps</h3>
     <p>В <a href="./04_object_function.html #setPrototype">Глава 4</a>, учихме за ECMAScript 6 <em>Object.setPrototypeOf()</em>, който се добавя за да допълни ECMAScript 5 <em>Object.getPrototypeOf()</em> метода. <em>Proxies</em> позволяват прихващане на изпълнението на двата метода със <em>setPrototypeOf</em> и <em>getPrototypeOf traps</em>. И в двата случая метода на <em>Object</em> извиква <em>trap</em> върху съответното име на <em>proxy</em>, което ни позволява да променяме поведението им. The <em>setPrototypeOf trap</em> получава тези аргументи:</p>
     <dl>
@@ -594,6 +593,189 @@ console.log(result2);                               // true
          <img src="./img/info.jpg" alt="info">
        </div><strong>Както, бе споменато по-рано, когато има привидно дублиращи се методи за <em>Object</em> и <em>Reflect</em>, винаги трябва да се използват методите на <em>Reflect</em> вътре в <em>proxy traps</em>.</strong></dd>
       </dl>
+      <h3>Property Descriptor Traps</h3>
+      <p>Една от най-важните характеристики на ECMAScript 5 е възможността да се определят свойства-атрибути използвайки <em>Object.defineProperty()</em>. В предишните версии нямаше начин да се определи свойство за достъп, да се направи свойство само за четене или да се направи свойство <em>nonenumerable</em>. Всички те са възможни с използване на <em>Object.defineProperty()</em> и тези атрибути се връщатат при използване на <em>Object.getOwnPropertyDescriptor()</em>. <em>Proxies</em> позволяват да се прихващат извикванията към  <em>Object.defineProperty()</em> и <em>Object.getOwnPropertyDescriptor()</em>, като се използва <em>defineProperty</em> и <em>getOwnPropertyDescriptor traps</em>, съответно. The <em>defineProperty trap</em>  получава следните аргументи:</p>
+      <dl>
+        <dd>
+          <ol>
+            <li><strong>trapTarget</strong> - обекта, на който следва да бъде определено свойството (<em>proxy target</em>).</li>
+            <li><strong>key</strong>- <em>string</em> или символ за свойството.</li>
+            <li><strong>descriptor</strong> - <em>descriptor</em> обект за свойството</li>
+          </ol>
+        </dd>
+      </dl>
+      <p>The <em>defineProperty trap</em> изисква да се върне <em>true</em> ако операцията е успяла и <em>false</em> ако не е. The <em>getOwnPropertyDescriptor traps</em> получава само <em>trapTarget</em> и <em>key</em> и се очаква да върне <em>descriptor</em>. Съответно <em>Reflect.defineProperty()</em> и <em>Reflect.getOwnPropertyDescriptor()</em> методите приемат същите аргументи, каквито приема <em>proxy trap</em>. Ето един прост пример, който просто изпълнява поведение по подразбиране за всеки <em>trap</em>:</p>
+      <dl>
+        <dd>
+          <pre class="highlight-overflow">
+<span class="code">let</span> proxy = <span class="code">new Proxy</span>({}, {
+    defineProperty(trapTarget, key, descriptor) {
+        <span class="code">return</span> Reflect.defineProperty(trapTarget, key, descriptor);
+    },
+    getOwnPropertyDescriptor(trapTarget, key) {
+        <span class="code">return</span> Reflect.getOwnPropertyDescriptor(trapTarget, key);
+    }
+});
+
+
+<span class="code">Object</span>.defineProperty(proxy, "name", {
+    value: "proxy"
+});
+
+console.log(proxy.name);            // "proxy"
+
+<span class="code">let</span> descriptor = <span class="code">Object</span>.getOwnPropertyDescriptor(proxy, "name");
+
+console.log(descriptor.value);      // "proxy"
+          </pre>
+        </dd>
+      </dl>
+      <p>Този пример дефинира свойството "name" на <em>proxy</em> използвайки <em>Object.defineProperty()</em>. Свойството <em>descriptor</em> за това свойство се извлича с помощта на <em>Object.getOwnPropertyDescriptor()</em>.</p>
+      <h3>Блокирване на Object.defineProperty()</h3>
+      <p>The <em>defineProperty trap</em> изисква да се върне булева стойност за да покаже, че операцията е била успешна. Когато се връща <em>true, Object.defineProperty()</em> успява, както обикновено; когато се връща <em>false, Object.defineProperty()</em> хвърля грешка. Можем да използваме тази функция, за да ограничим вида на свойството, което може да бъде определено с помощта на <em>Object.defineProperty()</em>. Например, ако искаме да предотвратим определени символни свойства, бихме могли да проверим дали ключа е <em>string</em> и да върне <em>false</em> ако не е. Например:</p>
+      <dl>
+        <dd>
+          <pre class="highlight-overflow">
+<span class="code">let</span> proxy = <span class="code">new Proxy</span>({}, {
+    defineProperty(trapTarget, key, descriptor) {
+
+        <span class="code">if</span> (<span class="code">typeof</span> key !== "string") {
+            <span class="code">return false</span>;
+        }
+
+        <span class="code">return</span> Reflect.defineProperty(trapTarget, key, descriptor);
+    }
+});
+
+
+<span class="code">Object</span>.defineProperty(proxy, "name", {
+    value: "proxy"
+});
+
+console.log(proxy.name);                    // "proxy"
+
+<span class="code">let</span> nameSymbol = Symbol("name");
+
+// throws error
+<span class="code">Object</span>.defineProperty(proxy, nameSymbol , {
+    value: "proxy"
+});
+          </pre>
+        </dd>
+      </dl>
+      <p>В този код, <em>defineProperty proxy trap</em> връща <em>false</em>, когато <em>key</em> не е <em>string</em>, иначе продължава с поведението по подразбиране. Когато <em>Object.defineProperty()</em> се извика с ключ "name", той успява защото ключът е <em>string</em>. Когато <em>Object.defineProperty()</em> се извика с <em>nameSymbol</em>, хвърля грешка, защото <em>definePropert trap</em> връща <em>false</em>.</p>
+      <dl>
+        <dd><div class="info">
+         <img src="./img/info.jpg" alt="info">
+       </div><strong>Може също така, <em>Object.defineProperty()</em> тихо да се провали, като върне <em>true</em> и да не извика <em>Reflect.defineProperty()</em>. Това ще подтисне грешката, докато всъщност не определя свойство.</strong></dd>
+      </dl>
+      <h3>Descriptor Object Restrictions</h3>
+      <p>The <em>descriptor object</em> се подава към <em>defineProperty trap</em> и се връща от <em>getOwnPropertyDescriptor trap</em>  нормализиран и валидиран, съответно, за да гарантира последователно поведение при използване на <em>Object.defineProperty()</em> и <em>Object.getOwnPropertyDescriptor()</em>. За да започне, без значение какъв обект се подава, като трети аргумент на <em>Object.defineProperty()</em>, само свойствата <em>enumerable,  configurable,  value, writable, get</em> и <em>set</em> ще бъдат в <em>descriptor</em> обекта подадени към <em>defineProperty trap</em>. Например:</p>
+      <dl>
+        <dd>
+          <pre class="highlight-overflow">
+<span class="code">let</span> proxy = <span class="code">new Proxy</span>({}, {
+    defineProperty(trapTarget, key, descriptor) {
+        console.log(descriptor.value);              // "proxy"
+        console.log(descriptor.name);               // undefined
+
+        <span class="code">return</span> Reflect.defineProperty(trapTarget, key, descriptor);
+    }
+})
+
+
+<span class="code">Object</span>.defineProperty(proxy, "name", {
+    value: "proxy",
+    name: "custom"
+});
+          </pre>
+        </dd>
+      </dl>
+      <p>Тука, <em>Object.defineProperty()</em> се извиква с нестандартното свойство <em>name</em>, като трети аргумент. Когато <em>defineProperty trap</em> се извика, <em>descriptor</em> обекта не разполага със свойството <em>name</em>, но има свойството <em>value</em>. Това е така, защото <em>descriptor</em> не е препратка към действителния трети аргумент на <em>Object.defineProperty()</em>, а по-скоро е нов обект, който съдържа само допустимите свойства. <em>Reflect.defineProperty()</em> метода, също така пренебрегва всякакви нестандартни свойства на <em>descriptor</em>.</p>
+      <p>The <em>getOwnPropertyDescriptor trap</em> има малко по-различно ограничение, което изисква върнатата стойност да бъде <em>null, undefined</em> или <em>object</em>. Ако се връща обект, само <em>enumerable, configurable, value, writable, get</em> и <em>set</em> са позволени, като собствени свойства на обекта. Грешка се хвърля, ако се върне обект със собствено свойство, което не е разрешено, например:</p>
+      <dl>
+        <dd>
+          <pre class="highlight-overflow">
+<span class="code">let</span> proxy = <span class="code">new Proxy</span>({}, {
+    getOwnPropertyDescriptor(trapTarget, key) {
+        <span class="code">return</span> {
+            name: "proxy";
+        };
+    }
+});
+
+// throws error
+<span class="code">let</span> descriptor = <span class="code">Object</span>.getOwnPropertyDescriptor(proxy, "name");
+            
+          </pre>
+        </dd>
+      </dl>
+      <p>Свойството <em>name</em> не е допустимо, като свойство на <em>descriptors</em>, така че, когато <em>Object.getOwnPropertyDescriptor()</em> се извика, <em>getOwnPropertyDescriptor</em> връща стойност, която предизвиква грешка. Това ограничение гарантира, че стойността върната от <em>Object.getOwnPropertyDescriptor()</em> винаги има надеждна структура, независимо от използването на <em>proxies</em>.</p>
+      <h3>Дублиране на Descriptor методи</h3>
+      <p>За пореден път, ECMAScript 6 има някои объркващо подобни методи, като <em>Object.defineProperty()</em> и <em>Object.getOwnPropertyDescriptor()</em> изглежда, че правят същото, като <em>Reflect.defineProperty()</em> и <em>Reflect.getOwnPropertyDescriptor()</em>, съответно. Както и при другите двойки методи, обсъдени по-рано в тази глава, има някои фини но важни разлики.</p>
+      <p><em>Object.defineProperty()</em> и <em>Reflect.defineProperty()</em> методите са абсолютно същите с изключение на стойностите им за връщане. <em>Object.defineProperty()</em> метода връща първия аргумент, докато <em>Reflect.defineProperty()</em> връща булева стойност, <em>true</em> ако операцията е успешна и <em>false</em> ако не е. Например:</p>
+      <dl>
+        <dd>
+          <pre class="highlight-overflow">
+<span class="code">let</span> target = {};
+
+<span class="code">let</span> result1 = <span class="code">Object</span>.defineProperty(target, "name", { value: "target "});
+
+console.log(target === result1);        // true
+
+<span class="code">let</span> result2 = Reflect.defineProperty(target, "name", { value: "reflect" });
+
+console.log(result2);                   // true
+          </pre>
+        </dd>
+      </dl>
+      <p>Когато <em>Object.defineProperty()</em> се извика върху <em>target</em>, върнатата стойност е <em>target</em>. Когато <em>Reflect.defineProperty()</em> се извика върху <em>target</em>, върнатата стойност е <em>true</em>, което показва, че операцията е успяла. Тъй като,  <em>defineProperty proxy trap</em> изисква булевата стойност да бъде върната, е по-добре да се използва <em>Reflect.defineProperty()</em> за да изпълни поведението по подразбиране, когато е необходимо.</p>
+      <p><em>Object.getOwnPropertyDescriptor()</em> метода коригира своя първи аргумент в обект, когато се подава примитивна стойност и след това продължава операцията, като има в предвид, че <em>Reflect.getOwnPropertyDescriptor()</em> хвърля грешка ако първият аргумент е примитивна стойност. Ето един пример:</p>
+      <dl>
+        <dd>
+          <pre class="highlight">
+<span class="code">let</span> descriptor1 = <span class="code">Object</span>.getOwnPropertyDescriptor(2, "name");
+console.log(descriptor1);       // undefined
+
+// throws an error
+<span class="code">let</span> descriptor2 = Reflect.getOwnPropertyDescriptor(2, "name");
+          </pre>
+        </dd>
+      </dl>
+      <p><em>Object.getOwnPropertyDescriptor()</em> метода връща <em>undefined</em>, защото коригира 2 в обект и този обект не разполага с <em>name</em> свойство. Това е стандартно поведение на метода, когато свойство с дадено име не е намерено в даден обект. Обаче, когато <em>Reflect.getOwnPropertyDescriptor()</em> се извика, незабавно се хвърля грешка, защото той не приема примитивни стойности за първи аргумент.</p>
+      <h3>The ownKeys Trap</h3>
+      <p>The <em>ownKeys proxy trap</em> прихваща вътрешния метод  [[OwnPropertyKeys]] и позволява да се замени това поведение с връщане на масив от стойности. Този масив се използва на три места: <em>Object.getOwnPropertyNames(), Object.getOwnPropertySymbols()</em> и <em>Object.assign()</em> (за да определи, кои свойства са за копиране). Поведението по подразбиране, когато се прилага от <em>Reflect.ownKeys()</em>, е да върне масив с всички собствени ключове (<em>strings</em> и <em>symbols</em>). <em>Object.getOwnProperyNames()</em> метода, филтрира символи от масива и връща резултата, докато <em>Object.getOwnPropertySymbols()</em> филтрира <em>strings</em> от масива и връща резултата. <em>Object.assign()</em> метода използва масива, както със <em>strings</em> така и със <em>symbols</em>.</p>
+      <p>The <em>ownKeys trap</em> получава един аргумент - <em>target</em> и винаги трябва да върне масив или масиво-подобен обект (в противен случай хвърля грешка). С използването на <em>ownKeys trap</em> можем, например, да филтрираме определени ключове свойства, които не искаме да се използват от <em>Object.getOwnPropertyNames(), Object.getOwnPropertySymbols()</em> или <em>Object.assign()</em>. Да предположим, че вие не искате да се включва всяко име на свойство, което започва с долна черта на характера, което е обща нотация в JavaScript и показва, че е частно. Можем да използваме <em>ownKeys trap</em> да филтрира тези ключове:</p>
+      <dl>
+        <dd>
+          <pre class="highlight">
+<span class="code">let</span> proxy = <span class="code">new Proxy</span>({}, {
+    ownKeys(trapTarget) {
+        <span class="code">return</span> Reflect.ownKeys(trapTarget).filter(key => {
+            <span class="code">return typeof</span> key !== "string" || key[0] !== "_";
+        });
+    }
+});
+
+<span class="code">let</span>nameSymbol = Symbol("name");
+
+proxy.name = "proxy";
+proxy._name = "private";
+proxy[nameSymbol] = "symbol";
+
+<span class="code">let</span> names = <span class="code">Object</span>.getOwnPropertyNames(proxy),
+    symbols = <span class="code">Object</span>.getOwnPropertySymbols(proxy);
+
+console.log(names.length);      // 1
+console.log(names[0]);          // "proxy"
+
+console.log(symbols.length);    // 1
+console.log(symbols[0]);        // "Symbol(name)"
+          </pre>
+        </dd>
+      </dl>
+      <p>Този пример използва <em>ownKeys trap</em>, който първо извиква <em>Reflect.ownKeys()</em> за да получи списък по подразбиране на ключовете на целта. После, <em>filter()</em> метода се използва за филтриране на ключовете, които са <em>strings</em> и започват с долна черта. Обекта <em>proxy</em> има три свойства: <em>name, _name</em> и <em>nameSymbol</em>. Когато <em>Object.getOwnPropertyNames()</em> се извика върху <em>proxy</em>, само <em>name</em> свойството се връща. По същия начин, само <em>nameSymbol</em> се връща, когато <em>Object.getOwnPropertySymbols()</em> се извика върху <em>proxy</em>. Свойството <em>_name</em> не присъства в нито един резултат, тъй като е било филтрирано.</p>
+      <p>Докато <em>ownKeys proxy trap</em> ни позволява да променяме върнатите ключовете от малък набор с операции, той не засяга по-често използваните операции, като <em>for-of</em> цикли или <em>Object.keys()</em>. За да могат да се променят тези операции, трябва да използваме <em>enumerate trap</em>.</p>
       <h3>Функция Proxies с използване на apply и construct traps</h3>
       <p>От всички <em>proxy traps</em>, само <em>apply</em> и <em>construct</em> изискват <em>proxy target</em> да бъде функция. Както научихме в <a href="./03_function.html #izqsnqwane">Глава 3</a> функциите имат два вътрешни метода, [[Call]] и [[Construct]], които се изпълняват, когато една функция се извика без или със оператора <em>new</em>. The <em>apply</em> и <em>construct traps</em> съответстват на тези вътрешни методи и ни позволяват да ги заменим. The <em>apply trap</em> получава, а <em>Reflect.apply()</em> очаква следните аргументи, когато дадена функция се извиква без <em>new</em>:</p>
       <dl>
@@ -605,7 +787,7 @@ console.log(result2);                               // true
           </ol>
         </dd>
       </dl>
-      <p>The <em>construct trap</em>, който се извиква, когато функцията се изпълнява с помощта на new, получава следните аргументи:</p>
+      <p>The <em>construct trap</em>, който се извиква, когато функцията се изпълнява с помощта на <em>new</em>, получава следните аргументи:</p>
       <dl>
         <dd>
           <ol>
@@ -848,7 +1030,7 @@ console.log(me <span class="code">instanceof</span> PersonProxy); // true
       </dl>
       <p>Обекта <em>PersonProxy</em> е <em>proxy</em> на <em>Person</em> клас конструктора. Клас конструкторите са само функции, така че се държат по същия начин, когато се използват в <em>proxies</em>. The <em>apply trap</em> отменя поведението по подразбиране и вместо това връща нова инстанция на <em>trapTarget</em>, която е равна на <em>Person</em> (например, използва <em>trapTarget</em> за да покаже, че не е нужно ръчно да определим класа). The <em>argumentList</em> се подава към <em>trapTarget</em> използвайки оператора <em>spread</em> да подаде всеки аргумент по отделно. Извикването на <em>PersonProxy()</em> без използване на <em>new</em> връща инстанция на <em>Person</em> (ако се опитаме да извикаме <em>Person()</em> без <em>new</em>, ще бъде хвърлена грешка). Създаване на изискуеми клас конструктори е нещо, което е възможно използвайки само <em>proxies</em>.</p>
       <h3>Отмяна на Proxies</h3>
-      <p>Обикновено, <em>proxy</em> не може дабъде освободен от <em>target</em>, след като <em>proxy</em> вече е бил създаден. Всички примери до този момент в тази глава използват неотменими <em>proxies</em>. Въпреки това, може да има ситуации, когато да искаме да отменим <em>proxy</em> до по-късен момент от време, когато вече да не може да се използва. Това обикновено се случва, когато искаме да се осигури обект чрез API за целите на сигурността, като се запази възможността да се отреже достъпа до някои функции във някаква точка от времето.</p>
+      <p>Обикновено, <em>proxy</em> не може да бъде освободен от <em>target</em>, след като <em>proxy</em> вече е бил създаден. Всички примери до този момент в тази глава използват неотменими <em>proxies</em>. Въпреки това, може да има ситуации, когато да искаме да отменим <em>proxy</em> до по-късен момент от време, когато вече да не може да се използва. Това обикновено се случва, когато искаме да се осигури обект чрез API за целите на сигурността, като се запази възможността да се отреже достъпа до някои функции във някаква точка от времето.</p>
       <p>Отмяна на <em>proxies</em> се създават с помощта на метода <em>Proxy.revocable()</em>, който има същите аргументи, както <em>Proxy constructor - target object</em> и <em>proxy handler</em>. Върнатата стойност е обект със свойства:</p>
       <dl>
         <dd>
