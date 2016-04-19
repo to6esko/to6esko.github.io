@@ -898,7 +898,7 @@ p4.<span class="code">catch</span>(<span class="code">function</span>(value) {
 		</dl>
 		<p>Тука, p4 се отхвърля, защото p2 е вече в отхвърлено състояние, когато <em>Promise.race()</em> се извиква. Въпреки, че p1 и p3 са изпълнени, техните резултати са игнорирани, тъй като те се появяват, след като p2 се отхвърли.</p>
 		<h3>Asynchronous Task Running</h3>
-		<p>Обратно в <a href="08_iterators_and_generators.html #asynchron">Глава 8</a> , където учихме за генератори и как те могат да бъдат използвани за работа с асинхронни задачи, като следното:</p>
+		<p>Обратно в <a href="08_iterators_and_generators.html">Глава 8</a> , където учихме за генератори и как те могат да бъдат използвани за работа с асинхронни задачи, като следното:</p>
 		<dl>
 			<dd><pre class="highlight">
 <span class="code">let</span> fs = require("fs");
@@ -1044,7 +1044,7 @@ promise.success(<span class="code">function</span>(value) {
 		</dl>
 		<p>В този пример, <em>MyPromise</em> произлиза от <em>Promise</em> и се добавят два допълнителни метода. И двата, <em>success()</em> и <em>failure()</em> използват <em>this</em> за извикване на подходящ метод, който да се имитира. Създадените функции обещания са също, като вградената версия, с изключение на това, че сега могат да използват <em>success()</em> и <em>failure()</em> в допълнение към <em>then()</em> и <em>catch()</em>.</p>
 		<p>Тъй като, статичните методи могат да се наследяват, това означава, че <em>MyPromise.resolve(), MyPromise.reject(), MyPromise.race()</em> и <em>MyPromise.all()</em> също присъстват. Докато последните два се държат също, като вградени методи, първите два са леко различни.</p>
-		<p>И двата <em>MyPromise.resolve()</em> и <em>MyPromise.reject()</em> ще върнат инстанция на <em>MyPromise</em> независимо от подадената стойност, защото използват <em>Symbol.species</em> свойството (виж <a href="09_classes.html #species">Глава 9</a>) за да определят вида на обещанието за връщане. Така, че ако вграденото обещание се подава на всеки, то ще бъде разрешено или отхвърлено и върнато в нов <em>MyPromise</em>, така че да може да се присвои от манипулатора на изпълнение и отхвърляне. Например:</p>
+		<p>И двата <em>MyPromise.resolve()</em> и <em>MyPromise.reject()</em> ще върнат инстанция на <em>MyPromise</em> независимо от подадената стойност, защото използват <em>Symbol.species</em> свойството (виж <a href="09_classes.html">Глава 9</a>) за да определят вида на обещанието за връщане. Така, че ако вграденото обещание се подава на всеки, то ще бъде разрешено или отхвърлено и върнато в нов <em>MyPromise</em>, така че да може да се присвои от манипулатора на изпълнение и отхвърляне. Например:</p>
 		<dl>
 			<dd><pre class="highlight">
 <span class="code">let</span> p1 = <span class="code">new</span> Promise(<span class="code">function</span>(resolve, reject) {

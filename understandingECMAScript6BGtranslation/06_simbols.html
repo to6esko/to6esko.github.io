@@ -197,11 +197,11 @@ console.log(object[symbols[0]]);    // "12345"
 	    	<dd><ul>
 	    		<li><strong>Symbol.hasInstance</strong> - метод използван от <em>instanceof</em> да определи наследството на даден обект.</li>
 	    		<li><strong>Symbol.isConcatSpreadable</strong> - булева стойност, показваща дали употребата на <em>Array.prototype.concat()</em> ще изглади елементите на колекцията.</li>
-	    		<li><strong>Symbol.iterator</strong> - метод, който връща iterator (обяснен в <a href="08_iterators_and_generators.html #iterables">Глава 8</a> - Iterators и Generators).</li>
+	    		<li><strong>Symbol.iterator</strong> - метод, който връща iterator (обяснен в <a href="08_iterators_and_generators.html">Глава 8</a> - Iterators и Generators).</li>
 	    		<li><strong>Symbol.match</strong> - метод използван от <em>String.prototype.match()</em> за сравняване на <em>strings</em>.</li>
 	    		<li><strong>Symbol.replace</strong> - метод използван от <em>String.prototype.replace()</em> за заместване на <em>substrings</em>.</li>
 	    		<li><strong>Symbol.search </strong> - метод използван от <em>String.prototype.search()</em> за намиране на <em>substrings</em>.</li>
-	    		<li><strong>Symbol.species </strong> - конструктор от който са направени извлечените обекти (обяснен в <a href="09_classes.html #species">Глава 9</a> - Класове).</li>
+	    		<li><strong>Symbol.species </strong> - конструктор от който са направени извлечените обекти (обяснен в <a href="09_classes.html">Глава 9</a> - Класове).</li>
 	    		<li><strong>Symbol.split </strong> - метод използван от <em>String.prototype.split()</em> за разделяне на <em>strings</em>.</li>
 	    		<li><strong>Symbol.toPrimitive </strong> - метод който връща представянето на примитивни стойности в обекта.</li>
 	    		<li><strong>Symbol.toStringTag</strong> - <em>string</em> използван от <em>Object.prototype.toString()</em> за създаване на описание на обект.</li>
@@ -576,7 +576,7 @@ console.log(colors);    // ["red", "green", "blue", "black", 1, 2, 3]
 	   	</pre></dd>
 	   </dl>
 	   <p>В този пример, двете извиквания на <em>push()</em> вътре в <em>with</em> изявлението, са еквивалентни на <em>colors.push()</em>, защото <em>with</em> изявлението добавя <em>puhs</em> в локалното обвързване. Препратката към <em>color</em> се отнася до променливата, създадена извън <em>whit</em>, което прави <em>values</em> референтна.</p>
-	   <p>За ECMAScript 6, метода <em>values()</em> е добавен в масиви (обсъдено в <a href="08_iterators_and_generators.html #values">Глава 8</a> - <em>Iterators</em> и <em>Generators</em>). Това би означавало, че препратката към <em>values</em> в последния пример, сега трябва да се отнася не към локалните променливи стойности, а към стойностите на метода <em>values</em> на масива и ще прекъсне кода. Ето, защо символа <em>Symbol.unscopables</em> съществува.</p>
+	   <p>За ECMAScript 6, метода <em>values()</em> е добавен в масиви (обсъдено в <a href="08_iterators_and_generators.html">Глава 8</a> - <em>Iterators</em> и <em>Generators</em>). Това би означавало, че препратката към <em>values</em> в последния пример, сега трябва да се отнася не към локалните променливи стойности, а към стойностите на метода <em>values</em> на масива и ще прекъсне кода. Ето, защо символа <em>Symbol.unscopables</em> съществува.</p>
 	   <p>Символа <em>Symbol.unscopables</em> се използва за <em>Array.prototype</em> за да посочи, кои свойства не трябва да създават обвързвания във вътрешността на <em>with</em> изявлението. Когато е налице, <em>Symbol.unscopables</em> е обект, чийто ключове са идентификатори за пропускане на <em>whit</em> обвързвания и чийто стойности са <em>true</em> за прилагане на блока. Тук е по подразбиране за масиви:</p>
 	   <dl>
 	   	<dd><pre class="highlight-overflow">
@@ -592,7 +592,7 @@ console.log(colors);    // ["red", "green", "blue", "black", 1, 2, 3]
 });
 	   	</pre></dd>
 	   </dl>
-	   <p>Обекта <em>Symbol.unscopables</em> има <em>null</em> прототип (създаден от <em>Object.create(null)</em>) и съдържа всички нови методи за масиви в  ECMAScript 6 (тези методи са разгледани подробно в <a href="08_iterators_and_generators.html #values">Глава 8</a> - Iterators и Generators и в <a href="10_array.html #new-metods">Глава 10</a> - Масиви). Обвързванията за тези методи не са създадени вътре в <em>with</em> изявлението, което позволява на стария код да продължи да работи без никакъв проблем.</p>
+	   <p>Обекта <em>Symbol.unscopables</em> има <em>null</em> прототип (създаден от <em>Object.create(null)</em>) и съдържа всички нови методи за масиви в  ECMAScript 6 (тези методи са разгледани подробно в <a href="08_iterators_and_generators.html">Глава 8</a> - Iterators и Generators и в <a href="10_array.html">Глава 10</a> - Масиви). Обвързванията за тези методи не са създадени вътре в <em>with</em> изявлението, което позволява на стария код да продължи да работи без никакъв проблем.</p>
 	   <p>По принцип, не трябва да се дефинира <em>Symbol.unscopables</em> за вашите обекти, освен ако не използвате <em>with</em> изявление или се правят промени в съществуващ обект във вашия база код.</p>
 	 </article>
 	 <footer>
