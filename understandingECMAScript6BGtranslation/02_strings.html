@@ -397,7 +397,7 @@ console.log(re2.test("AB"));            // false
 <span class="code">function</span> getFlags(re) { 
     <span class="code">var</span> text = re.toString();
     <span class="code">return</span> text.substring(
-    text.lastIndexOf("/") + 1, text.length);
+        text.lastIndexOf("/") + 1, text.length);
 }
                  // toString() is "/ab/g"
 <span class="code">var</span> re = /ab/g;
