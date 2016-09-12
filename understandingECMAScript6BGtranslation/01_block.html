@@ -183,8 +183,7 @@ person = {
        <p>Това е вярно, за всеки път, когато се опитате да използвате променлива декларация с <em>let</em>, преди да е била определена. Както предишния пример демонстрира, това важи дори за нормално безопасни оператори, като <em>typeof</em>. Можете обаче да използвате <em>typeof</em>  върху променлива извън блока, където тази променлива е обявена, макар и той да не може да даде очакваните резултати. Помислете върху този код:</p>
        <dl>
        	<dd><pre class="highlight">
-console.log(<span class="code">typeof</span> value);
-<span class="comment"><em>// ReferenceError!</em></span>
+console.log(<span class="code">typeof</span> value); <span class="comment"><em>// "undefined"</em></span>
 <span class="code">if</span> (condition) {  
     <span class="code">let</span> value = "blue";
 }
