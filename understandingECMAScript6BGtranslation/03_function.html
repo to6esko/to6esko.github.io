@@ -367,7 +367,7 @@ console.log(bookData.year);     // 2015
 <span class="code">function</span> pick(object, ...keys) {
     <span class="code">let</span> result = <span class="code">Object</span>.create(<span class="code">null</span>);
     <span class="code">for</span> (<span class="code">let</span> i = 0, len = keys.length; i < len; i++) {
-        <span class="code">return</span>[keys[i]] = object[keys[i]];
+        <span class="code">result</span>[keys[i]] = object[keys[i]];
     }
     <span class="code">return</span> result;
 }	
