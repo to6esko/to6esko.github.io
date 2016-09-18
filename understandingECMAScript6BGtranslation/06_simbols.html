@@ -347,16 +347,16 @@ console.log(messages);           // ["hi","Hello","world"]
 	   	<dd><pre class="highlight-overflow">
 <span class="comment">// ефективно еквивалентно на /^.{10}$/</span>
 <span class="code">let</span> hasLengthOf10 = {
-    [Symbol.match] = <span class="code">function</span>(value) {
+    [Symbol.match]: <span class="code">function</span>(value) {
         <span class="code">return</span> value.length === 10 ? [value.substring(0, 10)] : <span class="code">null</span>;
     },
-    [Symbol.replace] = <span class="code">function</span>(value, replacement) {
+    [Symbol.replace]: <span class="code">function</span>(value, replacement) {
         <span class="code">return</span> value.length === 10 ? replacement + value.substring(10) : value;
     },
-    [Symbol.search] = <span class="code">function</span>(value) {
+    [Symbol.search]: <span class="code">function</span>(value) {
         <span class="code">return</span> value.length === 10 ? 0 : -1;
     },
-    [Symbol.split] = <span class="code">function</span>(value) {
+    [Symbol.split]: <span class="code">function</span>(value) {
         <span class="code">return</span> value.length === 10 ? ["", ""] : [value];
     }
 };
