@@ -34,56 +34,56 @@
 <p><a class="p_ident" id="p_u/9SKAI2Yi" href="./09_regexp.html#p_u/9SKAI2Yi"></a>Регулярният израз е тип обект. Той може или да бъде конструиран с <code>RegExp</code> конструктора или  написан, като буквална стойност чрез затваряне на схемата със знака за наклонена черта (<code>/</code>).</p>
 <pre data-language="javascript" class="snippet cm-s-default"><div class="sandboxhint">edit &amp; run code by clicking it</div><a class="c_ident" id="c_XBSA9s2btm" href="./09_regexp.html#c_XBSA9s2btm"></a><span class="cm-keyword">var</span> <span class="cm-variable">re1</span> <span class="cm-operator">=</span> <span class="cm-keyword">new</span> <span class="cm-variable">RegExp</span>(<span class="cm-string">"abc"</span>);
 <span class="cm-keyword">var</span> <span class="cm-variable">re2</span> <span class="cm-operator">=</span> <span class="cm-string-2">/abc/</span>;</pre>
-<p><a class="p_ident" id="p_uNMQxzr01n" href="./09_regexp.html#p_uNMQxzr01n"></a>И двата са редовни експресионни обекти представляващи един и същ модел: един символ <em>a</em> последван от <em>b</em> последван от <em>c</em>.</p>
+<p><a class="p_ident" id="p_uNMQxzr01n" href="./09_regexp.html#p_uNMQxzr01n"></a>И двата са редовни експресионни обекти представляващи един и същ модел: един характер <em>a</em> последван от <em>b</em> последван от <em>c</em>.</p>
 <p><a class="p_ident" id="p_qv8UWLVrTv" href="./09_regexp.html#p_qv8UWLVrTv"></a>При използване на конструктора <code>RegExp</code>, моделът е написан, като нормален <em>string</em>, така че се прилагат обичайните правила за обратно наклонените черти.</p>
-<p><a class="p_ident" id="p_xB91PDBGKz" href="./09_regexp.html#p_xB91PDBGKz"></a>Втората нотация, където моделът се поставя между наклонени черти, третира  обратно наклонените черти по малко по-различен начин. На първо място, тъй като с наклонена черта завършва модела, трябва да поставим наклонена черта преди всяка наклонена черта, ако искаме да бъде част от модела. Освен това, обратно наклонените черти, които не са част от специалните символи на кода (като <code>\n</code>) ще бъдат запазени, но няма да им се обърне внимание, тъй като са в <em>strings</em> и променят смисъла на модела. Някои знаци, като въпросителна и плюс, имат специално значение в регулярните изрази и трябва да бъдат предшествани от обратна наклонена черта, ако са предназначени да представляват самия символ.</p>
+<p><a class="p_ident" id="p_xB91PDBGKz" href="./09_regexp.html#p_xB91PDBGKz"></a>Втората нотация, където моделът се поставя между наклонени черти, третира  обратно наклонените черти по малко по-различен начин. На първо място, тъй като с наклонена черта завършва модела, трябва да поставим наклонена черта преди всяка наклонена черта, ако искаме да бъде част от модела. Освен това, обратно наклонените черти, които не са част от специалните характери на кода (като <code>\n</code>) ще бъдат запазени, но няма да им се обърне внимание, тъй като са в <em>strings</em> и променят смисъла на модела. Някои знаци, като въпросителна и плюс, имат специално значение в регулярните изрази и трябва да бъдат предшествани от обратна наклонена черта, ако са предназначени да представляват самия характер.</p>
 <pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_GMbBpgLwwd" href="./09_regexp.html#c_GMbBpgLwwd"></a><span class="cm-keyword">var</span> <span class="cm-variable">eighteenPlus</span> <span class="cm-operator">=</span> <span class="cm-string-2">/eighteen\+/</span>;</pre>
-<p><a class="p_ident" id="p_GYUjU5Z/Gb" href="./09_regexp.html#p_GYUjU5Z/Gb"></a>Знаейки, какво точно прави символа на обратната наклонена черта - <em>escape</em> (бягство) при писане на регулярни изрази се изисква от вас да знаете всеки символ със специално предназначение. За момента, това не може да бъде реалистично, така че, когато се съмнявате, просто сложете обратно наклонена черта пред всеки символ, който не е буква, цифра или празно пространство.</p>
+<p><a class="p_ident" id="p_GYUjU5Z/Gb" href="./09_regexp.html#p_GYUjU5Z/Gb"></a>Знаейки, какво точно прави характера на обратната наклонена черта - <em>escape</em> (бягство) при писане на регулярни изрази се изисква от вас да знаете всеки характер със специално предназначение. За момента, това не може да бъде реалистично, така че, когато се съмнявате, просто сложете обратно наклонена черта пред всеки характер, който не е буква, цифра или празно пространство.</p>
 <h2><a class="h_ident" id="h_vPyyYjMEtz" href="./09_regexp.html#h_vPyyYjMEtz"></a>Тест  за  съвпадение</h2>
 <p><a class="p_ident" id="p_0vbMMWCatE" href="./09_regexp.html#p_0vbMMWCatE"></a>Регулярните експресионни обекти имат редица методи. Най-простият от тях е <code>test</code>. Ако го подадете на <em>string</em>, той ще върне булева стойност, която ви казва дали този <em>string</em> съдържа  съвпадение с модела на израза.</p>
 <pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_O53a6v4BM0" href="./09_regexp.html#c_O53a6v4BM0"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">/abc/</span>.<span class="cm-property">test</span>(<span class="cm-string">"abcde"</span>));
 <span class="cm-comment">// → true</span>
 <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">/abc/</span>.<span class="cm-property">test</span>(<span class="cm-string">"abxde"</span>));
 <span class="cm-comment">// → false</span></pre>
-<p><a class="p_ident" id="p_WFokgkkjHh" href="./09_regexp.html#p_WFokgkkjHh"></a>Регулярния израз, съставен само от <em>nonspecial</em> символи просто означава поредица от знаци. Ние тестваме съвпадението не само в началото и <code>test</code> ще върне <code>true</code>, ако abc е на всякъде в <em>string</em>.</p>
-<h2><a class="h_ident" id="h_z4ZvUsIpEG" href="./09_regexp.html#h_z4ZvUsIpEG"></a>Съвпадение на набор от символи</h2>
+<p><a class="p_ident" id="p_WFokgkkjHh" href="./09_regexp.html#p_WFokgkkjHh"></a>Регулярния израз, съставен само от <em>nonspecial</em> характери просто означава поредица от знаци. Ние тестваме съвпадението не само в началото и <code>test</code> ще върне <code>true</code>, ако abc е на всякъде в <em>string</em>.</p>
+<h2><a class="h_ident" id="h_z4ZvUsIpEG" href="./09_regexp.html#h_z4ZvUsIpEG"></a>Съвпадение на набор от характери</h2>
 <p><a class="p_ident" id="p_DtXmb/uhsO" href="./09_regexp.html#p_DtXmb/uhsO"></a>Намирането дали <em>string</em> съдържа <em>abc</em>, може да се направи също толкова добре с извикване на <code>indexOf</code>. Регулярните изрази ни позволяват да отидем отвъд това и да изразят по-сложни модели</p>
-<p><a class="p_ident" id="p_i/99SEfu9y" href="./09_regexp.html#p_i/99SEfu9y"></a>Кажете, че искате съвпадение с произволно число. В регулярен израз поставяне на набор от знаци между квадратни скоби, прави тази част от израза да съответства на всеки от символите между скобите.</p>
+<p><a class="p_ident" id="p_i/99SEfu9y" href="./09_regexp.html#p_i/99SEfu9y"></a>Кажете, че искате съвпадение с произволно число. В регулярен израз поставяне на набор от знаци между квадратни скоби, прави тази част от израза да съответства на всеки от характерите между скобите.</p>
 <p><a class="p_ident" id="p_sC+2E08KnL" href="./09_regexp.html#p_sC+2E08KnL"></a>И двата от следните изрази съответстват на всички <em>strings</em>, които съдържат цифри:</p>
 <pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_lup2c3o+xm" href="./09_regexp.html#c_lup2c3o+xm"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">/[0123456789]/</span>.<span class="cm-property">test</span>(<span class="cm-string">"in 1992"</span>));
 <span class="cm-comment">// → true</span>
 <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">/[0-9]/</span>.<span class="cm-property">test</span>(<span class="cm-string">"in 1992"</span>));
 <span class="cm-comment">// → true</span></pre>
-<p><a class="p_ident" id="p_i0WYLVUede" href="./09_regexp.html#p_i0WYLVUede"></a>В квадратните скоби тирето (<code>-</code>) между два знака, може да се използва за обозначаване на набор от символи, където редът се определя от Unicode таблицата за символите. Символите от 0 до 9 стоят в непосредствена близост един до друг в тази таблица (кодове от 48 до 57), така че <code>[0-9]</code> обхваща всички тях и съвпаденията с всяка цифра.</p>
-<p><a class="p_ident" id="p_+w4wbahJfo" href="./09_regexp.html#p_+w4wbahJfo"></a>Има редица общи групи от символи, които имат свои собствени вградени команди за бърз достъп. Цифрите са една от тях: <code>\d</code> означава същото, <code>[0-9]</code>.</p>
+<p><a class="p_ident" id="p_i0WYLVUede" href="./09_regexp.html#p_i0WYLVUede"></a>В квадратните скоби тирето (<code>-</code>) между два знака, може да се използва за обозначаване на набор от характери, където редът се определя от Unicode таблицата за характерите. Характерите от 0 до 9 стоят в непосредствена близост един до друг в тази таблица (кодове от 48 до 57), така че <code>[0-9]</code> обхваща всички тях и съвпаденията с всяка цифра.</p>
+<p><a class="p_ident" id="p_+w4wbahJfo" href="./09_regexp.html#p_+w4wbahJfo"></a>Има редица общи групи от характери, които имат свои собствени вградени команди за бърз достъп. Цифрите са една от тях: <code>\d</code> означава същото, <code>[0-9]</code>.</p>
 <table>
 <tbody><tr>
 <td><code>\d</code></td>
-<td>Всеки символ цифра</td>
+<td>Всеки характер цифра</td>
 </tr>
 <tr>
 <td><code>\w</code></td>
-<td>Всеки буквено-цифров символ (‘дума символ’)</td>
+<td>Всеки буквено-цифров характер (‘дума характер’)</td>
 </tr>
 <tr>
 <td><code>\s</code></td>
-<td>Всеки символ за празно пространство (space, tab, newline и similar)</td>
+<td>Всеки характер за празно пространство (space, tab, newline и similar)</td>
 </tr>
 <tr>
 <td><code>\D</code></td>
-<td>Всеки символ, който не е цифра</td>
+<td>Всеки характер, който не е цифра</td>
 </tr>
 <tr>
 <td><code>\W</code></td>
-<td>Всеки не буквено-цифров символ</td>
+<td>Всеки не буквено-цифров характер</td>
 </tr>
 <tr>
 <td><code>\S</code></td>
-<td>Всеки символ, който не е за празно пространство</td>
+<td>Всеки характер който не е за празно пространство</td>
 </tr>
 <tr>
 <td><code>.</code></td>
-<td>Всеки символ, освен символа за новите редове</td>
+<td>Всеки характер, освен характера за новите редове</td>
 </tr>
 </tbody></table>
 <p><a class="p_ident" id="p_yXMUKEYpwG" href="./09_regexp.html#p_yXMUKEYpwG"></a>Така може да откриете съвпаденията за формата на дата и час, като 30-01-2003 15:20, със следния израз:</p>
@@ -93,8 +93,8 @@
 <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">dateTime</span>.<span class="cm-property">test</span>(<span class="cm-string">"30-jan-2003 15:20"</span>));
 <span class="cm-comment">// → false</span></pre>
 <p><a class="p_ident" id="p_NjgwK/FZRp" href="./09_regexp.html#p_NjgwK/FZRp"></a>Това изглежда ужасно, не е ли? Има прекалено много обратни наклонени черти, които правят фонов шум, което го прави трудно място за действителния модел на изрази. Ще видим леко подобрена версия на този израз <a href="./09_regexp.html#date_regexp_counted">по-късно</a>.</p>
-<p><a class="p_ident" id="p_P0qAMYu0C/" href="./09_regexp.html#p_P0qAMYu0C/"></a>Тези кодове с обратна наклонена черта могат да бъдат използвани в квадратни скоби. Например <code>[\d.]</code> означава всяка цифра или период от символи. Но имайте в предвид, че самия период, когато се използва в квадратни скоби, губи своето значение. Същото важи и за други специални знаци, като например плюс <code>+</code>.</p>
-<p><a class="p_ident" id="p_HqQEZsitdl" href="./09_regexp.html#p_HqQEZsitdl"></a>За да обърнете набор от символи, тоест искате да съвпадат с всеки символ с изключение на зададените, можете да напишете ксор ^ символ след отварящата скоба.</p>
+<p><a class="p_ident" id="p_P0qAMYu0C/" href="./09_regexp.html#p_P0qAMYu0C/"></a>Тези кодове с обратна наклонена черта могат да бъдат използвани в квадратни скоби. Например <code>[\d.]</code> означава всяка цифра или период от характери. Но имайте в предвид, че самия период, когато се използва в квадратни скоби, губи своето значение. Същото важи и за други специални знаци, като например плюс <code>+</code>.</p>
+<p><a class="p_ident" id="p_HqQEZsitdl" href="./09_regexp.html#p_HqQEZsitdl"></a>За да обърнете набор от характери, тоест искате да съвпадат с всеки характер с изключение на зададените, можете да напишете ксор ^ характер след отварящата скоба.</p>
 <pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_ExU1Fm09+X" href="./09_regexp.html#c_ExU1Fm09+X"></a><span class="cm-keyword">var</span> <span class="cm-variable">notBinary</span> <span class="cm-operator">=</span> <span class="cm-string-2">/[^01]/</span>;
 <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">notBinary</span>.<span class="cm-property">test</span>(<span class="cm-string">"1100100010100110"</span>));
 <span class="cm-comment">// → false</span>
@@ -112,7 +112,7 @@
 <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">/'\d*'/</span>.<span class="cm-property">test</span>(<span class="cm-string">"''"</span>));
 <span class="cm-comment">// → true</span></pre>
 <p><a class="p_ident" id="p_/oNBIVm41F" href="./09_regexp.html#p_/oNBIVm41F"></a>Звездата (<code>*</code>) има подобно значение, но също така позволява моделът да съвпада нула пъти. Нещо със звезда след него, никога не предпазва модела от съвпадение - той ще съвпада нула пъти ако не може да намери подходящ текст за съвпадение.</p>
-<p><a class="p_ident" id="p_rtXbvQjQpG" href="./09_regexp.html#p_rtXbvQjQpG"></a>Въпросителният знак прави част от един модел “по избор”, което означава, че може да стане нула или едно едновременно. В следващия пример, <em>u</em> символа пропуска случващото се , но също така съответства на модела, когато липсва.</p>
+<p><a class="p_ident" id="p_rtXbvQjQpG" href="./09_regexp.html#p_rtXbvQjQpG"></a>Въпросителният знак прави част от един модел “по избор”, което означава, че може да стане нула или едно едновременно. В следващия пример, <em>u</em> характера пропуска случващото се , но също така съответства на модела, когато липсва.</p>
 <pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_Jvdrjd3WXF" href="./09_regexp.html#c_Jvdrjd3WXF"></a><span class="cm-keyword">var</span> <span class="cm-variable">neighbor</span> <span class="cm-operator">=</span> <span class="cm-string-2">/neighbou?r/</span>;
 <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">neighbor</span>.<span class="cm-property">test</span>(<span class="cm-string">"neighbour"</span>));
 <span class="cm-comment">// → true</span>
@@ -182,17 +182,17 @@
 <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">findDate</span>(<span class="cm-string">"30-1-2003"</span>));
 <span class="cm-comment">// → Thu Jan 30 2003 00:00:00 GMT+0100 (CET)</span></pre>
 <h2><a class="h_ident" id="h_26ixny78VY" href="./09_regexp.html#h_26ixny78VY"></a>Думи и string граници</h2>
-<p><a class="p_ident" id="p_xmknsh+RBC" href="./09_regexp.html#p_xmknsh+RBC"></a>За съжаление, <code>findDate</code> също ще извлече безсмислена дата 00-1-3000 от <code>string “100-1-30000”</code>. Съвпадението може да се случи навсякъде в <em>string</em>, така че в този случай просто ще започне с символа за секундата и ще свърши в последния символ на секундите.</p>
+<p><a class="p_ident" id="p_xmknsh+RBC" href="./09_regexp.html#p_xmknsh+RBC"></a>За съжаление, <code>findDate</code> също ще извлече безсмислена дата 00-1-3000 от <code>string “100-1-30000”</code>. Съвпадението може да се случи навсякъде в <em>string</em>, така че в този случай просто ще започне с характера за секундата и ще свърши в последния характер на секундите.</p>
 <p><a class="p_ident" id="p_tKA0/BuA/v" href="./09_regexp.html#p_tKA0/BuA/v"></a>Ако искаме да наредим, че съвпадението трябва да обхване целия <em>string</em>, можем да добавим маркерите <code>^</code> и <code>$</code>. Ксор съвпада с началото на входния <em>string</em>, а знака за долар- съответствията до края. Така че, <code>/^\d+$/</code> съвпада с <em>string</em>, състоящ се изцяло от една или повече цифри, <code>/^!/</code> съвпада с всеки <em>string</em>, който започва с удивителен знак и <code>/x^/</code> не съответства на всеки <em>string</em>, който има <em>x</em> преди началото на <em>string</em>.</p>
-<p><a class="p_ident" id="p_dWIgppHuON" href="./09_regexp.html#p_dWIgppHuON"></a>Ако просто искаме да се уверим, че <em>string</em> започва с дата и завършва с дума, можем да използваме маркер <code>\b</code>. Думата може да бъде в началото, в края или всяка точка на <em>string</em> , който има дума в него, тогава можем да използваме <code>\w</code> за едната страна и <em>nonword</em> символ за другата.</p>
+<p><a class="p_ident" id="p_dWIgppHuON" href="./09_regexp.html#p_dWIgppHuON"></a>Ако просто искаме да се уверим, че <em>string</em> започва с дата и завършва с дума, можем да използваме маркер <code>\b</code>. Думата може да бъде в началото, в края или всяка точка на <em>string</em> , който има дума в него, тогава можем да използваме <code>\w</code> за едната страна и <em>nonword</em> характер за другата.</p>
 <pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_78q/iu+Tt7" href="./09_regexp.html#c_78q/iu+Tt7"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">/cat/</span>.<span class="cm-property">test</span>(<span class="cm-string">"concatenate"</span>));
 <span class="cm-comment">// → true</span>
 <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string-2">/\bcat\b/</span>.<span class="cm-property">test</span>(<span class="cm-string">"concatenate"</span>));
 <span class="cm-comment">// → false</span></pre>
-<p><a class="p_ident" id="p_btxd6luedx" href="./09_regexp.html#p_btxd6luedx"></a>Имайте в предвид, че маркера на границата, не представлява действителен символ. Той просто се прилага на регулярния израз за съвпадне само, когато дадено условие държи мястото, където той се появява в модела. </p>
+<p><a class="p_ident" id="p_btxd6luedx" href="./09_regexp.html#p_btxd6luedx"></a>Имайте в предвид, че маркера на границата, не представлява действителен характер. Той просто се прилага на регулярния израз за съвпадне само, когато дадено условие държи мястото, където той се появява в модела. </p>
 <h2><a class="h_ident" id="h_In3b+t6uOO" href="./09_regexp.html#h_In3b+t6uOO"></a>Модели на избор</h2>
 <p><a class="p_ident" id="p_G5RTt0AFku" href="./09_regexp.html#p_G5RTt0AFku"></a>Кажете, че искаме да знаем дали част от текста съдържа не само номера, а номера последвани от думи, като прасе, крава или пиле, или някоя от техните форми за множествено число.</p>
-<p><a class="p_ident" id="p_GcEbQJT+nS" href="./09_regexp.html#p_GcEbQJT+nS"></a>Бихме могли да напишем три регулярни израза и да ги тестваме по ред, но има и по-добър начин. Символа <code>(|)</code> или, означава избор между лявата страна на модела и дясната страна на модела. Така, че можем да направим това: </p>
+<p><a class="p_ident" id="p_GcEbQJT+nS" href="./09_regexp.html#p_GcEbQJT+nS"></a>Бихме могли да напишем три регулярни израза и да ги тестваме по ред, но има и по-добър начин. Характера <code>(|)</code> или, означава избор между лявата страна на модела и дясната страна на модела. Така, че можем да направим това: </p>
 <pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_T1BADhqiD4" href="./09_regexp.html#c_T1BADhqiD4"></a><span class="cm-keyword">var</span> <span class="cm-variable">animalCount</span> <span class="cm-operator">=</span> <span class="cm-string-2">/\b\d+ (pig|cow|chicken)s?\b/</span>;
 <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">animalCount</span>.<span class="cm-property">test</span>(<span class="cm-string">"15 pigs"</span>));
 <span class="cm-comment">// → true</span>
@@ -219,7 +219,7 @@
 </li>
 <li>
 <p><a class="p_ident" id="p_fQdWHxKgCF" href="./09_regexp.html#p_fQdWHxKgCF"></a>
-  На 5-та позиция, един път се връщаме с цикъл към втората кутия (цифра), докато останалите продължават да се движат напред през полето, което има символ интервал (празно пространство). На това място няма цифра, така че вземаме втория път.
+  На 5-та позиция, един път се връщаме с цикъл към втората кутия (цифра), докато останалите продължават да се движат напред през полето, което има характер за интервал (празно пространство). На това място няма цифра, така че вземаме втория път.
 </p>
 </li>
 <li>
@@ -229,7 +229,7 @@
 </li>
 <li>
 <p><a class="p_ident" id="p_SowlGZC6lM" href="./09_regexp.html#p_SowlGZC6lM"></a>
-  В позиция 9, след тройното разклонение, единият път прескача кутията за множествено число <em>s</em> и отива в крайната дума- граница, а другия път съвпада с нея. Налице е символ за множествено число, така че преминаваме през кутията  <em>s</em> box.
+  В позиция 9, след тройното разклонение, единият път прескача кутията за множествено число <em>s</em> и отива в крайната дума- граница, а другия път съвпада с нея. Налице е характер за множествено число, така че преминаваме през кутията  <em>s</em> box.
 </p>
 </li>
 <li>
@@ -238,21 +238,21 @@
 </p>
 </li>
 </ul></div>
-<p><a class="p_ident" id="p_dfwI9Viw95" href="./09_regexp.html#p_dfwI9Viw95"></a>Концептуално, регулярният израз търси съвпадение в <em>string</em>, както следва: започва в началото на <em>string</em>, като търси съвпадение там. В този случай, там има дума-граница, така че първият символ на <em>string</em> ще премине през първата кутия, но няма цифра, така че ще се провали на втора кутия. След това ще вземе втория символ от <em>string</em>   и  ще се опита да започне ново съвпадение..... и т.н., докато не открие съвпадение или не достигне края на <em>string</em> и реши, че няма съвпадение.</p>
+<p><a class="p_ident" id="p_dfwI9Viw95" href="./09_regexp.html#p_dfwI9Viw95"></a>Концептуално, регулярният израз търси съвпадение в <em>string</em>, както следва: започва в началото на <em>string</em>, като търси съвпадение там. В този случай, там има дума-граница, така че първият характер на <em>string</em> ще премине през първата кутия, но няма цифра, така че ще се провали на втора кутия. След това ще вземе втория характер от <em>string</em> и ще се опита да започне ново съвпадение..... и т.н., докато не открие съвпадение или не достигне края на <em>string</em> и реши, че няма съвпадение.</p>
 <h2 id="backtracking"><a class="h_ident" id="h_NFMtGK0tD3" href="./09_regexp.html#h_NFMtGK0tD3"></a>Връщане  на  зад</h2>
 <p><a class="p_ident" id="p_tCd15MFAty" href="./09_regexp.html#p_tCd15MFAty"></a>Регулярния израз <code>/\b([01]+b|\d+|[\da-f]+h)\b/</code> търси съвпадение  за всяко бинарно число след <em>b</em>, обикновено десетично число без никаква наставка или шестнадестетично число (т.е. основа 16 с буквите от <em>a</em> до <em>f</em>, постоянно за цифрите от 10 до 15) следвано от час <em>h</em>. Това съответства на диаграмата:</p>
 <div class="image">
   <img src="./media/re_number.svg" alt="Visualization of /\b([01]+b|\d+|[\da-f]+h)\b/">
 </div>
 <p><a class="p_ident" id="p_CkxEfo2iHH" href="./09_regexp.html#p_CkxEfo2iHH"></a>Съответствието на този израз се случва често, както в горното бинарно разклонение, въпреки, че входът всъщност не съдържа двоично число. Съвпадение на <code>string “103”</code>, например, има само в 3, където сме в грешното разклонение. Тоест  <em>string</em> съвпада с израза, само че просто не сме в настоящото разклонение.</p>
-<p><a class="p_ident" id="p_SjTCKE9hvf" href="./09_regexp.html#p_SjTCKE9hvf"></a>Това съответствие е <em>backtracks</em> (връщане на зад). При въвеждане на разклонение, то си спомня сегашната позиция (в този случай началото на string, съвсем близо до първото поле на границата в схемата) така че, да може да се върне и да пробва друг клон, ако сегашния не работи. За <code>string "103"</code> след, като среща символа 3, то се оглежда за сектор с цели десетични числа. Това съвпада, така че, даденото съвпадение е съобщено в края на краищата.</p>
+<p><a class="p_ident" id="p_SjTCKE9hvf" href="./09_regexp.html#p_SjTCKE9hvf"></a>Това съответствие е <em>backtracks</em> (връщане на зад). При въвеждане на разклонение, то си спомня сегашната позиция (в този случай началото на string, съвсем близо до първото поле на границата в схемата) така че, да може да се върне и да пробва друг клон, ако сегашния не работи. За <code>string "103"</code> след, като среща характера 3, то се оглежда за сектор с цели десетични числа. Това съвпада, така че, даденото съвпадение е съобщено в края на краищата.</p>
 <p><a class="p_ident" id="p_+Hy4DF1l6V" href="./09_regexp.html#p_+Hy4DF1l6V"></a>Съпоставянето спира веднага след, като установи пълно съвпадение. Това означава, че много клонове потенциално могат да съответстват на <em>string</em>, но се използва само първия (от подредбата, по която клоните се появяват в регулярния израз). </p>
-<p><a class="p_ident" id="p_zEBIV8lYeb" href="./09_regexp.html#p_zEBIV8lYeb"></a>Връщането на зад също се случва с повторение за оператори, като + и <code>*</code>. Ако съвпада <code>/^.*x/</code> със <code>"abcxe"</code>, the <code>.*</code> ще се опита първо да консумира целия <em>string</em>. След което, ще осъзнае, че се нуждае от <code>х</code> да отговаря на типа. И тъй като няма <code>х</code> на края на <em>string</em>, операторът  *  се опитва да съответства на един символ по-малко. Но съгласувателя пак не намира <code>х</code> след <code>abcx</code>, от който има нужда и отчита успешно съвпадение с позиции от 0 до 4.</p>
+<p><a class="p_ident" id="p_zEBIV8lYeb" href="./09_regexp.html#p_zEBIV8lYeb"></a>Връщането на зад също се случва с повторение за оператори, като + и <code>*</code>. Ако съвпада <code>/^.*x/</code> със <code>"abcxe"</code>, the <code>.*</code> ще се опита първо да консумира целия <em>string</em>. След което, ще осъзнае, че се нуждае от <code>х</code> да отговаря на типа. И тъй като няма <code>х</code> на края на <em>string</em>, операторът  *  се опитва да съответства на един характер по-малко. Но съгласувателя пак не намира <code>х</code> след <code>abcx</code>, от който има нужда и отчита успешно съвпадение с позиции от 0 до 4.</p>
 <p><a class="p_ident" id="p_VxCrsg7UEp" href="./09_regexp.html#p_VxCrsg7UEp"></a>Възможно е да се напишат регулярни изрази, които ще направят много връщания на зад. Този проблем възниква, когато един модел може да се сравнява с парче от въвеждане по много различни начини. Например, ако искаме да бърка, докато пише двоичен номер на регулярен израз, ние можем да напишем нещо такова: <code>/([01]+)+b/</code>.</p>
 <div class="image">
   <img src="./media/re_slow.svg" alt="Visualization of /([01]+)+b/">
 </div>
-<p><a class="p_ident" id="p_5cI0Ma3Wy8" href="./09_regexp.html#p_5cI0Ma3Wy8"></a>Ако това се опитва да съответства на някаква дълга поредица от нули и единици, без да следи <em>b</em> символа, съгласувателя първо ще премине през вътрешния цикъл, докато не прочете всички цифри. Тогава забелязва, че няма <em>b</em>, така че се връща една позиция на зад, минава през външния цикъл веднъж, изгубва отново, опитвайки се да излезе от вътрешния цикъл още веднъж. Той ще продължи да опитва всеки възможен маршрут през тези две вериги. Това означава, че обема на работа се удвоява с всеки допълнителен символ. Дори само на дузина символи, резултата за съвпадението ще отнеме много време - практически завинаги.</p>
+<p><a class="p_ident" id="p_5cI0Ma3Wy8" href="./09_regexp.html#p_5cI0Ma3Wy8"></a>Ако това се опитва да съответства на някаква дълга поредица от нули и единици, без да следи <em>b</em> характера, съгласувателя първо ще премине през вътрешния цикъл, докато не прочете всички цифри. Тогава забелязва, че няма <em>b</em>, така че се връща една позиция на зад, минава през външния цикъл веднъж, изгубва отново, опитвайки се да излезе от вътрешния цикъл още веднъж. Той ще продължи да опитва всеки възможен маршрут през тези две вериги. Това означава, че обема на работа се удвоява с всеки допълнителен характер. Дори само на дузина характери, резултата за съвпадението ще отнеме много време - практически завинаги.</p>
 <h2><a class="h_ident" id="h_k0YuTOu54D" href="./09_regexp.html#h_k0YuTOu54D"></a>Метод  replace</h2>
 <p><a class="p_ident" id="p_HMQv5qrs78" href="./09_regexp.html#p_HMQv5qrs78"></a><em>String</em> стойностите имат метод <code>replace</code>, който се използва за замяна на част от <em>string</em> с друг <em>string</em>.</p>
 <pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_k4SqDNUcsT" href="./09_regexp.html#c_k4SqDNUcsT"></a><span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-string">"papa"</span>.<span class="cm-property">replace</span>(<span class="cm-string">"p"</span>, <span class="cm-string">"m"</span>));
@@ -303,12 +303,12 @@
 <span class="cm-comment">// → x = 10;</span>
 <span class="cm-variable">console</span>.<span class="cm-property">log</span>(<span class="cm-variable">stripComments</span>(<span class="cm-string">"1 /* a */+/* b */ 1"</span>));
 <span class="cm-comment">// → 1  1</span></pre>
-<p><a class="p_ident" id="p_6+ZTC2M5ci" href="./09_regexp.html#p_6+ZTC2M5ci"></a>Частта преди оператора или  |  просто търси съвпадение с две наклонени черти, последвани от всички знаци до края на реда. Частта за много-редовите коментари е по-ангажираща. Ние използваме <code>[^]</code> (за всеки символ, който не е в празен набор от символи), като начин да съответства на всеки символ. Не можем просто да използваме точка  тук, защото блоковите коментари могат да продължат на нов ред, а точките не съответстват на символ за нов ред.</p>
+<p><a class="p_ident" id="p_6+ZTC2M5ci" href="./09_regexp.html#p_6+ZTC2M5ci"></a>Частта преди оператора или  |  просто търси съвпадение с две наклонени черти, последвани от всички знаци до края на реда. Частта за много-редовите коментари е по-ангажираща. Ние използваме <code>[^]</code> (за всеки характер, който не е в празен набор от характери), като начин да съответства на всеки характер. Не можем просто да използваме точка  тук, защото блоковите коментари могат да продължат на нов ред, а точките не съответстват на характера за нов ред.</p>
 <p><a class="p_ident" id="p_s9E9JYjAYp" href="./09_regexp.html#p_s9E9JYjAYp"></a>Но изходът на последния пример изглежда е грешен. Защо</p>
 <p><a class="p_ident" id="p_atS1ERkauC" href="./09_regexp.html#p_atS1ERkauC"></a>Частта от израза <code>[^]*</code>, както описах в раздела за връщане на зад, ще е първото съвпадение, толкова колкото може. И това е причината следващата част на модела да се провали, съгласувателя преминава напред един знак се опитва отново там. В примера, съгласувателя се опитва да съответства на цялата останала част от <em>string</em>  и след това се връща обратно там. Той ще открие появата на <code>*/</code> след връщане на зад четири знака за да съвпадне с този. Това не е онова, което искахме - намерението беше да съответства на един единствен коментар, за да не вървим по целия път до края на кода и да намерим края на последния коментар блок.</p>
 <p><a class="p_ident" id="p_eNtLSVH65f" href="./09_regexp.html#p_eNtLSVH65f"></a>Заради това поведение, ние казваме, че операторите за повторение (<code>+</code>, <code>*</code>,
 <code>?</code>, и <code>{}</code>) са <em>greedy</em> ненаситни, това означава, че те съвпадат толкова колкото могат и се връщат от там. Ако сложим въпросителен знак след тях (<code>+?</code>, <code>*?</code>, <code>??</code>, <code>{}?</code>), те стават <em>nongreed</em> (не-лакоми) и започват съвпадение на най-малко възможности - съвпадения само, когато оставащия модел не се вписва в по-малко съвпадение.</p>
-<p><a class="p_ident" id="p_0L47KZXZKa" href="./09_regexp.html#p_0L47KZXZKa"></a>И това е точно онова, което искаме в този случай. Докато * съвпада с най-малкия участък от символи, който ни води до <code>*/</code>, ние консумираме един блок с коментари и нищо повече.</p>
+<p><a class="p_ident" id="p_0L47KZXZKa" href="./09_regexp.html#p_0L47KZXZKa"></a>И това е точно онова, което искаме в този случай. Докато * съвпада с най-малкия участък от характери, който ни води до <code>*/</code>, ние консумираме един блок с коментари и нищо повече.</p>
 <pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_0e+jWcCHlB" href="./09_regexp.html#c_0e+jWcCHlB"></a><span class="cm-keyword">function</span> <span class="cm-variable">stripComments</span>(<span class="cm-def">code</span>) {
   <span class="cm-keyword">return</span> <span class="cm-variable-2">code</span>.<span class="cm-property">replace</span>(<span class="cm-string-2">/\/\/.*|\/\*[^]*?\*\//g</span>, <span class="cm-string">""</span>);
 }
@@ -402,7 +402,7 @@ outputdir=/home/marijn/enemies/gargamel</pre>
 </li>
 <li>
 <p><a class="p_ident" id="p_l2Yjl1fUVB" href="./09_regexp.html#p_l2Yjl1fUVB"></a>
-Линии, съдържащи буквено-цифров идентификатор последвани от символа <code>=</code>, добавя настройка за текущата секция.
+Линии, съдържащи буквено-цифров идентификатор последвани от характера за <code>=</code>, добавя настройка за текущата секция.
 </p>
 </li>
 <li>
@@ -412,7 +412,7 @@ outputdir=/home/marijn/enemies/gargamel</pre>
 </li>
 </ul></div>
 <p><a class="p_ident" id="p_LWCnDNCUFW" href="./09_regexp.html#p_LWCnDNCUFW"></a>Нашата задача е да конвертира <em>string</em>, като този в масив от обекти, всеки с името на свойство и масив от настройки. Ще имаме нужда от един такъв обект за всяка секция и един за глобалните настройки в началото.</p>
-<p><a class="p_ident" id="p_8golZvaoZS" href="./09_regexp.html#p_8golZvaoZS"></a>Тъй като, формата трябва да бъде обработен ред по ред, разделянето на файла на отделни линии е добро начало. Ние използвахме <code>string.split("\n")</code> за да направим това в <a href="./06_object.html#split">Глава 6</a>. Някои операционни системи обаче, не използват само символа за нов ред за отделяне на линии, а използват символа за връщане последван от този за нов ред (<code>"\r\n"</code>). Като се има в предвид, че метода <code>split</code> позволява също и регулярен израз, като аргумент, можем да разделим регулярния израз, като се раздели по този начин <code>/\r?\n/</code>, който позволява едновременно  и <code>"\n"</code> and <code>"\r\n"</code> между линиите.</p>
+<p><a class="p_ident" id="p_8golZvaoZS" href="./09_regexp.html#p_8golZvaoZS"></a>Тъй като, формата трябва да бъде обработен ред по ред, разделянето на файла на отделни линии е добро начало. Ние използвахме <code>string.split("\n")</code> за да направим това в <a href="./06_object.html#split">Глава 6</a>. Някои операционни системи обаче, не използват само характера за нов ред за отделяне на линии, а използват характера за връщане последван от този за нов ред (<code>"\r\n"</code>). Като се има в предвид, че метода <code>split</code> позволява също и регулярен израз, като аргумент, можем да разделим регулярния израз, като се раздели по този начин <code>/\r?\n/</code>, който позволява едновременно  и <code>"\n"</code> and <code>"\r\n"</code> между линиите.</p>
 <pre data-language="javascript" class="snippet cm-s-default"><a class="c_ident" id="c_4pk9fouX3a" href="./09_regexp.html#c_4pk9fouX3a"></a><span class="cm-keyword">function</span> <span class="cm-variable">parseINI</span>(<span class="cm-def">string</span>) {
   <span class="cm-comment">// Start with an object to hold the top-level fields</span>
   <span class="cm-keyword">var</span> <span class="cm-def">currentSection</span> <span class="cm-operator">=</span> {<span class="cm-property">name</span>: <span class="cm-atom">null</span>, <span class="cm-property">fields</span>: []};
@@ -435,17 +435,17 @@ outputdir=/home/marijn/enemies/gargamel</pre>
 
   <span class="cm-keyword">return</span> <span class="cm-variable-2">categories</span>;
 }</pre>
-<p><a class="p_ident" id="p_aXK65jiU6o" href="./09_regexp.html#p_aXK65jiU6o"></a>Този код минава през всеки ред във файла и актуализира  обекта на “текущата секция”, тъй като върви заедно с него. Първо се проверява дали линията може да бъде игнорирана, използвайки <code>/^\s*(;.*)?$/</code>. Виждате ли как работи ? Частта между скобите ще съвпадне с коментарите, въпросителния знак <code>?</code> ще се увери, че също така съвпада с линии, които съдържат само празни символи.</p>
+<p><a class="p_ident" id="p_aXK65jiU6o" href="./09_regexp.html#p_aXK65jiU6o"></a>Този код минава през всеки ред във файла и актуализира  обекта на “текущата секция”, тъй като върви заедно с него. Първо се проверява дали линията може да бъде игнорирана, използвайки <code>/^\s*(;.*)?$/</code>. Виждате ли как работи ? Частта между скобите ще съвпадне с коментарите, въпросителния знак <code>?</code> ще се увери, че също така съвпада с линии, които съдържат само празни характери.</p>
 <p><a class="p_ident" id="p_CKB+LQEvXY" href="./09_regexp.html#p_CKB+LQEvXY"></a>Ако линията не е коментар, кодът проверява, дали  с тази линия започва нов раздел. Ако е така, той създава нова текуща секция-обект, към който ще бъдат добавени следващите настройки.</p>
 <p><a class="p_ident" id="p_XjKuxzEtw/" href="./09_regexp.html#p_XjKuxzEtw/"></a>Последната смислена възможност е, че линията е нормална и кодът я добавя към текущата секция-обект.</p>
 <p><a class="p_ident" id="p_oU+yccn9dn" href="./09_regexp.html#p_oU+yccn9dn"></a>Ако линията не съвпада с някоя от тези форми, функцията хвърля грешка.</p>
 <p><a class="p_ident" id="p_FPzqsloIkT" href="./09_regexp.html#p_FPzqsloIkT"></a>Обърнете внимание на повтарящото се използване на <code>^</code> и <code>$</code>, което ни уверява, че изразът съвпада с цялата линия, а не само с част от нея. Трудно може да се проследи бъг, при пропускането на резултат в кода, който предимно работи, но се държи странно за някакъв вход.</p>
 <p><a class="p_ident" id="p_SLY/jPojdT" href="./09_regexp.html#p_SLY/jPojdT"></a>Моделът <code>if (match
 = string.match(...))</code> е подобен на трика за използване на състоянието докато на цикъла <code>while</code>. Ако не сте сигурни, че извикването на <code>match</code> ще успее, може да получите достъп до получения обект само вътре в <code>if</code> изявлението на тестовете за това. За да не прекъснем веригата на <code>if</code> формите, ще възложим резултата от съвпадението на променлива и веднага ще я използваме, като задача за теста в <code>if</code> изявлението.</p>
-<h2><a class="h_ident" id="h_+y54//b0l+" href="./09_regexp.html#h_+y54//b0l+"></a>Международни  символи</h2>
-<p><a class="p_ident" id="p_Gw6mX6NBqt" href="./09_regexp.html#p_Gw6mX6NBqt"></a>Поради първоначално опростеното прилагане на JavaScript и в следствие на това, че този опростен подход беше непоклатим, като стандартно поведение, регулярните изрази в JavaScript  са доста тъпи като символи, които не са включени в английския език. Например, що се отнася до регулярни изрази в JavaScript, за ангажираните “word character” са само един от 26-те символа в латинската азбука (главни и малки букви) и по някаква причина  и символа за долна черта. Неща като <em>é</em> или <em>β</em>, които най-категорично са условни знаци, няма да съвпаднат с <code>\w</code>, а ще съответстват на главна <code>\W</code> (<em>nonword</em> категория).</p>
+<h2><a class="h_ident" id="h_+y54//b0l+" href="./09_regexp.html#h_+y54//b0l+"></a>Международни  характери</h2>
+<p><a class="p_ident" id="p_Gw6mX6NBqt" href="./09_regexp.html#p_Gw6mX6NBqt"></a>Поради първоначално опростеното прилагане на JavaScript и в следствие на това, че този опростен подход беше непоклатим, като стандартно поведение, регулярните изрази в JavaScript  са доста тъпи като характери, които не са включени в английския език. Например, що се отнася до регулярни изрази в JavaScript, за ангажираните “word character” са само един от 26-те характера в латинската азбука (главни и малки букви) и по някаква причина  и характера за долна черта. Неща като <em>é</em> или <em>β</em>, които най-категорично са условни знаци, няма да съвпаднат с <code>\w</code>, а ще съответстват на главна <code>\W</code> (<em>nonword</em> категория).</p>
 <p><a class="p_ident" id="p_hQosIPfRoo" href="./09_regexp.html#p_hQosIPfRoo"></a>По странна историческа случайност <code>\s</code> празно пространство (<em>whitespace</em>) няма такъв проблем и съвпада с всички знаци, които Unicode счита за празно пространство, включително неща, като пространството <em>nonbreaking</em> и Монголската гласна за сепаратор.</p>
-<p><a class="p_ident" id="p_ssmpiUydMx" href="./09_regexp.html#p_ssmpiUydMx"></a>Някои регулярни изрази инплементирани в други програмни езици имат синтаксис за съответствие на специфични категории символи в Unicode таблицата, като например “всички главни букви”, ”всички препинателни знаци” или ”контролни символи”. Има планове за добавяне на подкрепа за такива категории в JavaScript, но за съжаление изглежда, че няма да се реализират в близко бъдеще.</p>
+<p><a class="p_ident" id="p_ssmpiUydMx" href="./09_regexp.html#p_ssmpiUydMx"></a>Някои регулярни изрази инплементирани в други програмни езици имат синтаксис за съответствие на специфични категории характери в Unicode таблицата, като например “всички главни букви”, ”всички препинателни знаци” или ”контролни характери”. Има планове за добавяне на подкрепа за такива категории в JavaScript, но за съжаление изглежда, че няма да се реализират в близко бъдеще.</p>
 <h2 id="summary_regexp"><a class="h_ident" id="h_ErccPg/l98" href="./09_regexp.html#h_ErccPg/l98"></a>Резюме</h2>
 <p><a class="p_ident" id="p_/hQX04GtpS" href="./09_regexp.html#p_/hQX04GtpS"></a>Регулярните изрази са обекти, които представляват модели в <em>strings</em>. Те използват собствения си синтаксис за да изразят тези модели.</p>
 <table>
