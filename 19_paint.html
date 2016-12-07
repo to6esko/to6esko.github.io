@@ -364,16 +364,16 @@
   <span class="cm-tag cm-bracket">&lt;</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span><span class="cm-variable">createPaint</span>(<span class="cm-variable">document</span>.<span class="cm-property">body</span>);<span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">script</span><span class="cm-tag cm-bracket">&gt;</span>
 <span class="cm-tag cm-bracket">&lt;/</span><span class="cm-tag">body</span><span class="cm-tag cm-bracket">&gt;</span></pre>
 <div class="solution"><div class="solution-text">
-<p><a class="p_ident" id="p_roLPCOzlbR" href="./19_paint.html#p_roLPCOzlbR"></a>С дадена двойка начални координати и данни за изображението върху цялото платно, този подход трябва да работи, като:</p>
+<p><a class="p_ident" id="p_roLPCOzlbR" href="./19_paint.html#p_roLPCOzlbR"></a>При дадена двойка начални координати и данните за изображението върху цялото платно, този подход трябва да работи с:</p>
 <div class="olist arabic"><ol class="arabic">
 <li>
 <p><a class="p_ident" id="p_DJfuZAPd2V" href="./19_paint.html#p_DJfuZAPd2V"></a>
-Създава масив, за да държи информация за вече оцветени координати.
+Създаване на масив, който да държи информация за вече оцветени координати.
 </p>
 </li>
 <li>
 <p><a class="p_ident" id="p_8q76RzMUPC" href="./19_paint.html#p_8q76RzMUPC"></a>
-Създава масив - работен списък, който да държи координати, които трябва да бъдат разгледани. Поставете начална позиция в него.
+Създаване на масив - работен списък, който да държи координати, които трябва да бъдат разгледани. Поставете начална позиция в него.
 </p>
 </li>
 <li>
@@ -383,7 +383,7 @@
 </li>
 <li>
 <p><a class="p_ident" id="p_JXeW3M6LBu" href="./19_paint.html#p_JXeW3M6LBu"></a>
-Премахване на една двойка координати от списъка работа.
+Премахнете една двойка координати от работния списък.
 </p>
 </li>
 <li>
@@ -393,7 +393,7 @@
 </li>
 <li>
 <p><a class="p_ident" id="p_6sixhBP7gV" href="./19_paint.html#p_6sixhBP7gV"></a>
-Цвета на пикселите на текущите координати и добавете координатите към масива от цветни пиксели.
+Вземете цвета на пиксела в текущите координати и добавете координатите към масива от цветни пиксели.
 </p>
 </li>
 <li>
